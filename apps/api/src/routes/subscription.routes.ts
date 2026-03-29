@@ -1,30 +1,87 @@
 import { Router } from "express";
+import * as subscriptionController from "../controllers/subscription.controller.js";
+import { authenticate } from "../middleware/auth.js";
+import { validate } from "../middleware/validate.js";
+import { z } from "zod";
 
 const router = Router();
 
-// GET /api/v1/subscriptions/me (customer: my subscriptions)
-router.get("/me", (_req, res) => {
-  res.status(501).json({ message: "Not implemented" });
+const checkoutSchema = z.object({
+  pricingPlanId: z.string().uuid(),
+  billingCycle: z.enum(["MONTHLY", "YEARLY"]).default("MONTHLY"),
 });
 
-// POST /api/v1/subscriptions/checkout (customer: create checkout session)
-router.post("/checkout", (_req, res) => {
-  res.status(501).json({ message: "Not implemented" });
-});
+// All subscription routes require authentication
+router.use(authenticate);
 
-// POST /api/v1/subscriptions/:id/cancel (customer: cancel subscription)
-router.post("/:id/cancel", (_req, res) => {
-  res.status(501).json({ message: "Not implemented" });
-});
+/**
+ * @swagger
+ * /subscriptions/me:
+ *   get:
+ *     tags: [Subscriptions]
+ *     summary: Get current user's subscriptions
+ *     security: [{ bearerAuth: [] }]
+ *     responses:
+ *       200: { description: List of subscriptions with product details }
+ * /subscriptions/me/billing:
+ *   get:
+ *     tags: [Subscriptions]
+ *     summary: Get billing/transaction history
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: query, name: page, schema: { type: integer, default: 1 } }
+ *       - { in: query, name: limit, schema: { type: integer, default: 20 } }
+ *     responses:
+ *       200: { description: Paginated transaction history }
+ */
+router.get("/me", subscriptionController.getMySubscriptions);
+router.get("/me/billing", subscriptionController.getBillingHistory);
 
-// PATCH /api/v1/subscriptions/:id/plan (customer: upgrade/downgrade)
-router.patch("/:id/plan", (_req, res) => {
-  res.status(501).json({ message: "Not implemented" });
-});
+/**
+ * @swagger
+ * /subscriptions/checkout:
+ *   post:
+ *     tags: [Subscriptions]
+ *     summary: Create Stripe Checkout session
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [pricingPlanId]
+ *             properties:
+ *               pricingPlanId: { type: string, format: uuid }
+ *               billingCycle: { type: string, enum: [MONTHLY, YEARLY], default: MONTHLY }
+ *     responses:
+ *       200: { description: Returns Stripe Checkout URL }
+ *       409: { description: Already subscribed to this product }
+ */
+router.post("/checkout", validate(checkoutSchema), subscriptionController.createCheckout);
 
-// GET /api/v1/subscriptions/me/billing (customer: billing history)
-router.get("/me/billing", (_req, res) => {
-  res.status(501).json({ message: "Not implemented" });
-});
+/**
+ * @swagger
+ * /subscriptions/{id}:
+ *   get:
+ *     tags: [Subscriptions]
+ *     summary: Get subscription by ID
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200: { description: Subscription detail }
+ * /subscriptions/{id}/cancel:
+ *   post:
+ *     tags: [Subscriptions]
+ *     summary: Cancel subscription at period end
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200: { description: Subscription will cancel at period end }
+ */
+router.get("/:id", subscriptionController.getSubscription);
+router.post("/:id/cancel", subscriptionController.cancelSubscription);
 
 export default router;

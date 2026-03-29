@@ -37,6 +37,8 @@ import {
   LogOut,
   ChevronUp,
   Store,
+  Rocket,
+  Code2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -54,6 +56,7 @@ const customerNav: NavItem[] = [
 
 const developerNav: NavItem[] = [
   { label: "My Products", href: "/developer/products", icon: Package },
+  { label: "Code Editor", href: "/ide", icon: Code2 },
   { label: "WordPress Sites", href: "/developer/sites", icon: Globe },
   { label: "Analytics", href: "/developer/analytics", icon: BarChart3 },
   { label: "Revenue", href: "/developer/revenue", icon: DollarSign },
@@ -136,6 +139,12 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton render={<Link href="/developer/onboarding" />}>
+                    <Rocket className="h-4 w-4" />
+                    <span>Become a Developer</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton render={<Link href="/marketplace" />}>
                     <Store className="h-4 w-4" />

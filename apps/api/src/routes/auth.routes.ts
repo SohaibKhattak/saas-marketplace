@@ -21,25 +21,133 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-// POST /api/v1/auth/register
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Register a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, fullName]
+ *             properties:
+ *               email: { type: string, format: email }
+ *               password: { type: string, minLength: 8 }
+ *               fullName: { type: string }
+ *     responses:
+ *       201: { description: User created }
+ *       409: { description: Email already exists }
+ */
 router.post("/register", validate(registerSchema), authController.register);
 
-// POST /api/v1/auth/login
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Login with email and password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email: { type: string, format: email }
+ *               password: { type: string }
+ *     responses:
+ *       200: { description: Returns access token and user object }
+ *       401: { description: Invalid credentials }
+ */
 router.post("/login", validate(loginSchema), authController.login);
 
-// POST /api/v1/auth/refresh
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Refresh access token using httpOnly cookie
+ *     responses:
+ *       200: { description: New access token }
+ *       401: { description: Invalid or expired refresh token }
+ */
 router.post("/refresh", authController.refresh);
 
-// POST /api/v1/auth/verify-email
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Verify email address with token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token: { type: string }
+ *     responses:
+ *       200: { description: Email verified }
+ */
 router.post("/verify-email", authController.verifyEmail);
 
-// POST /api/v1/auth/forgot-password
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Request a password reset email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email }
+ *     responses:
+ *       200: { description: Reset email sent (always returns 200) }
+ */
 router.post("/forgot-password", authController.forgotPassword);
 
-// POST /api/v1/auth/reset-password
+/**
+ * @swagger
+ * /auth/reset-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Reset password with token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, password]
+ *             properties:
+ *               token: { type: string }
+ *               password: { type: string, minLength: 8 }
+ *     responses:
+ *       200: { description: Password reset successfully }
+ */
 router.post("/reset-password", authController.resetPassword);
 
-// POST /api/v1/auth/logout
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Logout and clear refresh token cookie
+ *     responses:
+ *       200: { description: Logged out }
+ */
 router.post("/logout", authController.logout);
 
 export default router;

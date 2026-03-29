@@ -1,8 +1,11 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { rateLimit } from "./middleware/rate-limit.js";
 
@@ -39,6 +42,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 app.use("/api/", rateLimit(60_000, 100));
+
+// Swagger docs
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/api/docs.json", (_req, res) => {
+  res.json(swaggerSpec);
+});
 
 // Health check
 app.get("/api/health", (_req, res) => {

@@ -6,6 +6,7 @@ import { ProtectedRoute } from "@/components/layout/protected-route";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/stores/auth-store";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
@@ -25,6 +26,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {user.role.toLowerCase()}
                 </Badge>
               )}
+            </div>
+            <div className="ml-auto">
+              <ThemeToggle />
             </div>
           </header>
           <main className="flex-1 p-6">{children}</main>
