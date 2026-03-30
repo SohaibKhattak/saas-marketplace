@@ -1,4 +1,4 @@
-# Demo Script — SaaS Marketplace Platform
+# Demo Script — Saasifyy Platform
 
 This guide walks through a complete demonstration of all user roles and the built-in Code Editor. Estimated time: 20-25 minutes.
 
@@ -150,7 +150,7 @@ This is the highlight of the demo.
 ## Part 5: Admin Experience (5 min)
 
 1. **Login as Admin:**
-   - Email: `admin@saasmarket.com` | Password: `Password1!`
+   - Email: `admin@saasifyy.com` | Password: `Password1!`
 
 2. **Dashboard** (`/admin/analytics`):
    - KPI cards: Total Users, Products, Revenue, Subscriptions
@@ -210,7 +210,7 @@ Customer browses → Subscribes via Stripe → Access granted
 |------|-------|----------|
 | Customer | `david@company.com` | `Password1!` |
 | Developer | `alice@devstudio.com` | `Password1!` |
-| Admin | `admin@saasmarket.com` | `Password1!` |
+| Admin | `admin@saasifyy.com` | `Password1!` |
 
 The login page has **Quick Login** buttons that auto-fill these credentials.
 

@@ -21,7 +21,7 @@ import { Store, Users, Code, Shield, ArrowRight, Loader2 } from "lucide-react";
 const demoAccounts = [
   { role: "customer", email: "david@company.com", password: "Password1!", icon: Users, label: "Customer", color: "text-blue-600 dark:text-blue-400 bg-blue-500/10" },
   { role: "developer", email: "alice@devstudio.com", password: "Password1!", icon: Code, label: "Developer", color: "text-violet-600 dark:text-violet-400 bg-violet-500/10" },
-  { role: "admin", email: "admin@saasmarket.com", password: "Password1!", icon: Shield, label: "Admin", color: "text-amber-600 dark:text-amber-400 bg-amber-500/10" },
+  { role: "admin", email: "admin@saasifyy.com", password: "Password1!", icon: Shield, label: "Admin", color: "text-amber-600 dark:text-amber-400 bg-amber-500/10" },
 ];
 
 function LoginForm() {

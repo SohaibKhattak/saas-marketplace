@@ -35,7 +35,7 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      email: "admin@saasmarket.com",
+      email: "admin@saasifyy.com",
       passwordHash: password,
       fullName: "Admin User",
       role: "ADMIN",
@@ -171,7 +171,7 @@ async function main() {
     data: {
       developerId: profile1.id,
       subdomain: "alice-studio",
-      siteUrl: "https://alice-studio.saasmarket.com",
+      siteUrl: "https://alice-studio.saasifyy.tech",
       status: "ACTIVE",
       wpSiteId: 2,
     },
@@ -181,7 +181,7 @@ async function main() {
     data: {
       developerId: profile2.id,
       subdomain: "techcorp",
-      siteUrl: "https://techcorp.saasmarket.com",
+      siteUrl: "https://techcorp.saasifyy.tech",
       status: "ACTIVE",
       wpSiteId: 3,
     },
@@ -191,7 +191,7 @@ async function main() {
     data: {
       developerId: profile3.id,
       subdomain: "startupio",
-      siteUrl: "https://startupio.saasmarket.com",
+      siteUrl: "https://startupio.saasifyy.tech",
       status: "ACTIVE",
       wpSiteId: 4,
     },
@@ -560,7 +560,7 @@ async function main() {
 
   console.log("\nSeed complete!");
   console.log("\nDemo Accounts (all use password: Password1!):");
-  console.log("  Admin:     admin@saasmarket.com");
+  console.log("  Admin:     admin@saasifyy.com");
   console.log("  Developer: alice@devstudio.com");
   console.log("  Developer: bob@techcorp.com");
   console.log("  Developer: carol@startup.io");

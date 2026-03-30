@@ -4,11 +4,11 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "SaaS Marketplace API",
+      title: "Saasifyy API",
       version: "1.0.0",
       description:
-        "REST API for the Multi-Tenant SaaS Marketplace Platform. Provides endpoints for authentication, product management, subscriptions, payments, and administration.",
-      contact: { name: "SaaS Marketplace Team" },
+        "REST API for the Saasifyy Multi-Tenant SaaS Platform. Provides endpoints for authentication, product management, subscriptions, payments, and administration.",
+      contact: { name: "Saasifyy Team" },
     },
     servers: [
       { url: "/api/v1", description: "API v1" },

@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: SaaS Marketplace Access Control
+ * Plugin Name: Saasifyy Access Control
  * Description: Controls access to WordPress subsites based on marketplace subscriptions.
  *              Checks subscription status via the platform API and shows paywall for non-subscribers.
  * Version: 1.0.0
- * Author: SaaS Marketplace Team
+ * Author: Saasifyy Team
  * Network: true
  */
 
@@ -306,7 +306,7 @@ function saas_admin_bar_notice($wp_admin_bar) {
 
     $wp_admin_bar->add_node([
         'id'    => 'saas-marketplace',
-        'title' => 'Powered by SaaS Marketplace',
+        'title' => 'Powered by Saasifyy',
         'href'  => SAAS_PLATFORM_URL,
         'meta'  => ['target' => '_blank'],
     ]);

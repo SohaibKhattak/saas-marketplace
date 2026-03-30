@@ -2,7 +2,7 @@
 # ─── WordPress Multisite VPS Setup Script ─────────────────────────────────────
 # Run this on a fresh Ubuntu 22.04+ VPS (DigitalOcean/Hetzner)
 # Usage: sudo bash install.sh <domain>
-# Example: sudo bash install.sh saasmarket.com
+# Example: sudo bash install.sh saasifyy.tech
 
 set -euo pipefail
 
@@ -15,7 +15,7 @@ WP_ADMIN_PASS=$(openssl rand -base64 16)
 WP_ADMIN_EMAIL="admin@${DOMAIN}"
 
 echo "═══════════════════════════════════════════════════════"
-echo "  SaaS Marketplace - WordPress Multisite Setup"
+echo "  Saasifyy - WordPress Multisite Setup"
 echo "  Domain: ${DOMAIN}"
 echo "═══════════════════════════════════════════════════════"
 
@@ -62,7 +62,7 @@ PHP
 
 wp core install --allow-root \
   --url="https://${DOMAIN}" \
-  --title="SaaS Marketplace" \
+  --title="Saasifyy" \
   --admin_user="${WP_ADMIN_USER}" \
   --admin_password="${WP_ADMIN_PASS}" \
   --admin_email="${WP_ADMIN_EMAIL}"

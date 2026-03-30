@@ -1,4 +1,4 @@
-# Multi-Tenant SaaS Marketplace Platform
+# Saasifyy — Multi-Tenant SaaS Marketplace Platform
 
 A full-stack, multi-tenant SaaS marketplace where developers build and deploy SaaS products (via a built-in code editor or WordPress no-code builder) and customers discover, subscribe, and manage software — all from one platform. Built as a Final Year Project for BS Computer Science at UET Peshawar.
 
@@ -92,7 +92,7 @@ The platform features a professional, animated UI with:
 - CSS keyframe animations (fade-in, slide-up, float, pulse-glow)
 - Responsive design across all breakpoints
 - Dark mode with oklch color space for vibrant colors
-- Consistent branding with SaaS Market logo across all pages
+- Consistent branding with Saasifyy logo across all pages
 
 ---
 
@@ -173,7 +173,7 @@ After running `npm run db:seed`, these accounts are available:
 
 | Email | Password | Role | Notes |
 |-------|----------|------|-------|
-| `admin@saasmarket.com` | `Password1!` | Admin | Full platform access |
+| `admin@saasifyy.com` | `Password1!` | Admin | Full platform access |
 | `alice@devstudio.com` | `Password1!` | Developer | 2 published products |
 | `bob@techcorp.com` | `Password1!` | Developer | 1 published product |
 | `carol@startup.io` | `Password1!` | Developer | 1 published, 1 pending |
