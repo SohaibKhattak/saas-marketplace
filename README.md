@@ -173,7 +173,7 @@ After running `npm run db:seed`, these accounts are available:
 
 | Email | Password | Role | Notes |
 |-------|----------|------|-------|
-| `admin@saasifyy.com` | `Password1!` | Admin | Full platform access |
+| `sohaibktk969@gmail.com` | `Password1!` | Admin | Full platform access |
 | `alice@devstudio.com` | `Password1!` | Developer | 2 published products |
 | `bob@techcorp.com` | `Password1!` | Developer | 1 published product |
 | `carol@startup.io` | `Password1!` | Developer | 1 published, 1 pending |

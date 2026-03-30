@@ -150,7 +150,7 @@ This is the highlight of the demo.
 ## Part 5: Admin Experience (5 min)
 
 1. **Login as Admin:**
-   - Email: `admin@saasifyy.com` | Password: `Password1!`
+   - Email: `sohaibktk969@gmail.com` | Password: `Password1!`
 
 2. **Dashboard** (`/admin/analytics`):
    - KPI cards: Total Users, Products, Revenue, Subscriptions
@@ -210,7 +210,7 @@ Customer browses → Subscribes via Stripe → Access granted
 |------|-------|----------|
 | Customer | `david@company.com` | `Password1!` |
 | Developer | `alice@devstudio.com` | `Password1!` |
-| Admin | `admin@saasifyy.com` | `Password1!` |
+| Admin | `sohaibktk969@gmail.com` | `Password1!` |
 
 The login page has **Quick Login** buttons that auto-fill these credentials.
 
