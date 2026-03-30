@@ -62,6 +62,12 @@ export default function SitesPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [credentials, setCredentials] = useState<{
+    username: string;
+    password: string;
+    loginUrl: string;
+    subdomain: string;
+  } | null>(null);
 
   const fetchSites = useCallback(async () => {
     try {
@@ -83,7 +89,16 @@ export default function SitesPage() {
     setError("");
     setCreating(true);
     try {
-      await api.post("/wp/sites", { subdomain: subdomain.toLowerCase() }, { token: accessToken! });
+      const res = await api.post<{ data: any }>("/wp/sites", { subdomain: subdomain.toLowerCase() }, { token: accessToken! });
+      const wpCreds = res.data?.wpCredentials;
+      if (wpCreds) {
+        setCredentials({
+          username: wpCreds.username,
+          password: wpCreds.password,
+          loginUrl: wpCreds.loginUrl,
+          subdomain: subdomain.toLowerCase(),
+        });
+      }
       setSubdomain("");
       setDialogOpen(false);
       fetchSites();
@@ -179,6 +194,60 @@ export default function SitesPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Credentials Dialog — shown after site creation */}
+      <Dialog open={!!credentials} onOpenChange={(open) => !open && setCredentials(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <DialogTitle>Site Created Successfully!</DialogTitle>
+            </div>
+            <DialogDescription>
+              Your WordPress site is ready. Save these login credentials — you won&apos;t see the password again.
+            </DialogDescription>
+          </DialogHeader>
+          {credentials && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg bg-muted p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Site URL</p>
+                  <p className="text-sm font-medium">https://{credentials.subdomain}.{WP_DOMAIN}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">WordPress Admin</p>
+                  <p className="text-sm font-medium">{credentials.loginUrl}</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="text-xs text-muted-foreground mb-1">Username</p>
+                  <p className="text-sm font-mono font-medium bg-background rounded px-2 py-1">{credentials.username}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Password</p>
+                  <p className="text-sm font-mono font-medium bg-background rounded px-2 py-1">{credentials.password}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>Save these credentials now. You can change your password later from WordPress admin.</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCredentials(null)}>
+              Close
+            </Button>
+            {credentials && (
+              <a href={credentials.loginUrl} target="_blank" rel="noopener noreferrer">
+                <Button>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open WP Admin
+                </Button>
+              </a>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Sites Grid */}
       {loading ? (

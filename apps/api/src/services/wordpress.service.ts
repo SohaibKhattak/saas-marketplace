@@ -79,10 +79,22 @@ export async function provisionSite(
   });
 
   try {
-    // Create the WordPress subsite via WP-CLI
     const title = profile.businessName || profile.user.fullName + "'s Site";
     const email = profile.user.email;
+    const username = subdomain.replace(/-/g, "") + "admin";
+    const password = "Dev@" + Math.random().toString(36).slice(2, 10) + "!";
 
+    // Step 1: Check if WP user exists, if not create one
+    try {
+      await wpCli(`user get ${email} --field=ID`);
+    } catch {
+      // User doesn't exist — create them as a subscriber on the main site first
+      await wpCli(
+        `user create ${username} ${email} --user_pass="${password}" --display_name="${profile.user.fullName}" --role=administrator`
+      );
+    }
+
+    // Step 2: Create the WordPress subsite via WP-CLI
     const output = await wpCli(
       `site create --slug=${subdomain} --title="${title}" --email=${email}`
     );
@@ -90,6 +102,15 @@ export async function provisionSite(
     // Extract the blog ID from WP-CLI output (e.g., "Success: Site 3 created.")
     const blogIdMatch = output.match(/Site\s+(\d+)\s+created/);
     const wpSiteId = blogIdMatch ? parseInt(blogIdMatch[1], 10) : null;
+
+    // Step 3: Make the developer an admin of their new subsite
+    if (wpSiteId) {
+      try {
+        await wpCli(`super-admin add ${username}`);
+      } catch {
+        // Not critical if this fails — they're already site admin via --email
+      }
+    }
 
     // Update site record to ACTIVE
     const activeSite = await prisma.developerSite.update({
@@ -100,7 +121,14 @@ export async function provisionSite(
       },
     });
 
-    return activeSite;
+    return {
+      ...activeSite,
+      wpCredentials: {
+        username,
+        password,
+        loginUrl: `https://${subdomain}.${WP_DOMAIN}/wp-login.php`,
+      },
+    };
   } catch (error) {
     // If WP-CLI fails, mark site as failed and re-throw
     await prisma.developerSite.update({
