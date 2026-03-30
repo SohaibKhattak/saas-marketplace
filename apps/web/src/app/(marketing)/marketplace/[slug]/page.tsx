@@ -127,7 +127,7 @@ export default function ProductPage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="text-xl font-bold">SaaS Marketplace</Link>
+          <Link href="/" className="text-xl font-bold">Saasifyy</Link>
           <nav className="flex items-center gap-4">
             <Link href="/marketplace" className="text-sm font-medium">Marketplace</Link>
             {user ? (

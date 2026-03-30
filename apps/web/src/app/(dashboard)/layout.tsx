@@ -20,7 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SidebarTrigger />
             <Separator orientation="vertical" className="h-6" />
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">SaaS Marketplace</span>
+              <span className="text-sm font-medium">Saasifyy</span>
               {user && (
                 <Badge variant="outline" className="text-xs capitalize">
                   {user.role.toLowerCase()}

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SaaS Marketplace - Discover & Subscribe to SaaS Products",
+  title: "Saasifyy - Discover & Subscribe to SaaS Products",
   description:
     "A multi-tenant marketplace platform for discovering, subscribing to, and managing SaaS products built on WordPress.",
 };

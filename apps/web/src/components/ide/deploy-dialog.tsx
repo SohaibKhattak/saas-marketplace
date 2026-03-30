@@ -65,7 +65,7 @@ export function DeployDialog({
   const [name, setName] = useState(projectName || "");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState(
-    `A SaaS product built with ${templateName} template on the SaaS Marketplace code editor.`
+    `A SaaS product built with ${templateName} template on the Saasifyy code editor.`
   );
   const [category, setCategory] = useState("");
   const [tagsInput, setTagsInput] = useState("");
@@ -82,7 +82,7 @@ export function DeployDialog({
     setName(projectName || "");
     setShortDescription("");
     setDescription(
-      `A SaaS product built with ${templateName} template on the SaaS Marketplace code editor.`
+      `A SaaS product built with ${templateName} template on the Saasifyy code editor.`
     );
     setCategory("");
     setTagsInput("");

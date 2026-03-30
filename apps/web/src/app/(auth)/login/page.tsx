@@ -80,7 +80,7 @@ function LoginForm() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Store className="h-4 w-4" />
           </div>
-          <span>SaaS Market</span>
+          <span>Saasifyy</span>
         </Link>
         <ThemeToggle />
       </div>
@@ -90,7 +90,7 @@ function LoginForm() {
           <Card className="shadow-xl border-0 shadow-black/5 dark:shadow-black/30">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-              <CardDescription>Sign in to your SaaS Marketplace account</CardDescription>
+              <CardDescription>Sign in to your Saasifyy account</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">

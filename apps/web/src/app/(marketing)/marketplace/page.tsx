@@ -116,7 +116,7 @@ export default function MarketplacePage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
-            <span>SaaS Market</span>
+            <span>Saasifyy</span>
           </Link>
           <nav className="flex items-center gap-2">
             <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-foreground">
@@ -278,7 +278,7 @@ export default function MarketplacePage() {
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>SaaS Marketplace - Multi-Tenant Business Platform</p>
+          <p>Saasifyy - Multi-Tenant SaaS Platform</p>
         </div>
       </footer>
     </div>

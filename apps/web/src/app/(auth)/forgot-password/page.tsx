@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
-            <span>SaaS Market</span>
+            <span>Saasifyy</span>
           </Link>
           <ThemeToggle />
         </div>
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Store className="h-4 w-4" />
           </div>
-          <span>SaaS Market</span>
+          <span>Saasifyy</span>
         </Link>
         <ThemeToggle />
       </div>

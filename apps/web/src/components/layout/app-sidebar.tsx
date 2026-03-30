@@ -125,7 +125,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b px-4 py-3">
         <Link href="/marketplace" className="flex items-center gap-2 font-semibold">
           <Store className="h-5 w-5" />
-          <span>SaaS Marketplace</span>
+          <span>Saasifyy</span>
         </Link>
       </SidebarHeader>
 

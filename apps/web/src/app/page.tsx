@@ -27,7 +27,7 @@ export default function HomePage() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
-            <span>SaaS Market</span>
+            <span>Saasifyy</span>
           </Link>
           <nav className="flex items-center gap-2">
             <Link
@@ -281,7 +281,7 @@ export default function HomePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Store className="h-4 w-4" />
               </div>
-              <span>SaaS Market</span>
+              <span>Saasifyy</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>

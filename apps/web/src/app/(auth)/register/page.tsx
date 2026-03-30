@@ -68,7 +68,7 @@ function RegisterForm() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Store className="h-4 w-4" />
           </div>
-          <span>SaaS Market</span>
+          <span>Saasifyy</span>
         </Link>
         <ThemeToggle />
       </div>
@@ -79,7 +79,7 @@ function RegisterForm() {
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
               <CardDescription>
-                Join the SaaS Marketplace to {role === "developer" ? "publish products" : "discover tools"}
+                Join Saasifyy to {role === "developer" ? "publish products" : "discover tools"}
               </CardDescription>
             </CardHeader>
 
