@@ -64,6 +64,7 @@ export default function ProductPage() {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
   const { accessToken } = useAuthStore();
@@ -98,7 +99,7 @@ export default function ProductPage() {
         window.location.href = res.data.url;
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to start checkout");
+      setCheckoutError(err instanceof ApiError ? err.message : "Failed to start checkout");
       setSubscribing(null);
     }
   }
@@ -131,7 +132,7 @@ export default function ProductPage() {
           <nav className="flex items-center gap-4">
             <Link href="/marketplace" className="text-sm font-medium">Marketplace</Link>
             {user ? (
-              <Link href="/customer/subscriptions">
+              <Link href={user.role === "ADMIN" ? "/admin/analytics" : user.role === "DEVELOPER" ? "/developer/products" : "/customer/subscriptions"}>
                 <Button size="sm" variant="ghost">Dashboard</Button>
               </Link>
             ) : (
@@ -248,6 +249,11 @@ export default function ProductPage() {
 
             {/* Pricing Sidebar */}
             <div className="space-y-4">
+              {checkoutError && (
+                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  {checkoutError}
+                </div>
+              )}
               {product.pricingPlans.map((plan) => (
                 <Card key={plan.id} className="sticky top-4">
                   <CardHeader>

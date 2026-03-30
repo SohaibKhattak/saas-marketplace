@@ -63,7 +63,7 @@ const developerNav: NavItem[] = [
   { label: "Start Building", href: "/developer/start", icon: Hammer },
   { label: "Analytics", href: "/developer/analytics", icon: BarChart3 },
   { label: "Revenue", href: "/developer/revenue", icon: DollarSign },
-  { label: "Settings", href: "/customer/settings", icon: Settings },
+  { label: "Settings", href: "/developer/settings", icon: Settings },
 ];
 
 // ── Admin sidebar ──────────────────────────────────────────
