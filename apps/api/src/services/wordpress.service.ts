@@ -189,6 +189,33 @@ export async function suspendSite(siteId: string) {
   });
 }
 
+export async function deleteSite(siteId: string, developerId: string) {
+  const site = await prisma.developerSite.findUnique({ where: { id: siteId } });
+
+  if (!site) {
+    throw new AppError(404, "Site not found", "SITE_NOT_FOUND");
+  }
+
+  if (site.developerId !== developerId) {
+    throw new AppError(403, "You do not own this site", "FORBIDDEN");
+  }
+
+  // Delete the WordPress subsite via WP-CLI if it has a wpSiteId
+  if (site.wpSiteId && site.status === "ACTIVE") {
+    try {
+      await wpCli(`site delete ${site.wpSiteId} --yes`);
+    } catch (error) {
+      console.error("Failed to delete WP subsite:", error);
+      // Continue with DB deletion even if WP-CLI fails
+    }
+  }
+
+  // Delete from database
+  await prisma.developerSite.delete({ where: { id: siteId } });
+
+  return { message: "Site deleted successfully" };
+}
+
 export async function checkSubscriptionAccess(
   userEmail: string,
   siteSubdomain: string

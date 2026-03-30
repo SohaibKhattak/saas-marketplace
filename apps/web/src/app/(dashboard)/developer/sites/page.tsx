@@ -34,6 +34,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Rocket,
+  Trash2,
 } from "lucide-react";
 
 interface Site {
@@ -68,6 +69,7 @@ export default function SitesPage() {
     loginUrl: string;
     subdomain: string;
   } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchSites = useCallback(async () => {
     try {
@@ -83,6 +85,19 @@ export default function SitesPage() {
   useEffect(() => {
     fetchSites();
   }, [fetchSites]);
+
+  async function handleDelete(siteId: string) {
+    if (!confirm("Are you sure you want to delete this site? This cannot be undone.")) return;
+    setDeletingId(siteId);
+    try {
+      await api.delete(`/wp/sites/${siteId}`, { token: accessToken! });
+      fetchSites();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to delete site");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleProvision(e: React.FormEvent) {
     e.preventDefault();
@@ -310,19 +325,34 @@ export default function SitesPage() {
                   </div>
 
                   {site.status === "ACTIVE" && (
-                    <div className="flex gap-2">
-                      <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full">
-                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-                          View Site
-                        </Button>
-                      </a>
-                      <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                        <Button size="sm" className="w-full">
-                          <Settings className="mr-1.5 h-3.5 w-3.5" />
-                          WP Admin
-                        </Button>
-                      </a>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                            View Site
+                          </Button>
+                        </a>
+                        <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                          <Button size="sm" className="w-full">
+                            <Settings className="mr-1.5 h-3.5 w-3.5" />
+                            WP Admin
+                          </Button>
+                        </a>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(site.id)}
+                        disabled={deletingId === site.id}
+                      >
+                        {deletingId === site.id ? (
+                          <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting...</>
+                        ) : (
+                          <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete Site</>
+                        )}
+                      </Button>
                     </div>
                   )}
 
@@ -334,9 +364,24 @@ export default function SitesPage() {
                   )}
 
                   {site.status === "SUSPENDED" && (
-                    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-lg p-3">
-                      <AlertCircle className="h-4 w-4" />
-                      <span>Site creation failed. Please try again.</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-lg p-3">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>Site creation failed. Please try again.</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(site.id)}
+                        disabled={deletingId === site.id}
+                      >
+                        {deletingId === site.id ? (
+                          <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting...</>
+                        ) : (
+                          <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Remove</>
+                        )}
+                      </Button>
                     </div>
                   )}
                 </CardContent>
