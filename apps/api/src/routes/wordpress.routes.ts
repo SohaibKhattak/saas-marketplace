@@ -95,7 +95,7 @@ router.post("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest
 // DELETE /api/v1/wp/sites/:id — delete a WordPress subsite
 router.delete("/sites/:id", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
     const result = await wordpressService.deleteSite(id, profile.id);
     res.json({ data: result });
