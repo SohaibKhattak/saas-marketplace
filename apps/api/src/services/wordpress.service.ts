@@ -1,12 +1,33 @@
 import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 const WP_DOMAIN = process.env.WP_DOMAIN ?? "localhost";
+const WP_CLI_PATH = process.env.WP_CLI_PATH ?? "/usr/local/bin/wp";
+const WP_PATH = "/var/www/wordpress";
+
+/**
+ * Execute a WP-CLI command on the WordPress Multisite installation.
+ */
+async function wpCli(command: string): Promise<string> {
+  try {
+    const { stdout } = await execAsync(
+      `sudo -u www-data ${WP_CLI_PATH} ${command} --path=${WP_PATH}`,
+      { timeout: 30000 }
+    );
+    return stdout.trim();
+  } catch (error: any) {
+    console.error("WP-CLI error:", error.message);
+    throw new AppError(500, `WordPress command failed: ${error.message}`, "WP_CLI_ERROR");
+  }
+}
 
 /**
  * Provision a WordPress subsite for an approved developer.
- * In production, this calls WP-CLI on the VPS to create the Multisite subsite.
- * For development, it records the site in the database and simulates provisioning.
+ * Calls WP-CLI on the VPS to create the Multisite subsite.
  */
 export async function provisionSite(
   developerId: string,
@@ -16,6 +37,12 @@ export async function provisionSite(
   const subdomainRegex = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
   if (!subdomainRegex.test(subdomain)) {
     throw new AppError(400, "Invalid subdomain. Use lowercase letters, numbers, and hyphens (3-32 chars)", "INVALID_SUBDOMAIN");
+  }
+
+  // Reserved subdomains
+  const reserved = ["api", "www", "admin", "mail", "ftp", "wp", "wordpress", "testsite"];
+  if (reserved.includes(subdomain)) {
+    throw new AppError(400, "This subdomain is reserved", "SUBDOMAIN_RESERVED");
   }
 
   // Check developer exists and is approved
@@ -32,7 +59,7 @@ export async function provisionSite(
     throw new AppError(403, "Developer application must be approved first", "NOT_APPROVED");
   }
 
-  // Check subdomain uniqueness
+  // Check subdomain uniqueness in our database
   const existing = await prisma.developerSite.findUnique({
     where: { subdomain },
   });
@@ -51,18 +78,37 @@ export async function provisionSite(
     },
   });
 
-  // In production, this would execute WP-CLI:
-  // wp site create --slug=<subdomain> --title="<businessName>" --email=<email>
-  // For now, simulate successful provisioning by marking as ACTIVE
-  const activeSite = await prisma.developerSite.update({
-    where: { id: site.id },
-    data: {
-      status: "ACTIVE",
-      wpSiteId: Math.floor(Math.random() * 10000) + 1, // Simulated WP blog ID
-    },
-  });
+  try {
+    // Create the WordPress subsite via WP-CLI
+    const title = profile.businessName || profile.user.fullName + "'s Site";
+    const email = profile.user.email;
 
-  return activeSite;
+    const output = await wpCli(
+      `site create --slug=${subdomain} --title="${title}" --email=${email}`
+    );
+
+    // Extract the blog ID from WP-CLI output (e.g., "Success: Site 3 created.")
+    const blogIdMatch = output.match(/Site\s+(\d+)\s+created/);
+    const wpSiteId = blogIdMatch ? parseInt(blogIdMatch[1], 10) : null;
+
+    // Update site record to ACTIVE
+    const activeSite = await prisma.developerSite.update({
+      where: { id: site.id },
+      data: {
+        status: "ACTIVE",
+        wpSiteId,
+      },
+    });
+
+    return activeSite;
+  } catch (error) {
+    // If WP-CLI fails, mark site as failed and re-throw
+    await prisma.developerSite.update({
+      where: { id: site.id },
+      data: { status: "SUSPENDED" },
+    });
+    throw error;
+  }
 }
 
 export async function getDeveloperSites(developerId: string) {
