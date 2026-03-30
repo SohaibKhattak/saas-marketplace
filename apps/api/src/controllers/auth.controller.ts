@@ -3,8 +3,8 @@ import * as authService from "../services/auth.service.js";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, password, fullName } = req.body;
-    const result = await authService.register(email, password, fullName);
+    const { email, password, fullName, role } = req.body;
+    const result = await authService.register(email, password, fullName, role);
 
     // TODO: Send verification email via Resend
     // For dev, include verifyToken in response

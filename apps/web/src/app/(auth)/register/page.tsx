@@ -47,7 +47,7 @@ function RegisterForm() {
     }
 
     try {
-      await register(email, password, fullName);
+      await register(email, password, fullName, role === "developer" ? "DEVELOPER" : "CUSTOMER");
       // If developer, redirect to onboarding after verification
       const redirectPath = role === "developer"
         ? `/verify-email?email=${encodeURIComponent(email)}&next=developer`

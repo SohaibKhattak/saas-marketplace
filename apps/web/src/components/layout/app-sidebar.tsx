@@ -32,13 +32,13 @@ import {
   FileCheck,
   BarChart3,
   DollarSign,
-  Globe,
   ShieldCheck,
   LogOut,
   ChevronUp,
   Store,
   Rocket,
-  Code2,
+  UserCircle,
+  Hammer,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -48,20 +48,25 @@ interface NavItem {
   icon: LucideIcon;
 }
 
+// ── Customer-only sidebar ──────────────────────────────────
 const customerNav: NavItem[] = [
+  { label: "Profile", href: "/customer/profile", icon: UserCircle },
   { label: "My Subscriptions", href: "/customer/subscriptions", icon: Package },
   { label: "Billing History", href: "/customer/billing", icon: CreditCard },
   { label: "Settings", href: "/customer/settings", icon: Settings },
 ];
 
+// ── Developer sidebar ──────────────────────────────────────
 const developerNav: NavItem[] = [
+  { label: "Profile", href: "/developer/profile", icon: UserCircle },
   { label: "My Products", href: "/developer/products", icon: Package },
-  { label: "Code Editor", href: "/ide", icon: Code2 },
-  { label: "WordPress Sites", href: "/developer/sites", icon: Globe },
+  { label: "Start Building", href: "/developer/start", icon: Hammer },
   { label: "Analytics", href: "/developer/analytics", icon: BarChart3 },
   { label: "Revenue", href: "/developer/revenue", icon: DollarSign },
+  { label: "Settings", href: "/customer/settings", icon: Settings },
 ];
 
+// ── Admin sidebar ──────────────────────────────────────────
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin/analytics", icon: LayoutDashboard },
   { label: "Users", href: "/admin/users", icon: Users },
@@ -88,7 +93,7 @@ function NavSection({
           {items.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
-                isActive={pathname === item.href}
+                isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
                 render={<Link href={item.href} />}
               >
                 <item.icon className="h-4 w-4" />
@@ -125,35 +130,59 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavSection label="Customer" items={customerNav} pathname={pathname} />
-
-        {(user.role === "DEVELOPER" || user.role === "ADMIN") && (
-          <NavSection label="Developer" items={developerNav} pathname={pathname} />
-        )}
-
-        {user.role === "ADMIN" && (
-          <NavSection label="Admin" items={adminNav} pathname={pathname} />
-        )}
-
+        {/* CUSTOMER role — show customer nav */}
         {user.role === "CUSTOMER" && (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/developer/onboarding" />}>
-                    <Rocket className="h-4 w-4" />
-                    <span>Become a Developer</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/marketplace" />}>
-                    <Store className="h-4 w-4" />
-                    <span>Browse Marketplace</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <>
+            <NavSection label="Customer" items={customerNav} pathname={pathname} />
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton render={<Link href="/developer/onboarding" />}>
+                      <Rocket className="h-4 w-4" />
+                      <span>Become a Developer</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton render={<Link href="/marketplace" />}>
+                      <Store className="h-4 w-4" />
+                      <span>Browse Marketplace</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {/* DEVELOPER role — show developer nav + explore link */}
+        {user.role === "DEVELOPER" && (
+          <>
+            <NavSection label="Developer" items={developerNav} pathname={pathname} />
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname === "/marketplace"}
+                      render={<Link href="/marketplace" />}
+                    >
+                      <Store className="h-4 w-4" />
+                      <span>Explore Marketplace</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
+
+        {/* ADMIN role — show admin nav */}
+        {user.role === "ADMIN" && (
+          <>
+            <NavSection label="Admin" items={adminNav} pathname={pathname} />
+            <NavSection label="Developer" items={developerNav} pathname={pathname} />
+          </>
         )}
       </SidebarContent>
 

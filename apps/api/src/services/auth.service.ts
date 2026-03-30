@@ -9,7 +9,7 @@ const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? "dev-refresh-secret-min
 const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY ?? "15m";
 const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY ?? "7d";
 
-export async function register(email: string, password: string, fullName: string) {
+export async function register(email: string, password: string, fullName: string, role?: "CUSTOMER" | "DEVELOPER") {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     throw new AppError(409, "An account with this email already exists", "EMAIL_EXISTS");
@@ -23,7 +23,10 @@ export async function register(email: string, password: string, fullName: string
       email,
       passwordHash,
       fullName,
+      role: role ?? "CUSTOMER",
       verifyToken,
+      // Auto-verify in development (no email service configured)
+      ...(process.env.NODE_ENV === "development" && { emailVerified: true }),
     },
     select: {
       id: true,

@@ -14,6 +14,7 @@ const registerSchema = z.object({
     .regex(/[0-9]/, "Must contain a number")
     .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
   fullName: z.string().min(2).max(100),
+  role: z.enum(["CUSTOMER", "DEVELOPER"]).optional(),
 });
 
 const loginSchema = z.object({
