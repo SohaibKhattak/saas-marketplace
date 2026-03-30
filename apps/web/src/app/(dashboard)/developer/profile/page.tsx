@@ -64,7 +64,7 @@ export default function DeveloperProfilePage() {
     return parts.slice(1).join(" ") ?? "";
   });
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl ?? null);
   const [saving, setSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -159,7 +159,11 @@ export default function DeveloperProfilePage() {
     setSaving(true);
     try {
       const fullName = `${firstName} ${lastName}`.trim();
-      await api.patch("/users/me", { fullName }, { token: accessToken! });
+      const updateData: { fullName: string; avatarUrl?: string | null } = { fullName };
+      if (avatarPreview !== (user?.avatarUrl ?? null)) {
+        updateData.avatarUrl = avatarPreview;
+      }
+      await api.patch("/users/me", updateData, { token: accessToken! });
       await fetchUser();
       setProfileMessage({ type: "success", text: "Profile updated successfully" });
     } catch (err) {

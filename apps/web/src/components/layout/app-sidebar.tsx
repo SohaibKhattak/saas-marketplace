@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -177,11 +177,25 @@ export function AppSidebar() {
           </>
         )}
 
-        {/* ADMIN role — show admin nav */}
+        {/* ADMIN role — show admin nav only */}
         {user.role === "ADMIN" && (
           <>
             <NavSection label="Admin" items={adminNav} pathname={pathname} />
-            <NavSection label="Developer" items={developerNav} pathname={pathname} />
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname === "/marketplace"}
+                      render={<Link href="/marketplace" />}
+                    >
+                      <Store className="h-4 w-4" />
+                      <span>Browse Marketplace</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </>
         )}
       </SidebarContent>
@@ -194,6 +208,7 @@ export function AppSidebar() {
                 render={
                   <SidebarMenuButton className="w-full">
                     <Avatar className="h-6 w-6">
+                      {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.fullName} />}
                       <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                     </Avatar>
                     <span className="truncate">{user.fullName}</span>
