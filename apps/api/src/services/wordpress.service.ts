@@ -81,20 +81,10 @@ export async function provisionSite(
   try {
     const title = profile.businessName || profile.user.fullName + "'s Site";
     const email = profile.user.email;
-    const username = subdomain.replace(/-/g, "") + "admin";
+    let username = subdomain.replace(/-/g, "") + "admin";
     const password = "Dev@" + Math.random().toString(36).slice(2, 10) + "!";
 
-    // Step 1: Check if WP user exists, if not create one
-    try {
-      await wpCli(`user get ${email} --field=ID`);
-    } catch {
-      // User doesn't exist — create them as a subscriber on the main site first
-      await wpCli(
-        `user create ${username} ${email} --user_pass="${password}" --display_name="${profile.user.fullName}" --role=administrator`
-      );
-    }
-
-    // Step 2: Create the WordPress subsite via WP-CLI
+    // Step 1: Create the WordPress subsite via WP-CLI
     const output = await wpCli(
       `site create --slug=${subdomain} --title="${title}" --email=${email}`
     );
@@ -103,14 +93,38 @@ export async function provisionSite(
     const blogIdMatch = output.match(/Site\s+(\d+)\s+created/);
     const wpSiteId = blogIdMatch ? parseInt(blogIdMatch[1], 10) : null;
 
-    // Step 3: Make the developer an admin of their new subsite
-    if (wpSiteId) {
+    // Step 2: wp site create auto-creates a user with that email if it doesn't exist.
+    // Either way, set a known password so the developer can log in.
+    try {
+      await wpCli(`user update ${email} --user_pass="${password}" --display_name="${profile.user.fullName}"`);
+    } catch {
+      // If update fails, try creating the user
       try {
-        await wpCli(`super-admin add ${username}`);
+        await wpCli(
+          `user create ${username} ${email} --user_pass="${password}" --display_name="${profile.user.fullName}" --role=administrator`
+        );
       } catch {
-        // Not critical if this fails — they're already site admin via --email
+        // User might already exist with different lookup — continue anyway
       }
     }
+
+    // Step 3: Get the actual WP username for this email
+    let actualUsername = username;
+    try {
+      actualUsername = await wpCli(`user get ${email} --field=user_login`);
+    } catch {
+      // fallback to generated username
+    }
+
+    // Step 4: Make them a super admin so they have full access
+    try {
+      await wpCli(`super-admin add ${actualUsername}`);
+    } catch {
+      // Not critical
+    }
+
+    // Use the actual WP username for credentials
+    username = actualUsername;
 
     // Update site record to ACTIVE
     const activeSite = await prisma.developerSite.update({
