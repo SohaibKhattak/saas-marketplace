@@ -1,5 +1,6 @@
 import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
+import { createNotification } from "./notification.service.js";
 
 function generateSlug(name: string): string {
   return name
@@ -228,14 +229,31 @@ export async function listMarketplaceProducts(params: {
   limit: number;
   search?: string;
   category?: string;
+  tag?: string;
+  minPrice?: number;
+  maxPrice?: number;
   sortBy?: string;
 }) {
-  const { page, limit, search, category, sortBy } = params;
+  const { page, limit, search, category, tag, minPrice, maxPrice, sortBy } = params;
 
   const where: any = { status: "PUBLISHED" };
 
   if (category) {
     where.category = category;
+  }
+
+  if (tag) {
+    where.tags = { has: tag };
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.pricingPlans = {
+      some: {
+        isActive: true,
+        ...(minPrice !== undefined ? { priceMonthly: { gte: minPrice } } : {}),
+        ...(maxPrice !== undefined ? { priceMonthly: { lte: maxPrice } } : {}),
+      },
+    };
   }
 
   if (search) {
@@ -353,7 +371,63 @@ export async function reviewProduct(
     return updatedProduct;
   });
 
+  // Notify developer
+  const devUserId = product.developer.userId;
+  if (decision.status === "PUBLISHED") {
+    createNotification({
+      userId: devUserId,
+      type: "PRODUCT_APPROVED",
+      title: "Product approved!",
+      message: `Your product "${product.name}" has been approved and is now live on the marketplace.`,
+      link: `/marketplace/${product.slug}`,
+    }).catch(() => {});
+  } else {
+    createNotification({
+      userId: devUserId,
+      type: "PRODUCT_REJECTED",
+      title: "Product needs changes",
+      message: `Your product "${product.name}" was not approved. Reason: ${decision.rejectionReason ?? "No reason provided"}`,
+      link: `/developer/products`,
+    }).catch(() => {});
+  }
+
   return updated;
+}
+
+export async function listAllProducts(page: number, limit: number, status?: string) {
+  const where: any = {};
+  if (status) where.status = status;
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        developer: {
+          include: { user: { select: { fullName: true, email: true } } },
+        },
+        _count: { select: { subscriptions: true, reviews: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  return { products, total };
+}
+
+export async function toggleFeatured(productId: string) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) {
+    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+  }
+
+  return prisma.product.update({
+    where: { id: productId },
+    data: { isFeatured: !product.isFeatured },
+    select: { id: true, name: true, isFeatured: true },
+  });
 }
 
 // Helper: verify product ownership

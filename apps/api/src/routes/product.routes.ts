@@ -1,5 +1,6 @@
 import { Router } from "express";
 import * as productController from "../controllers/product.controller.js";
+import * as reviewController from "../controllers/review.controller.js";
 import { authenticate } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { validate } from "../middleware/validate.js";
@@ -42,6 +43,16 @@ const updatePlanSchema = z.object({
   features: z.array(z.string()).optional(),
   trialDays: z.number().int().min(0).max(30).optional(),
   isActive: z.boolean().optional(),
+});
+
+const createReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().max(2000).optional(),
+});
+
+const updateReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5).optional(),
+  comment: z.string().max(2000).optional(),
 });
 
 // --- Public routes ---
@@ -226,5 +237,11 @@ router.post("/:productId/plans", authenticate, requireRole("DEVELOPER", "ADMIN")
  */
 router.patch("/plans/:planId", authenticate, requireRole("DEVELOPER", "ADMIN"), validate(updatePlanSchema), productController.updatePricingPlan);
 router.delete("/plans/:planId", authenticate, requireRole("DEVELOPER", "ADMIN"), productController.deletePricingPlan);
+
+// --- Review routes ---
+router.get("/:productId/reviews/me", authenticate, reviewController.getUserReview);
+router.post("/:productId/reviews", authenticate, validate(createReviewSchema), reviewController.createReview);
+router.patch("/reviews/:reviewId", authenticate, validate(updateReviewSchema), reviewController.updateReview);
+router.delete("/reviews/:reviewId", authenticate, reviewController.deleteReview);
 
 export default router;

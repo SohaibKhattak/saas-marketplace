@@ -76,7 +76,7 @@ export default function SitesPage() {
       const res = await api.get<{ data: Site[] }>("/wp/sites", { token: accessToken! });
       setSites(res.data);
     } catch {
-      // silently fail
+      setError("Failed to load sites");
     } finally {
       setLoading(false);
     }
@@ -263,6 +263,8 @@ export default function SitesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {error && !dialogOpen && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       {/* Sites Grid */}
       {loading ? (

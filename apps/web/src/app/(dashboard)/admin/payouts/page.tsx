@@ -66,8 +66,9 @@ export default function PayoutsPage() {
       try {
         const res = await api.get<{ data: PayoutSummary[] }>("/admin/payouts/summary", { token: accessToken! });
         setSummary(res.data);
-      } catch { /* */ }
-      finally { setLoadingSummary(false); }
+      } catch {
+        setError("Failed to load payout summary");
+      } finally { setLoadingSummary(false); }
     }
     loadSummary();
   }, [accessToken]);
@@ -81,8 +82,9 @@ export default function PayoutsPage() {
       }>(`/admin/payouts?page=${page}&limit=${limit}`, { token: accessToken! });
       setPayouts(res.data);
       setTotal(res.pagination.total);
-    } catch { /* */ }
-    finally { setLoadingPayouts(false); }
+    } catch {
+      setError("Failed to load payouts");
+    } finally { setLoadingPayouts(false); }
   }, [accessToken, page]);
 
   useEffect(() => {

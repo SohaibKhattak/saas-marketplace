@@ -50,6 +50,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState("");
   const limit = 10;
 
   const fetchProducts = useCallback(async () => {
@@ -62,7 +63,7 @@ export default function ProductsPage() {
       setProducts(res.data);
       setTotal(res.pagination.total);
     } catch {
-      // Silently fail
+      setError("Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -90,6 +91,8 @@ export default function ProductsPage() {
           </Button>
         </Link>
       </div>
+
+      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>

@@ -19,6 +19,7 @@ import subscriptionRoutes from "./routes/subscription.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import webhookRoutes from "./routes/webhook.routes.js";
 import wordpressRoutes from "./routes/wordpress.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 const app = express();
 const PORT = env.PORT;
@@ -70,6 +71,7 @@ app.use("/api/v1/subscriptions", subscriptionRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/webhooks", webhookRoutes);
 app.use("/api/v1/wp", wordpressRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 // Error handling
 app.use(errorHandler);

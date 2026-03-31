@@ -11,6 +11,11 @@ const checkoutSchema = z.object({
   billingCycle: z.enum(["MONTHLY", "YEARLY"]).default("MONTHLY"),
 });
 
+const switchPlanSchema = z.object({
+  pricingPlanId: z.string().uuid(),
+  billingCycle: z.enum(["MONTHLY", "YEARLY"]).default("MONTHLY"),
+});
+
 // All subscription routes require authentication
 router.use(authenticate);
 
@@ -83,5 +88,6 @@ router.post("/checkout", validate(checkoutSchema), subscriptionController.create
  */
 router.get("/:id", subscriptionController.getSubscription);
 router.post("/:id/cancel", subscriptionController.cancelSubscription);
+router.post("/:id/switch", validate(switchPlanSchema), subscriptionController.switchPlan);
 
 export default router;

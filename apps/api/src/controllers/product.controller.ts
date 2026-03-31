@@ -76,10 +76,13 @@ export async function listMarketplaceProducts(req: Request, res: Response, next:
     const limit = parseInt(req.query.limit as string) || 12;
     const search = req.query.search as string | undefined;
     const category = req.query.category as string | undefined;
+    const tag = req.query.tag as string | undefined;
     const sortBy = req.query.sortBy as string | undefined;
+    const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
+    const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
 
     const { products, total } = await productService.listMarketplaceProducts({
-      page, limit, search, category, sortBy,
+      page, limit, search, category, tag, minPrice, maxPrice, sortBy,
     });
     res.json({
       data: products,
@@ -124,6 +127,31 @@ export async function reviewProduct(req: AuthRequest, res: Response, next: NextF
       status,
       rejectionReason,
     });
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listAllProducts(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const status = req.query.status as string | undefined;
+    const { products, total } = await productService.listAllProducts(page, limit, status);
+    res.json({
+      data: products,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function toggleFeatured(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const result = await productService.toggleFeatured(id as string);
     res.json({ data: result });
   } catch (err) {
     next(err);

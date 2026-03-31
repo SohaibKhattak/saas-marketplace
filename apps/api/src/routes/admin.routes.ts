@@ -121,8 +121,10 @@ router.patch("/developers/:id/review", validate(reviewSchema), developerControll
  *     responses:
  *       200: { description: Product reviewed }
  */
+router.get("/products", productController.listAllProducts);
 router.get("/products/moderation", productController.listPendingProducts);
 router.patch("/products/:id/review", validate(productReviewSchema), productController.reviewProduct);
+router.post("/products/:id/feature", productController.toggleFeatured);
 
 /**
  * @swagger

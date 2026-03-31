@@ -106,7 +106,7 @@ export default function DeveloperProfilePage() {
       setTaxId(res.data.taxId ?? "");
       setBio(res.data.bio ?? "");
     } catch {
-      // Developer profile may not exist yet
+      setProfileMessage({ type: "error", text: "Failed to load developer profile" });
     } finally {
       setDevLoading(false);
     }
@@ -124,7 +124,7 @@ export default function DeveloperProfilePage() {
         revenue: res.data.totalRevenue ?? 0,
       });
     } catch {
-      // Stats may fail
+      setProfileMessage({ type: "error", text: "Failed to load stats" });
     }
   }, [accessToken]);
 

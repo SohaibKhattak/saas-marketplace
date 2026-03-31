@@ -2,6 +2,8 @@ import { stripe } from "../config/stripe.js";
 import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
 import { env } from "../config/env.js";
+import { sendNewSubscriptionEmail, sendSubscriptionConfirmationEmail } from "./email.service.js";
+import { createNotification } from "./notification.service.js";
 
 const FRONTEND_URL = env.FRONTEND_URL;
 const PLATFORM_FEE_PERCENT = env.PLATFORM_FEE_PERCENT;
@@ -166,6 +168,16 @@ async function handleCheckoutCompleted(session: any) {
   const periodStart = firstItem?.current_period_start;
   const periodEnd = firstItem?.current_period_end;
 
+  // Fetch product, plan, customer, and developer info for emails
+  const [plan, customer, product] = await Promise.all([
+    prisma.pricingPlan.findUnique({ where: { id: pricingPlanId } }),
+    prisma.user.findUnique({ where: { id: customerId }, select: { fullName: true, email: true } }),
+    prisma.product.findUnique({
+      where: { id: productId },
+      include: { developer: { include: { user: { select: { email: true } } } } },
+    }),
+  ]);
+
   // Atomic: create subscription + increment subscriber count
   await prisma.$transaction([
     prisma.subscription.create({
@@ -186,6 +198,30 @@ async function handleCheckoutCompleted(session: any) {
       data: { totalSubscribers: { increment: 1 } },
     }),
   ]);
+
+  // Send notification emails (non-blocking)
+  if (plan && customer && product) {
+    const emailData = {
+      customerName: customer.fullName,
+      productName: product.name,
+      planName: plan.name,
+      amount: billingCycle === "YEARLY" && plan.priceYearly ? plan.priceYearly : plan.priceMonthly,
+      billingCycle,
+    };
+
+    // Developer notification (email + in-app)
+    sendNewSubscriptionEmail(product.developer.user.email, emailData).catch(() => {});
+    createNotification({
+      userId: product.developer.userId,
+      type: "NEW_SUBSCRIBER",
+      title: "New subscriber!",
+      message: `${customer.fullName} subscribed to ${product.name} (${plan.name})`,
+      link: `/developer/products`,
+    }).catch(() => {});
+
+    // Customer confirmation
+    sendSubscriptionConfirmationEmail(customer.email, emailData).catch(() => {});
+  }
 }
 
 async function handleInvoicePaid(invoice: any) {
@@ -287,6 +323,101 @@ async function handleSubscriptionDeleted(stripeSub: any) {
     where: { id: subscription.productId },
     data: {
       totalSubscribers: { decrement: 1 },
+    },
+  });
+}
+
+/**
+ * Switch a subscription to a different plan (upgrade/downgrade).
+ */
+export async function switchPlan(
+  subscriptionId: string,
+  customerId: string,
+  newPricingPlanId: string,
+  billingCycle: "MONTHLY" | "YEARLY"
+) {
+  const subscription = await prisma.subscription.findUnique({
+    where: { id: subscriptionId },
+    include: { pricingPlan: true },
+  });
+
+  if (!subscription) {
+    throw new AppError(404, "Subscription not found", "SUB_NOT_FOUND");
+  }
+
+  if (subscription.customerId !== customerId) {
+    throw new AppError(403, "Not your subscription", "FORBIDDEN");
+  }
+
+  if (subscription.status !== "ACTIVE" && subscription.status !== "TRIALING") {
+    throw new AppError(400, "Can only switch plans on active subscriptions", "INVALID_STATUS");
+  }
+
+  // Verify new plan belongs to same product
+  const newPlan = await prisma.pricingPlan.findUnique({ where: { id: newPricingPlanId } });
+  if (!newPlan || !newPlan.isActive) {
+    throw new AppError(404, "Pricing plan not found", "PLAN_NOT_FOUND");
+  }
+
+  if (newPlan.productId !== subscription.productId) {
+    throw new AppError(400, "Can only switch to plans within the same product", "WRONG_PRODUCT");
+  }
+
+  if (newPlan.id === subscription.pricingPlanId && billingCycle === subscription.billingCycle) {
+    throw new AppError(400, "Already on this plan", "SAME_PLAN");
+  }
+
+  // Determine new Stripe price
+  const price = billingCycle === "YEARLY" && newPlan.priceYearly
+    ? newPlan.priceYearly
+    : newPlan.priceMonthly;
+  const interval = billingCycle === "YEARLY" ? "year" : "month";
+  const priceField = billingCycle === "YEARLY" ? "stripePriceIdYearly" : "stripePriceIdMonthly";
+
+  let stripePriceId = newPlan[priceField];
+
+  if (!stripePriceId) {
+    const product = await prisma.product.findUnique({ where: { id: newPlan.productId } });
+    const stripeProduct = await stripe.products.create({
+      name: `${product!.name} - ${newPlan.name}`,
+      metadata: { productId: newPlan.productId, pricingPlanId: newPlan.id },
+    });
+    const stripePrice = await stripe.prices.create({
+      product: stripeProduct.id,
+      unit_amount: Math.round(price * 100),
+      currency: "usd",
+      recurring: { interval },
+      metadata: { pricingPlanId: newPlan.id, billingCycle },
+    });
+    stripePriceId = stripePrice.id;
+    await prisma.pricingPlan.update({
+      where: { id: newPlan.id },
+      data: { [priceField]: stripePriceId },
+    });
+  }
+
+  // Update Stripe subscription
+  if (subscription.stripeSubscriptionId) {
+    const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
+    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+      items: [{
+        id: stripeSub.items.data[0].id,
+        price: stripePriceId,
+      }],
+      proration_behavior: "create_prorations",
+    });
+  }
+
+  // Update local subscription
+  return prisma.subscription.update({
+    where: { id: subscriptionId },
+    data: {
+      pricingPlanId: newPlan.id,
+      billingCycle: billingCycle as any,
+    },
+    include: {
+      product: { select: { name: true, slug: true } },
+      pricingPlan: { select: { name: true, priceMonthly: true, priceYearly: true } },
     },
   });
 }

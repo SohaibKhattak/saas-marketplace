@@ -173,8 +173,14 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement authentication
-    console.log('Login:', { email, password });
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!res.ok) throw new Error('Invalid credentials');
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
   };
 
   return (
@@ -321,8 +327,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   const login = async (email: string, password: string) => {
-    // TODO: Call your API
-    setUser({ id: '1', email, name: 'Demo User' });
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    setUser(data.user);
   };
 
   const logout = () => setUser(null);
@@ -678,8 +689,11 @@ billingRouter.post('/create-checkout', authenticate, async (req, res, next) => {
 });
 
 billingRouter.get('/subscription', authenticate, async (req, res) => {
-  // TODO: Fetch user's active subscription
-  res.json({ subscription: null });
+  const subscription = await Subscription.findOne({
+    where: { userId: req.user.id, status: 'active' },
+    include: [{ model: Plan, as: 'plan' }],
+  });
+  res.json({ subscription });
 });`,
               },
             ],
@@ -1023,8 +1037,10 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({ users: 0, revenue: 0, products: 0 });
 
   useEffect(() => {
-    // TODO: Fetch real stats from API
-    setStats({ users: 1250, revenue: 45000, products: 32 });
+    fetch('/api/admin/stats')
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(() => setStats({ users: 0, revenue: 0, products: 0 }));
   }, []);
 
   return (
@@ -1795,8 +1811,13 @@ def stripe_webhook(request):
 
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
-        # TODO: Activate subscription for user
-        print(f"Checkout completed for user {session['metadata']['user_id']}")
+        user_id = session['metadata']['user_id']
+        plan_id = session['metadata']['plan_id']
+        Subscription.objects.create(
+            user_id=user_id, plan_id=plan_id,
+            stripe_subscription_id=session['subscription'],
+            status='active',
+        )
 
     return Response({'status': 'ok'})`,
               },

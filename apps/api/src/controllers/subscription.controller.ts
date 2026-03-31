@@ -53,6 +53,19 @@ export async function cancelSubscription(req: AuthRequest, res: Response, next: 
   }
 }
 
+export async function switchPlan(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { pricingPlanId, billingCycle } = req.body;
+    const result = await stripeService.switchPlan(
+      id as string, req.user!.userId, pricingPlanId, billingCycle ?? "MONTHLY"
+    );
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getBillingHistory(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const page = parseInt(req.query.page as string) || 1;

@@ -16,7 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Star, Check, ArrowLeft } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Star, Check, ArrowLeft, Loader2 } from "lucide-react";
 
 interface PricingPlan {
   id: string;
@@ -66,6 +67,12 @@ export default function ProductPage() {
   const [error, setError] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
   const [subscribing, setSubscribing] = useState<string | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [userReview, setUserReview] = useState<Review | null>(null);
+  const [reviewLoaded, setReviewLoaded] = useState(false);
 
   const { accessToken } = useAuthStore();
 
@@ -82,6 +89,55 @@ export default function ProductPage() {
     }
     load();
   }, [slug]);
+
+  // Check if user already reviewed this product
+  useEffect(() => {
+    if (!product || !user || !accessToken) return;
+    api.get<{ data: Review | null }>(`/products/${product.id}/reviews/me`, { token: accessToken })
+      .then((res) => { if (res.data) setUserReview(res.data); })
+      .catch(() => {})
+      .finally(() => setReviewLoaded(true));
+  }, [product, user, accessToken]);
+
+  async function handleSubmitReview() {
+    if (!product || !accessToken) return;
+    setReviewSubmitting(true);
+    setReviewError("");
+    try {
+      const res = await api.post<{ data: Review }>(
+        `/products/${product.id}/reviews`,
+        { rating: reviewRating, comment: reviewComment || undefined },
+        { token: accessToken }
+      );
+      setUserReview(res.data);
+      // Add to local reviews list and update rating
+      setProduct((prev) => prev ? {
+        ...prev,
+        reviews: [res.data, ...prev.reviews],
+        _count: { ...prev._count, reviews: prev._count.reviews + 1 },
+      } : prev);
+      setReviewComment("");
+    } catch (err) {
+      setReviewError(err instanceof ApiError ? err.message : "Failed to submit review");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
+
+  async function handleDeleteReview() {
+    if (!userReview || !accessToken) return;
+    try {
+      await api.delete(`/products/reviews/${userReview.id}`, { token: accessToken });
+      setProduct((prev) => prev ? {
+        ...prev,
+        reviews: prev.reviews.filter((r) => r.id !== userReview.id),
+        _count: { ...prev._count, reviews: prev._count.reviews - 1 },
+      } : prev);
+      setUserReview(null);
+    } catch (err) {
+      setReviewError(err instanceof ApiError ? err.message : "Failed to delete review");
+    }
+  }
 
   async function handleSubscribe(planId: string, billingCycle: "MONTHLY" | "YEARLY") {
     if (!user || !accessToken) {
@@ -215,7 +271,60 @@ export default function ProductPage() {
               {/* Reviews */}
               <div>
                 <h2 className="text-xl font-semibold">Reviews</h2>
-                {product.reviews.length === 0 ? (
+
+                {/* Review Form */}
+                {user && user.role === "CUSTOMER" && reviewLoaded && !userReview && (
+                  <Card className="mt-4">
+                    <CardContent className="pt-4 space-y-3">
+                      <p className="text-sm font-medium">Leave a review</p>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <button key={i} type="button" onClick={() => setReviewRating(i + 1)}>
+                            <Star className={`h-5 w-5 cursor-pointer ${i < reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                          </button>
+                        ))}
+                      </div>
+                      <Textarea
+                        placeholder="Share your experience (optional)"
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        rows={3}
+                      />
+                      {reviewError && (
+                        <p className="text-sm text-destructive">{reviewError}</p>
+                      )}
+                      <Button onClick={handleSubmitReview} disabled={reviewSubmitting} size="sm">
+                        {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...</> : "Submit Review"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* User's existing review */}
+                {user && userReview && (
+                  <Card className="mt-4 border-primary/30">
+                    <CardContent className="pt-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-primary">Your review</span>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} className={`h-3 w-3 ${i < userReview.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                            ))}
+                          </div>
+                          <Button variant="ghost" size="sm" className="text-destructive h-7 text-xs" onClick={handleDeleteReview}>
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                      {userReview.comment && (
+                        <p className="mt-2 text-sm text-muted-foreground">{userReview.comment}</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {product.reviews.length === 0 && !userReview ? (
                   <p className="mt-4 text-sm text-muted-foreground">No reviews yet</p>
                 ) : (
                   <div className="mt-4 space-y-4">

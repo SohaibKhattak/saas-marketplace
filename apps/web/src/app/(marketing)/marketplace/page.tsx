@@ -19,12 +19,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight } from "lucide-react";
+import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight, X } from "lucide-react";
 
 const CATEGORIES = [
   "CRM", "Project Management", "Marketing", "Analytics", "E-Commerce",
   "Education", "Finance", "Healthcare", "Communication", "Productivity",
   "Developer Tools", "Other",
+];
+
+const PRICE_RANGES = [
+  { label: "Any price", min: undefined, max: undefined },
+  { label: "Free", min: 0, max: 0 },
+  { label: "Under $10/mo", min: undefined, max: 10 },
+  { label: "$10 - $50/mo", min: 10, max: 50 },
+  { label: "$50 - $100/mo", min: 50, max: 100 },
+  { label: "$100+/mo", min: 100, max: undefined },
 ];
 
 interface MarketplaceProduct {
@@ -37,6 +46,7 @@ interface MarketplaceProduct {
   logoUrl: string | null;
   avgRating: number;
   totalSubscribers: number;
+  isFeatured: boolean;
   developer: {
     user: { fullName: string; avatarUrl: string | null };
   };
@@ -70,10 +80,17 @@ export default function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
+  const [priceRange, setPriceRange] = useState("0");
+  const [tagFilter, setTagFilter] = useState("");
+  const [error, setError] = useState("");
   const limit = 12;
+
+  // Collect all unique tags from loaded products for the tag filter
+  const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -82,6 +99,10 @@ export default function MarketplacePage() {
       });
       if (search) params.set("search", search);
       if (category !== "all") params.set("category", category);
+      if (tagFilter) params.set("tag", tagFilter);
+      const range = PRICE_RANGES[parseInt(priceRange)];
+      if (range?.min !== undefined) params.set("minPrice", range.min.toString());
+      if (range?.max !== undefined) params.set("maxPrice", range.max.toString());
 
       const res = await api.get<{
         data: MarketplaceProduct[];
@@ -90,11 +111,11 @@ export default function MarketplacePage() {
       setProducts(res.data);
       setTotal(res.pagination.total);
     } catch {
-      // Silently fail
+      setError("Failed to load products");
     } finally {
       setLoading(false);
     }
-  }, [page, search, category, sortBy]);
+  }, [page, search, category, sortBy, priceRange, tagFilter]);
 
   useEffect(() => {
     fetchProducts();
@@ -170,6 +191,16 @@ export default function MarketplacePage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={priceRange} onValueChange={(val) => { setPriceRange(val ?? "0"); setPage(1); }}>
+                <SelectTrigger className="w-40 h-11">
+                  <SelectValue placeholder="Price range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRICE_RANGES.map((range, i) => (
+                    <SelectItem key={i} value={i.toString()}>{range.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={sortBy} onValueChange={(val) => { setSortBy(val ?? "latest"); setPage(1); }}>
                 <SelectTrigger className="w-36 h-11">
                   <SelectValue placeholder="Sort by" />
@@ -184,10 +215,36 @@ export default function MarketplacePage() {
             </div>
           </div>
 
+          {/* Active tag filters */}
+          {allTags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2 items-center">
+              <span className="text-xs text-muted-foreground">Tags:</span>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => { setTagFilter(tagFilter === tag ? "" : tag); setPage(1); }}
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                    tagFilter === tag
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {tag}
+                  {tagFilter === tag && <X className="ml-1 h-3 w-3" />}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Results count */}
           <p className="mt-4 text-sm text-muted-foreground">
             {total} product{total !== 1 ? "s" : ""} found
           </p>
+
+          {/* Error */}
+          {error && (
+            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+          )}
 
           {/* Product Grid */}
           {loading ? (
@@ -207,7 +264,7 @@ export default function MarketplacePage() {
                 <Link key={product.id} href={`/marketplace/${product.slug}`}>
                   <Card className={`h-full group border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-slide-up${i < 3 ? (i > 0 ? `-delay-${i}` : "") : ""}`}>
                     {/* Gradient top bar */}
-                    <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-t-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className={`h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-t-lg transition-opacity ${product.isFeatured ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
                     <div className="p-6 pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -216,8 +273,13 @@ export default function MarketplacePage() {
                             by {product.developer.user.fullName}
                           </p>
                         </div>
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                          <Package className="h-5 w-5" />
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          {product.isFeatured && (
+                            <Badge className="text-[10px] px-1.5 py-0">Featured</Badge>
+                          )}
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            <Package className="h-5 w-5" />
+                          </div>
                         </div>
                       </div>
                     </div>

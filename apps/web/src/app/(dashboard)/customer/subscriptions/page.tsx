@@ -23,7 +23,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Suspense } from "react";
+
+interface PlanOption {
+  id: string;
+  name: string;
+  priceMonthly: number;
+  priceYearly: number | null;
+  features: string[];
+  isActive: boolean;
+}
 
 interface Subscription {
   id: string;
@@ -69,6 +85,15 @@ function SubscriptionsContent() {
   const [cancelingSub, setCancelingSub] = useState<Subscription | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [error, setError] = useState("");
+  const [fetchError, setFetchError] = useState("");
+
+  // Plan switching
+  const [switchingSub, setSwitchingSub] = useState<Subscription | null>(null);
+  const [availablePlans, setAvailablePlans] = useState<PlanOption[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [selectedBilling, setSelectedBilling] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState("");
 
   const fetchSubscriptions = useCallback(async () => {
     setLoading(true);
@@ -80,7 +105,7 @@ function SubscriptionsContent() {
       setSubscriptions(res.data);
       setTotal(res.pagination.total);
     } catch {
-      // Silently fail
+      setFetchError("Failed to load subscriptions");
     } finally {
       setLoading(false);
     }
@@ -106,6 +131,43 @@ function SubscriptionsContent() {
     }
   }
 
+  async function openSwitchDialog(sub: Subscription) {
+    setSwitchingSub(sub);
+    setSwitchError("");
+    setSelectedBilling(sub.billingCycle as "MONTHLY" | "YEARLY");
+    try {
+      const res = await api.get<{ data: PlanOption[] }>(
+        `/products/${sub.product.id}/plans`, { token: accessToken! }
+      );
+      const plans = res.data.filter((p) => p.isActive);
+      setAvailablePlans(plans);
+      // Pre-select a different plan if possible
+      const other = plans.find((p) => p.id !== sub.pricingPlan.name);
+      setSelectedPlanId(other?.id ?? plans[0]?.id ?? "");
+    } catch {
+      setSwitchError("Failed to load plans");
+    }
+  }
+
+  async function handleSwitch() {
+    if (!switchingSub || !selectedPlanId) return;
+    setSwitching(true);
+    setSwitchError("");
+    try {
+      await api.post(
+        `/subscriptions/${switchingSub.id}/switch`,
+        { pricingPlanId: selectedPlanId, billingCycle: selectedBilling },
+        { token: accessToken! }
+      );
+      setSwitchingSub(null);
+      fetchSubscriptions();
+    } catch (err) {
+      setSwitchError(err instanceof ApiError ? err.message : "Failed to switch plan");
+    } finally {
+      setSwitching(false);
+    }
+  }
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -114,6 +176,8 @@ function SubscriptionsContent() {
       <p className="text-muted-foreground mt-1">
         Manage your active SaaS subscriptions ({total} total)
       </p>
+
+      {fetchError && <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{fetchError}</div>}
 
       {justSubscribed && (
         <div className="mt-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
@@ -189,9 +253,14 @@ function SubscriptionsContent() {
                   <Button size="sm" variant="outline">View Product</Button>
                 </Link>
                 {(sub.status === "ACTIVE" || sub.status === "TRIALING") && !sub.canceledAt && (
-                  <Button size="sm" variant="destructive" onClick={() => setCancelingSub(sub)}>
-                    Cancel
-                  </Button>
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => openSwitchDialog(sub)}>
+                      Change Plan
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setCancelingSub(sub)}>
+                      Cancel
+                    </Button>
+                  </>
                 )}
               </CardFooter>
             </Card>
@@ -227,6 +296,68 @@ function SubscriptionsContent() {
             <Button variant="outline" onClick={() => setCancelingSub(null)}>Keep Subscription</Button>
             <Button variant="destructive" onClick={handleCancel} disabled={canceling}>
               {canceling ? "Canceling..." : "Cancel Subscription"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Switch Plan Dialog */}
+      <Dialog
+        open={!!switchingSub}
+        onOpenChange={(open) => { if (!open) { setSwitchingSub(null); setSwitchError(""); } }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Plan</DialogTitle>
+            <DialogDescription>
+              Switch your plan for {switchingSub?.product.name}. Changes take effect immediately with prorated billing.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Current Plan</label>
+              <p className="text-sm text-muted-foreground">
+                {switchingSub?.pricingPlan.name} — ${switchingSub?.billingCycle === "YEARLY" && switchingSub?.pricingPlan.priceYearly
+                  ? switchingSub.pricingPlan.priceYearly
+                  : switchingSub?.pricingPlan.priceMonthly}/{switchingSub?.billingCycle === "YEARLY" ? "year" : "month"}
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">New Plan</label>
+              <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} — ${plan.priceMonthly}/mo
+                      {plan.priceYearly ? ` or $${plan.priceYearly}/yr` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Billing Cycle</label>
+              <Select value={selectedBilling} onValueChange={(v) => setSelectedBilling(v as "MONTHLY" | "YEARLY")}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                  <SelectItem value="YEARLY">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {switchError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{switchError}</div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSwitchingSub(null)}>Cancel</Button>
+            <Button onClick={handleSwitch} disabled={switching || !selectedPlanId}>
+              {switching ? "Switching..." : "Switch Plan"}
             </Button>
           </DialogFooter>
         </DialogContent>

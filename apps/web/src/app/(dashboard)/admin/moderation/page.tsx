@@ -71,7 +71,7 @@ export default function ModerationPage() {
       setProducts(res.data);
       setTotal(res.pagination.total);
     } catch {
-      // Silently fail
+      setError("Failed to load pending products");
     } finally {
       setLoading(false);
     }
@@ -117,6 +117,8 @@ export default function ModerationPage() {
       <p className="text-muted-foreground mt-1">
         Review and approve pending product submissions ({total} pending)
       </p>
+
+      {error && !reviewingProduct && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>

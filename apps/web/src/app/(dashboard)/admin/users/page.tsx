@@ -47,6 +47,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [error, setError] = useState("");
   const limit = 20;
 
   const fetchUsers = useCallback(async () => {
@@ -66,7 +67,7 @@ export default function UsersPage() {
       setUsers(res.data);
       setTotal(res.pagination.total);
     } catch {
-      // Silently fail
+      setError("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export default function UsersPage() {
       );
       fetchUsers();
     } catch {
-      // Silently fail
+      setError("Failed to update user status");
     }
   }
 
@@ -114,6 +115,8 @@ export default function UsersPage() {
       <p className="text-muted-foreground mt-1">
         Manage platform users and permissions ({total} total)
       </p>
+
+      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>

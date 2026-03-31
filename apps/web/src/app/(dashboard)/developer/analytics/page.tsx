@@ -32,6 +32,7 @@ export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<DevAnalytics | null>(null);
   const [revenueData, setRevenueData] = useState<RevenueMonth[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -43,7 +44,7 @@ export default function AnalyticsPage() {
         setAnalytics(aRes.data);
         setRevenueData(rRes.data);
       } catch {
-        // Silently fail
+        setError("Failed to load analytics data");
       } finally {
         setLoading(false);
       }
@@ -53,6 +54,10 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return <div className="py-12 text-center text-muted-foreground">Loading analytics...</div>;
+  }
+
+  if (error) {
+    return <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>;
   }
 
   const kpiCards = analytics ? [

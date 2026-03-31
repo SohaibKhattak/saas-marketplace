@@ -47,6 +47,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState("");
   const limit = 20;
 
   const fetchBilling = useCallback(async () => {
@@ -59,7 +60,7 @@ export default function BillingPage() {
       setTransactions(res.data);
       setTotal(res.pagination.total);
     } catch {
-      // Silently fail
+      setError("Failed to load billing history");
     } finally {
       setLoading(false);
     }
@@ -75,6 +76,8 @@ export default function BillingPage() {
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Billing History</h1>
       <p className="text-muted-foreground mt-1">View your payment history and invoices</p>
+
+      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>

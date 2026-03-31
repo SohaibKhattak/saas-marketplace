@@ -59,6 +59,7 @@ export default function PlatformAnalyticsPage() {
   const [revenueData, setRevenueData] = useState<RevenueMonth[]>([]);
   const [recentTx, setRecentTx] = useState<RecentTx[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -72,7 +73,7 @@ export default function PlatformAnalyticsPage() {
         setRevenueData(revRes.data);
         setRecentTx(txRes.data);
       } catch {
-        // Silently fail
+        setError("Failed to load analytics data");
       } finally {
         setLoading(false);
       }
@@ -82,6 +83,10 @@ export default function PlatformAnalyticsPage() {
 
   if (loading) {
     return <div className="py-12 text-center text-muted-foreground">Loading analytics...</div>;
+  }
+
+  if (error) {
+    return <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>;
   }
 
   const kpiCards = kpis ? [

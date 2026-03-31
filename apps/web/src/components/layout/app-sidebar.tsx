@@ -39,6 +39,7 @@ import {
   Rocket,
   UserCircle,
   Hammer,
+  Bell,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -53,6 +54,7 @@ const customerNav: NavItem[] = [
   { label: "Profile", href: "/customer/profile", icon: UserCircle },
   { label: "My Subscriptions", href: "/customer/subscriptions", icon: Package },
   { label: "Billing History", href: "/customer/billing", icon: CreditCard },
+  { label: "Notifications", href: "/customer/notifications", icon: Bell },
   { label: "Settings", href: "/customer/settings", icon: Settings },
 ];
 
@@ -63,6 +65,7 @@ const developerNav: NavItem[] = [
   { label: "Start Building", href: "/developer/start", icon: Hammer },
   { label: "Analytics", href: "/developer/analytics", icon: BarChart3 },
   { label: "Revenue", href: "/developer/revenue", icon: DollarSign },
+  { label: "Notifications", href: "/developer/notifications", icon: Bell },
   { label: "Settings", href: "/developer/settings", icon: Settings },
 ];
 
@@ -72,8 +75,10 @@ const adminNav: NavItem[] = [
   { label: "Users", href: "/admin/users", icon: Users },
   { label: "Applications", href: "/admin/applications", icon: FileCheck },
   { label: "Product Moderation", href: "/admin/moderation", icon: ShieldCheck },
+  { label: "Products", href: "/admin/products", icon: Package },
   { label: "Payouts", href: "/admin/payouts", icon: DollarSign },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell },
 ];
 
 function NavSection({
