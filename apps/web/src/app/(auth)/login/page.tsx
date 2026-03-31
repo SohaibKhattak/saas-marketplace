@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,57 +16,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Store, Users, Code, Shield, ArrowRight, Loader2 } from "lucide-react";
-
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-
-const demoAccounts = DEMO_MODE
-  ? [
-      { role: "customer", email: "david@company.com", password: "Password1!", icon: Users, label: "Customer", color: "text-blue-600 dark:text-blue-400 bg-blue-500/10" },
-      { role: "developer", email: "alice@devstudio.com", password: "Password1!", icon: Code, label: "Developer", color: "text-violet-600 dark:text-violet-400 bg-violet-500/10" },
-      { role: "admin", email: "sohaibktk969@gmail.com", password: "Password1!", icon: Shield, label: "Admin", color: "text-amber-600 dark:text-amber-400 bg-amber-500/10" },
-    ]
-  : [];
+import { Store, ArrowRight, Loader2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login, isLoading, error, clearError } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Auto-fill from ?role= query param
-  useEffect(() => {
-    const role = searchParams.get("role");
-    if (role) {
-      const account = demoAccounts.find((a) => a.role === role);
-      if (account) {
-        setEmail(account.email);
-        setPassword(account.password);
-      }
-    }
-  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     clearError();
     try {
       await login(email, password);
-      const { user } = useAuthStore.getState();
-      if (user?.role === "ADMIN") router.push("/admin/analytics");
-      else if (user?.role === "DEVELOPER") router.push("/developer/products");
-      else router.push("/customer/subscriptions");
-    } catch {
-      // Error is set in the store
-    }
-  }
-
-  async function handleDemoLogin(account: (typeof demoAccounts)[0]) {
-    clearError();
-    setEmail(account.email);
-    setPassword(account.password);
-    try {
-      await login(account.email, account.password);
       const { user } = useAuthStore.getState();
       if (user?.role === "ADMIN") router.push("/admin/analytics");
       else if (user?.role === "DEVELOPER") router.push("/developer/products");
@@ -154,34 +117,6 @@ function LoginForm() {
             </form>
           </Card>
 
-          {/* Demo Quick Login — only shown when NEXT_PUBLIC_DEMO_MODE=true */}
-          {demoAccounts.length > 0 && (
-            <div className="space-y-3 animate-fade-in-delay-2">
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Quick Demo Login</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {demoAccounts.map((account) => (
-                  <button
-                    key={account.role}
-                    onClick={() => handleDemoLogin(account)}
-                    disabled={isLoading}
-                    className="flex flex-col items-center gap-2 rounded-xl border bg-card p-4 hover:bg-accent hover:shadow-md transition-all disabled:opacity-50 group"
-                  >
-                    <div className={`rounded-lg p-2 ${account.color} group-hover:scale-110 transition-transform`}>
-                      <account.icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-sm font-medium">{account.label}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="text-center text-xs text-muted-foreground">
-                Password for all demo accounts: <code className="rounded bg-muted px-1.5 py-0.5 font-mono">Password1!</code>
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>
