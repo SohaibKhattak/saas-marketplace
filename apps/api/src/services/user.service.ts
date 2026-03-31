@@ -108,3 +108,18 @@ export async function suspendUser(userId: string, suspend: boolean) {
     select: userSelect,
   });
 }
+
+export async function deleteUser(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, "User not found", "USER_NOT_FOUND");
+  }
+  if (user.role === "ADMIN") {
+    throw new AppError(403, "Cannot delete an admin account", "FORBIDDEN");
+  }
+
+  // Cascade deletes are handled by Prisma schema (onDelete: Cascade)
+  await prisma.user.delete({ where: { id: userId } });
+
+  return { message: "User deleted successfully" };
+}

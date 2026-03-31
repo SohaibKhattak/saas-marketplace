@@ -28,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UserItem {
   id: string;
@@ -48,6 +56,8 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [error, setError] = useState("");
+  const [deletingUser, setDeletingUser] = useState<UserItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const limit = 20;
 
   const fetchUsers = useCallback(async () => {
@@ -87,6 +97,20 @@ export default function UsersPage() {
       fetchUsers();
     } catch {
       setError("Failed to update user status");
+    }
+  }
+
+  async function handleDelete() {
+    if (!deletingUser) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/admin/users/${deletingUser.id}`, { token: accessToken! });
+      setDeletingUser(null);
+      fetchUsers();
+    } catch {
+      setError("Failed to delete user");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -201,13 +225,22 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {u.role !== "ADMIN" && (
-                          <Button
-                            size="sm"
-                            variant={u.isSuspended ? "outline" : "destructive"}
-                            onClick={() => handleSuspend(u.id, !u.isSuspended)}
-                          >
-                            {u.isSuspended ? "Unsuspend" : "Suspend"}
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant={u.isSuspended ? "outline" : "secondary"}
+                              onClick={() => handleSuspend(u.id, !u.isSuspended)}
+                            >
+                              {u.isSuspended ? "Unsuspend" : "Suspend"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setDeletingUser(u)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -244,6 +277,28 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!deletingUser}
+        onOpenChange={(open) => { if (!open) setDeletingUser(null); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete <strong>{deletingUser?.fullName}</strong> ({deletingUser?.email})?
+              This will remove all their data including subscriptions, reviews, and transactions. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeletingUser(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

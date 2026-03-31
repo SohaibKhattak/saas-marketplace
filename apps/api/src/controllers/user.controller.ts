@@ -63,3 +63,13 @@ export async function suspendUser(req: AuthRequest, res: Response, next: NextFun
     next(err);
   }
 }
+
+export async function deleteUser(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const result = await userService.deleteUser(id as string);
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}

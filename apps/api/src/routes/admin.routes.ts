@@ -59,6 +59,7 @@ router.use(authenticate, requireRole("ADMIN"));
  */
 router.get("/users", userController.listUsers);
 router.patch("/users/:id/suspend", userController.suspendUser);
+router.delete("/users/:id", userController.deleteUser);
 
 /**
  * @swagger
