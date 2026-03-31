@@ -115,7 +115,7 @@ export default function AdminProductsPage() {
       )}
 
       <div className="mt-4">
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? "PUBLISHED"); setPage(1); }}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
