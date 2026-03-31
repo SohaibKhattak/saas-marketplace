@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, ApiError } from "@/lib/api-client";
@@ -23,10 +23,12 @@ function VerifyEmailContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const hasAttempted = useRef(false);
 
   // Auto-verify if token is in URL (from email link)
   useEffect(() => {
-    if (token && !success && !isLoading) {
+    if (token && !hasAttempted.current) {
+      hasAttempted.current = true;
       verifyToken(token);
     }
   }, [token]);

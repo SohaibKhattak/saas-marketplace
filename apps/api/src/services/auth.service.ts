@@ -87,7 +87,13 @@ export async function login(email: string, password: string) {
 export async function verifyEmail(token: string) {
   const user = await prisma.user.findUnique({ where: { verifyToken: token } });
   if (!user) {
-    throw new AppError(400, "Invalid or expired verification token", "INVALID_TOKEN");
+    // Token already consumed — check if the user already verified via this token
+    // (token was set to null after successful verification)
+    throw new AppError(400, "This verification link has already been used or is invalid. If you already verified, you can sign in.", "INVALID_TOKEN");
+  }
+
+  if (user.emailVerified) {
+    return { message: "Email already verified" };
   }
 
   await prisma.user.update({
