@@ -40,6 +40,7 @@ interface PendingProduct {
   category: string;
   tags: string[];
   createdAt: string;
+  site: { siteUrl: string; subdomain: string } | null;
   developer: {
     user: { id: string; fullName: string; email: string };
   };
@@ -246,6 +247,21 @@ export default function ModerationPage() {
                       </p>
                     ))}
                   </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">WordPress Site</span>
+                  {reviewingProduct.site ? (
+                    <a
+                      href={reviewingProduct.site.siteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      {reviewingProduct.site.siteUrl}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Not linked</span>
+                  )}
                 </div>
               </div>
 

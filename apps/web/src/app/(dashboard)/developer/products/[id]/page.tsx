@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, Send } from "lucide-react";
+import { Trash2, Plus, Send, Globe } from "lucide-react";
 
 interface PricingPlan {
   id: string;
@@ -58,6 +58,7 @@ interface Product {
   screenshots: string[];
   status: string;
   rejectionReason: string | null;
+  site: { siteUrl: string; subdomain: string } | null;
   pricingPlans: PricingPlan[];
   _count: { subscriptions: number; reviews: number };
 }
@@ -290,6 +291,24 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="tags">Tags</Label>
               <Input id="tags" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit} placeholder="Comma separated" />
+            </div>
+            <div className="space-y-2">
+              <Label>Linked WordPress Site</Label>
+              {product.site ? (
+                <div className="flex items-center gap-2 rounded-lg border p-3">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <a
+                    href={product.site.siteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    {product.site.siteUrl}
+                  </a>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No WordPress site linked</p>
+              )}
             </div>
           </CardContent>
           {canEdit && (
