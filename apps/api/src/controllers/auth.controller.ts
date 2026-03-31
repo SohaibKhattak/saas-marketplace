@@ -22,7 +22,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: "/api/v1/auth/refresh",
     });
@@ -51,7 +51,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/api/v1/auth/refresh",
     });
