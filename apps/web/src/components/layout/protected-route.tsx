@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
+import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,16 +12,26 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const router = useRouter();
-  const { user, accessToken } = useAuthStore();
+  const { user, accessToken, refreshToken } = useAuthStore();
+  const [isRestoring, setIsRestoring] = useState(!accessToken && !!user);
+
+  // If user is persisted but no access token, try refreshing first
+  useEffect(() => {
+    if (!accessToken && user) {
+      setIsRestoring(true);
+      refreshToken().finally(() => setIsRestoring(false));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (isRestoring) return; // Wait for token refresh to complete
+
     if (!accessToken || !user) {
       router.replace("/login");
       return;
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-      // Redirect to appropriate default page based on role
       switch (user.role) {
         case "ADMIN":
           router.replace("/admin/analytics");
@@ -32,7 +43,15 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
           router.replace("/customer/subscriptions");
       }
     }
-  }, [user, accessToken, allowedRoles, router]);
+  }, [user, accessToken, allowedRoles, router, isRestoring]);
+
+  if (isRestoring) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!accessToken || !user) {
     return null;
