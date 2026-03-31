@@ -29,6 +29,8 @@ function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
   const [localError, setLocalError] = useState("");
 
   useEffect(() => {
@@ -46,13 +48,17 @@ function RegisterForm() {
       return;
     }
 
+    if (role === "developer" && !businessName.trim()) {
+      setLocalError("Business name is required for developer accounts");
+      return;
+    }
+
     try {
-      await register(email, password, fullName, role === "developer" ? "DEVELOPER" : "CUSTOMER");
-      // If developer, redirect to onboarding after verification
-      const redirectPath = role === "developer"
-        ? `/verify-email?email=${encodeURIComponent(email)}&next=developer`
-        : `/verify-email?email=${encodeURIComponent(email)}`;
-      router.push(redirectPath);
+      const extra = role === "developer"
+        ? { businessName: businessName.trim(), businessEmail: businessEmail.trim() || undefined }
+        : undefined;
+      await register(email, password, fullName, role === "developer" ? "DEVELOPER" : "CUSTOMER", extra);
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     } catch {
       // Error is set in the store
     }
@@ -183,6 +189,35 @@ function RegisterForm() {
                     className="h-11"
                   />
                 </div>
+
+                {role === "developer" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="businessName">Business Name *</Label>
+                      <Input
+                        id="businessName"
+                        placeholder="Your company or brand name"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        required
+                        minLength={2}
+                        maxLength={200}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="businessEmail">Business Email (optional)</Label>
+                      <Input
+                        id="businessEmail"
+                        type="email"
+                        placeholder="contact@yourbusiness.com"
+                        value={businessEmail}
+                        onChange={(e) => setBusinessEmail(e.target.value)}
+                        className="h-11"
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
               <CardFooter className="flex flex-col gap-4">
                 <Button type="submit" className="w-full h-11 shadow-md shadow-primary/20" disabled={isLoading}>
@@ -208,7 +243,7 @@ function RegisterForm() {
           {role === "developer" && (
             <div className="rounded-xl border bg-primary/5 p-4 text-sm text-muted-foreground animate-fade-in">
               <p className="font-medium text-foreground mb-1">Developer accounts</p>
-              <p>After registering, you&apos;ll complete a developer application with your business details. An admin will review and approve your application.</p>
+              <p>After registering, an admin will review your application. Once approved, you can create products and WordPress sites.</p>
             </div>
           )}
         </div>

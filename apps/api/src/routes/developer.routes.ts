@@ -10,7 +10,7 @@ const router = Router();
 
 const applicationSchema = z.object({
   businessName: z.string().min(2).max(200),
-  businessEmail: z.string().email(),
+  businessEmail: z.string().email().optional().or(z.literal("")),
   taxId: z.string().optional(),
   bio: z.string().max(1000).optional(),
 });

@@ -4,8 +4,9 @@ import { env } from "../config/env.js";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, password, fullName, role } = req.body;
-    const result = await authService.register(email, password, fullName, role);
+    const { email, password, fullName, role, businessName, businessEmail } = req.body;
+    const developerData = role === "DEVELOPER" ? { businessName, businessEmail } : undefined;
+    const result = await authService.register(email, password, fullName, role, developerData);
 
     res.status(201).json({ data: result.user });
   } catch (err) {

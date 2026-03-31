@@ -219,14 +219,13 @@ export default function OnboardingPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="businessEmail">Business Email *</Label>
+              <Label htmlFor="businessEmail">Business Email (optional)</Label>
               <Input
                 id="businessEmail"
                 type="email"
                 placeholder="contact@yourbusiness.com"
                 value={businessEmail}
                 onChange={(e) => setBusinessEmail(e.target.value)}
-                required
               />
             </div>
             <div className="space-y-2">

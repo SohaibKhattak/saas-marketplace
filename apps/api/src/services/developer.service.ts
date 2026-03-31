@@ -5,7 +5,7 @@ export async function applyAsDeveloper(
   userId: string,
   data: {
     businessName: string;
-    businessEmail: string;
+    businessEmail?: string;
     taxId?: string;
     bio?: string;
   }
@@ -19,6 +19,11 @@ export async function applyAsDeveloper(
     throw new AppError(404, "User not found", "USER_NOT_FOUND");
   }
 
+  const profileData = {
+    ...data,
+    businessEmail: data.businessEmail || user.email,
+  };
+
   if (user.developerProfile) {
     if (user.developerProfile.applicationStatus === "PENDING") {
       throw new AppError(409, "You already have a pending application", "APPLICATION_PENDING");
@@ -30,7 +35,7 @@ export async function applyAsDeveloper(
     const profile = await prisma.developerProfile.update({
       where: { id: user.developerProfile.id },
       data: {
-        ...data,
+        ...profileData,
         applicationStatus: "PENDING",
         rejectionReason: null,
       },
@@ -41,7 +46,7 @@ export async function applyAsDeveloper(
   const profile = await prisma.developerProfile.create({
     data: {
       userId,
-      ...data,
+      ...profileData,
     },
   });
 

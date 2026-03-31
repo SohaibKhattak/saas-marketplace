@@ -11,7 +11,13 @@ const REFRESH_SECRET = env.JWT_REFRESH_SECRET;
 const ACCESS_EXPIRY = env.JWT_ACCESS_EXPIRY;
 const REFRESH_EXPIRY = env.JWT_REFRESH_EXPIRY;
 
-export async function register(email: string, password: string, fullName: string, role?: "CUSTOMER" | "DEVELOPER") {
+export async function register(
+  email: string,
+  password: string,
+  fullName: string,
+  role?: "CUSTOMER" | "DEVELOPER",
+  developerData?: { businessName?: string; businessEmail?: string }
+) {
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     throw new AppError(409, "An account with this email already exists", "EMAIL_EXISTS");
@@ -20,22 +26,38 @@ export async function register(email: string, password: string, fullName: string
   const passwordHash = await hashPassword(password);
   const verifyToken = crypto.randomBytes(32).toString("hex");
 
-  const user = await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      fullName,
-      role: role ?? "CUSTOMER",
-      verifyToken,
-    },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      role: true,
-      emailVerified: true,
-      createdAt: true,
-    },
+  const user = await prisma.$transaction(async (tx) => {
+    const newUser = await tx.user.create({
+      data: {
+        email,
+        passwordHash,
+        fullName,
+        role: role ?? "CUSTOMER",
+        verifyToken,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+        emailVerified: true,
+        createdAt: true,
+      },
+    });
+
+    // If registering as developer, create DeveloperProfile with PENDING status
+    if (role === "DEVELOPER" && developerData?.businessName) {
+      await tx.developerProfile.create({
+        data: {
+          userId: newUser.id,
+          businessName: developerData.businessName,
+          businessEmail: developerData.businessEmail || email,
+          applicationStatus: "PENDING",
+        },
+      });
+    }
+
+    return newUser;
   });
 
   // Send verification email

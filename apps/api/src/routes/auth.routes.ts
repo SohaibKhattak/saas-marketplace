@@ -16,7 +16,13 @@ const registerSchema = z.object({
     .regex(/[^A-Za-z0-9]/, "Must contain a special character"),
   fullName: z.string().min(2).max(100),
   role: z.enum(["CUSTOMER", "DEVELOPER"]).optional(),
-});
+  // Developer-specific fields (required when role=DEVELOPER)
+  businessName: z.string().min(2).max(200).optional(),
+  businessEmail: z.string().email().optional().or(z.literal("")),
+}).refine(
+  (data) => data.role !== "DEVELOPER" || (data.businessName && data.businessName.length >= 2),
+  { message: "Business name is required for developer accounts", path: ["businessName"] }
+);
 
 const loginSchema = z.object({
   email: z.string().email(),

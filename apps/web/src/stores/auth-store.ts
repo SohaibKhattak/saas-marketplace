@@ -19,7 +19,7 @@ interface AuthState {
   error: string | null;
 
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName: string, role?: string) => Promise<{ verifyToken?: string }>;
+  register: (email: string, password: string, fullName: string, role?: string, extra?: { businessName?: string; businessEmail?: string }) => Promise<{ verifyToken?: string }>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   fetchUser: () => Promise<void>;
@@ -53,12 +53,12 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (email, password, fullName, role?) => {
+      register: async (email, password, fullName, role?, extra?) => {
         set({ isLoading: true, error: null });
         try {
           const res = await api.post<{ data: User; _dev?: { verifyToken: string } }>(
             "/auth/register",
-            { email, password, fullName, role }
+            { email, password, fullName, role, ...extra }
           );
           set({ isLoading: false });
           return { verifyToken: res._dev?.verifyToken };
