@@ -324,7 +324,7 @@ function SubscriptionsContent() {
             </div>
             <div>
               <label className="text-sm font-medium">New Plan</label>
-              <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+              <Select value={selectedPlanId} onValueChange={(v) => setSelectedPlanId(v ?? "")}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
@@ -340,7 +340,7 @@ function SubscriptionsContent() {
             </div>
             <div>
               <label className="text-sm font-medium">Billing Cycle</label>
-              <Select value={selectedBilling} onValueChange={(v) => setSelectedBilling(v as "MONTHLY" | "YEARLY")}>
+              <Select value={selectedBilling} onValueChange={(v) => { if (v) setSelectedBilling(v as "MONTHLY" | "YEARLY"); }}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
