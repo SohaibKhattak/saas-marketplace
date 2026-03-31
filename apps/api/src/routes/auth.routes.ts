@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller.js";
 import { validate } from "../middleware/validate.js";
+import { authRateLimit } from "../middleware/rate-limit.js";
 import { z } from "zod";
 
 const router = Router();
@@ -43,7 +44,7 @@ const loginSchema = z.object({
  *       201: { description: User created }
  *       409: { description: Email already exists }
  */
-router.post("/register", validate(registerSchema), authController.register);
+router.post("/register", authRateLimit.register, validate(registerSchema), authController.register);
 
 /**
  * @swagger
@@ -65,7 +66,7 @@ router.post("/register", validate(registerSchema), authController.register);
  *       200: { description: Returns access token and user object }
  *       401: { description: Invalid credentials }
  */
-router.post("/login", validate(loginSchema), authController.login);
+router.post("/login", authRateLimit.login, validate(loginSchema), authController.login);
 
 /**
  * @swagger
@@ -117,7 +118,7 @@ router.post("/verify-email", authController.verifyEmail);
  *     responses:
  *       200: { description: Reset email sent (always returns 200) }
  */
-router.post("/forgot-password", authController.forgotPassword);
+router.post("/forgot-password", authRateLimit.forgotPassword, authController.forgotPassword);
 
 /**
  * @swagger

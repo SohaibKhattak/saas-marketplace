@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthInitializer } from "@/components/auth-initializer";
 import "./globals.css";
 
 const inter = Inter({
@@ -16,9 +17,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Saasifyy - Discover & Subscribe to SaaS Products",
+  metadataBase: new URL("https://saasifyy.tech"),
+  title: {
+    default: "Saasifyy - Discover & Subscribe to SaaS Products",
+    template: "%s | Saasifyy",
+  },
   description:
-    "A multi-tenant marketplace platform for discovering, subscribing to, and managing SaaS products built on WordPress.",
+    "A multi-tenant marketplace platform for discovering, subscribing to, and managing SaaS products.",
+  openGraph: {
+    type: "website",
+    siteName: "Saasifyy",
+    title: "Saasifyy - Discover & Subscribe to SaaS Products",
+    description: "A multi-tenant marketplace platform for discovering, subscribing to, and managing SaaS products.",
+  },
 };
 
 export default function RootLayout({
@@ -34,6 +45,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
+          <AuthInitializer />
           <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
       </body>

@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../utils/jwt.js";
 import { AppError } from "./error-handler.js";
+import { env } from "../config/env.js";
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? "dev-access-secret-min-32-characters!!";
+const ACCESS_SECRET = env.JWT_ACCESS_SECRET;
 
 export interface AuthRequest extends Request {
   user?: {

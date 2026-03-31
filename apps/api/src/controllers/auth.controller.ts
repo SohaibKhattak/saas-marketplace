@@ -1,19 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
 import * as authService from "../services/auth.service.js";
+import { env } from "../config/env.js";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password, fullName, role } = req.body;
     const result = await authService.register(email, password, fullName, role);
 
-    // TODO: Send verification email via Resend
-    // For dev, include verifyToken in response
-    res.status(201).json({
-      data: result.user,
-      ...(process.env.NODE_ENV === "development" && {
-        _dev: { verifyToken: result.verifyToken },
-      }),
-    });
+    res.status(201).json({ data: result.user });
   } catch (err) {
     next(err);
   }
@@ -27,8 +21,8 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     // Set refresh token as httpOnly cookie
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: "/api/v1/auth/refresh",
     });
@@ -56,8 +50,8 @@ export async function refresh(req: Request, res: Response, next: NextFunction) {
 
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: env.NODE_ENV === "production",
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
       path: "/api/v1/auth/refresh",
     });

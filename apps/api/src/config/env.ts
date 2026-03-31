@@ -25,9 +25,9 @@ const envSchema = z.object({
   // Email (Resend)
   RESEND_API_KEY: z.string().startsWith("re_"),
 
-  // Supabase Storage
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_SERVICE_KEY: z.string(),
+  // Supabase Storage (optional — only needed for file uploads)
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_KEY: z.string().optional(),
 
   // WordPress Multisite
   WP_CLI_PATH: z.string().default("/usr/local/bin/wp"),

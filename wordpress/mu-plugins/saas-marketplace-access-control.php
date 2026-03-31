@@ -57,8 +57,8 @@ function saas_check_subscription($user_email, $site_slug) {
     ]);
 
     if (is_wp_error($response)) {
-        // If API is unreachable, allow access (fail open for demo)
-        return ['hasAccess' => true, 'plan' => 'unknown'];
+        // Fail closed: deny access when API is unreachable
+        return ['hasAccess' => false, 'plan' => null];
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);

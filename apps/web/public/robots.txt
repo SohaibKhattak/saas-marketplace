@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /customer/
+Disallow: /developer/
+Disallow: /ide/
+
+Sitemap: https://saasifyy.tech/sitemap.xml

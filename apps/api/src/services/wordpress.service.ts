@@ -1,21 +1,24 @@
 import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
+import { env } from "../config/env.js";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
-const WP_DOMAIN = process.env.WP_DOMAIN ?? "localhost";
-const WP_CLI_PATH = process.env.WP_CLI_PATH ?? "/usr/local/bin/wp";
+const WP_DOMAIN = new URL(env.WP_SITE_URL).hostname;
+const WP_CLI_PATH = env.WP_CLI_PATH;
 const WP_PATH = "/var/www/wordpress";
 
 /**
  * Execute a WP-CLI command on the WordPress Multisite installation.
+ * Uses execFile (no shell) to prevent command injection.
  */
-async function wpCli(command: string): Promise<string> {
+async function wpCli(args: string[]): Promise<string> {
   try {
-    const { stdout } = await execAsync(
-      `sudo -u www-data ${WP_CLI_PATH} ${command} --path=${WP_PATH}`,
+    const { stdout } = await execFileAsync(
+      "sudo",
+      ["-u", "www-data", WP_CLI_PATH, ...args, `--path=${WP_PATH}`],
       { timeout: 30000 }
     );
     return stdout.trim();
@@ -85,9 +88,9 @@ export async function provisionSite(
     const password = "Dev@" + Math.random().toString(36).slice(2, 10) + "!";
 
     // Step 1: Create the WordPress subsite via WP-CLI
-    const output = await wpCli(
-      `site create --slug=${subdomain} --title="${title}" --email=${email}`
-    );
+    const output = await wpCli([
+      "site", "create", `--slug=${subdomain}`, `--title=${title}`, `--email=${email}`
+    ]);
 
     // Extract the blog ID from WP-CLI output (e.g., "Success: Site 3 created.")
     const blogIdMatch = output.match(/Site\s+(\d+)\s+created/);
@@ -96,13 +99,13 @@ export async function provisionSite(
     // Step 2: wp site create auto-creates a user with that email if it doesn't exist.
     // Either way, set a known password so the developer can log in.
     try {
-      await wpCli(`user update ${email} --user_pass="${password}" --display_name="${profile.user.fullName}"`);
+      await wpCli(["user", "update", email, `--user_pass=${password}`, `--display_name=${profile.user.fullName}`]);
     } catch {
       // If update fails, try creating the user
       try {
-        await wpCli(
-          `user create ${username} ${email} --user_pass="${password}" --display_name="${profile.user.fullName}" --role=administrator`
-        );
+        await wpCli([
+          "user", "create", username, email, `--user_pass=${password}`, `--display_name=${profile.user.fullName}`, "--role=administrator"
+        ]);
       } catch {
         // User might already exist with different lookup — continue anyway
       }
@@ -111,14 +114,14 @@ export async function provisionSite(
     // Step 3: Get the actual WP username for this email
     let actualUsername = username;
     try {
-      actualUsername = await wpCli(`user get ${email} --field=user_login`);
+      actualUsername = await wpCli(["user", "get", email, "--field=user_login"]);
     } catch {
       // fallback to generated username
     }
 
     // Step 4: Make them a super admin so they have full access
     try {
-      await wpCli(`super-admin add ${actualUsername}`);
+      await wpCli(["super-admin", "add", actualUsername]);
     } catch {
       // Not critical
     }
@@ -203,7 +206,7 @@ export async function deleteSite(siteId: string, developerId: string) {
   // Delete the WordPress subsite via WP-CLI if it has a wpSiteId
   if (site.wpSiteId && site.status === "ACTIVE") {
     try {
-      await wpCli(`site delete ${site.wpSiteId} --yes`);
+      await wpCli(["site", "delete", String(site.wpSiteId), "--yes"]);
     } catch (error) {
       console.error("Failed to delete WP subsite:", error);
       // Continue with DB deletion even if WP-CLI fails

@@ -2,12 +2,14 @@ import { prisma } from "../config/database.js";
 import { hashPassword, comparePassword } from "../utils/password.js";
 import { signAccessToken, signRefreshToken, verifyToken } from "../utils/jwt.js";
 import { AppError } from "../middleware/error-handler.js";
+import { env } from "../config/env.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "./email.service.js";
 import crypto from "crypto";
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET ?? "dev-access-secret-min-32-characters!!";
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET ?? "dev-refresh-secret-min-32-characters!!";
-const ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY ?? "15m";
-const REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY ?? "7d";
+const ACCESS_SECRET = env.JWT_ACCESS_SECRET;
+const REFRESH_SECRET = env.JWT_REFRESH_SECRET;
+const ACCESS_EXPIRY = env.JWT_ACCESS_EXPIRY;
+const REFRESH_EXPIRY = env.JWT_REFRESH_EXPIRY;
 
 export async function register(email: string, password: string, fullName: string, role?: "CUSTOMER" | "DEVELOPER") {
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -25,8 +27,6 @@ export async function register(email: string, password: string, fullName: string
       fullName,
       role: role ?? "CUSTOMER",
       verifyToken,
-      // Auto-verify in development (no email service configured)
-      ...(process.env.NODE_ENV === "development" && { emailVerified: true }),
     },
     select: {
       id: true,
@@ -37,6 +37,13 @@ export async function register(email: string, password: string, fullName: string
       createdAt: true,
     },
   });
+
+  // Send verification email
+  try {
+    await sendVerificationEmail(email, verifyToken);
+  } catch (err) {
+    console.error("Failed to send verification email:", err);
+  }
 
   return { user, verifyToken };
 }
@@ -78,7 +85,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function verifyEmail(token: string) {
-  const user = await prisma.user.findFirst({ where: { verifyToken: token } });
+  const user = await prisma.user.findUnique({ where: { verifyToken: token } });
   if (!user) {
     throw new AppError(400, "Invalid or expired verification token", "INVALID_TOKEN");
   }
@@ -123,23 +130,22 @@ export async function forgotPassword(email: string) {
     data: { resetToken, resetTokenExp },
   });
 
-  // TODO: Send email with reset link via Resend
-  // For now, return token in dev mode
-  return {
-    message: "If an account exists, a reset email has been sent",
-    ...(process.env.NODE_ENV === "development" && { resetToken }),
-  };
+  // Send password reset email
+  try {
+    await sendPasswordResetEmail(email, resetToken);
+  } catch (err) {
+    console.error("Failed to send password reset email:", err);
+  }
+
+  return { message: "If an account exists, a reset email has been sent" };
 }
 
 export async function resetPassword(token: string, newPassword: string) {
-  const user = await prisma.user.findFirst({
-    where: {
-      resetToken: token,
-      resetTokenExp: { gt: new Date() },
-    },
+  const user = await prisma.user.findUnique({
+    where: { resetToken: token },
   });
 
-  if (!user) {
+  if (!user || !user.resetTokenExp || user.resetTokenExp <= new Date()) {
     throw new AppError(400, "Invalid or expired reset token", "INVALID_TOKEN");
   }
 

@@ -1,9 +1,10 @@
 import { stripe } from "../config/stripe.js";
 import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
+import { env } from "../config/env.js";
 
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:3000";
-const PLATFORM_FEE_PERCENT = parseInt(process.env.PLATFORM_FEE_PERCENT ?? "15");
+const FRONTEND_URL = env.FRONTEND_URL;
+const PLATFORM_FEE_PERCENT = env.PLATFORM_FEE_PERCENT;
 
 /**
  * Create a Stripe Checkout Session for a subscription.
@@ -114,15 +115,22 @@ export async function createCheckoutSession(
 }
 
 /**
- * Handle Stripe webhook events.
+ * Handle Stripe webhook events with idempotency.
  */
-export async function handleWebhookEvent(event: any) {
+export async function handleWebhookEvent(event: { id: string; type: string; data: { object: any } }) {
+  // Idempotency: skip if already processed
+  const existing = await prisma.webhookEvent.findUnique({ where: { id: event.id } });
+  if (existing) return;
+
   switch (event.type) {
     case "checkout.session.completed":
       await handleCheckoutCompleted(event.data.object);
       break;
     case "invoice.paid":
       await handleInvoicePaid(event.data.object);
+      break;
+    case "invoice.payment_failed":
+      await handleInvoicePaymentFailed(event.data.object);
       break;
     case "customer.subscription.updated":
       await handleSubscriptionUpdated(event.data.object);
@@ -131,9 +139,14 @@ export async function handleWebhookEvent(event: any) {
       await handleSubscriptionDeleted(event.data.object);
       break;
     default:
-      // Unhandled event type
+      // Unhandled event type — still record it
       break;
   }
+
+  // Record processed event
+  await prisma.webhookEvent.create({
+    data: { id: event.id, type: event.type },
+  });
 }
 
 async function handleCheckoutCompleted(session: any) {
@@ -153,26 +166,26 @@ async function handleCheckoutCompleted(session: any) {
   const periodStart = firstItem?.current_period_start;
   const periodEnd = firstItem?.current_period_end;
 
-  // Create subscription in our database
-  await prisma.subscription.create({
-    data: {
-      customerId,
-      productId,
-      pricingPlanId,
-      stripeSubscriptionId,
-      status: stripeSub.status === "trialing" ? "TRIALING" : "ACTIVE",
-      billingCycle: billingCycle as any,
-      currentPeriodStart: periodStart ? new Date(periodStart * 1000) : new Date(),
-      currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
-      trialEnd: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
-    },
-  });
-
-  // Increment subscriber count
-  await prisma.product.update({
-    where: { id: productId },
-    data: { totalSubscribers: { increment: 1 } },
-  });
+  // Atomic: create subscription + increment subscriber count
+  await prisma.$transaction([
+    prisma.subscription.create({
+      data: {
+        customerId,
+        productId,
+        pricingPlanId,
+        stripeSubscriptionId,
+        status: stripeSub.status === "trialing" ? "TRIALING" : "ACTIVE",
+        billingCycle: billingCycle as any,
+        currentPeriodStart: periodStart ? new Date(periodStart * 1000) : new Date(),
+        currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
+        trialEnd: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
+      },
+    }),
+    prisma.product.update({
+      where: { id: productId },
+      data: { totalSubscribers: { increment: 1 } },
+    }),
+  ]);
 }
 
 async function handleInvoicePaid(invoice: any) {
@@ -207,6 +220,22 @@ async function handleInvoicePaid(invoice: any) {
       status: "SUCCEEDED",
       type: "PAYMENT",
     },
+  });
+}
+
+async function handleInvoicePaymentFailed(invoice: any) {
+  const stripeSubscriptionId = invoice.subscription as string;
+  if (!stripeSubscriptionId) return;
+
+  const subscription = await prisma.subscription.findUnique({
+    where: { stripeSubscriptionId },
+  });
+
+  if (!subscription) return;
+
+  await prisma.subscription.update({
+    where: { id: subscription.id },
+    data: { status: "PAST_DUE" },
   });
 }
 

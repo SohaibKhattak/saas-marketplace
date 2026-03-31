@@ -1,11 +1,6 @@
 import Stripe from "stripe";
+import { env } from "./env.js";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecretKey) {
-  console.warn("STRIPE_SECRET_KEY not set — Stripe features will be unavailable");
-}
-
-export const stripe = new Stripe(stripeSecretKey ?? "sk_test_placeholder", {
+export const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-08-27.basil",
 });

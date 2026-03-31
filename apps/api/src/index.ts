@@ -1,9 +1,10 @@
-import "dotenv/config";
+import { env } from "./config/env.js";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import morgan from "morgan";
+import pinoHttp from "pino-http";
 import cookieParser from "cookie-parser";
+import { logger } from "./config/logger.js";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 import { errorHandler } from "./middleware/error-handler.js";
@@ -20,17 +21,17 @@ import webhookRoutes from "./routes/webhook.routes.js";
 import wordpressRoutes from "./routes/wordpress.routes.js";
 
 const app = express();
-const PORT = process.env.PORT ?? 4000;
+const PORT = env.PORT;
 
 // Global middleware
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
+    origin: env.FRONTEND_URL,
     credentials: true,
   })
 );
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(pinoHttp({ logger }));
 app.use(cookieParser());
 
 // Stripe webhooks need raw body — must be before express.json()
@@ -49,9 +50,15 @@ app.get("/api/docs.json", (_req, res) => {
   res.json(swaggerSpec);
 });
 
-// Health check
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+// Health check with DB connectivity
+app.get("/api/health", async (_req, res) => {
+  try {
+    const { prisma } = await import("./config/database.js");
+    await prisma.$queryRawUnsafe("SELECT 1");
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: "unhealthy", timestamp: new Date().toISOString() });
+  }
 });
 
 // API routes
@@ -68,7 +75,7 @@ app.use("/api/v1/wp", wordpressRoutes);
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`API server running on http://localhost:${PORT}`);
+  logger.info(`API server running on http://localhost:${PORT}`);
 });
 
 export default app;
