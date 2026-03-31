@@ -126,6 +126,7 @@ router.get("/products", productController.listAllProducts);
 router.get("/products/moderation", productController.listPendingProducts);
 router.patch("/products/:id/review", validate(productReviewSchema), productController.reviewProduct);
 router.post("/products/:id/feature", productController.toggleFeatured);
+router.delete("/products/:id", productController.adminDeleteProduct);
 
 /**
  * @swagger

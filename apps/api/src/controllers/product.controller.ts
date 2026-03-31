@@ -34,6 +34,26 @@ export async function deleteProduct(req: AuthRequest, res: Response, next: NextF
   }
 }
 
+export async function unpublishProduct(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const product = await productService.unpublishProduct(id as string, req.user!.userId);
+    res.json({ data: product });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function adminDeleteProduct(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const result = await productService.adminDeleteProduct(id as string);
+    res.json({ data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function submitForReview(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;

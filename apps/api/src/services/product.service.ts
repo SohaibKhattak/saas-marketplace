@@ -109,12 +109,50 @@ export async function updateProduct(
 export async function deleteProduct(productId: string, developerId: string) {
   const product = await getOwnedProduct(productId, developerId);
 
-  // Only allow deletion of draft/rejected products
-  if (product.status === "PUBLISHED") {
-    throw new AppError(400, "Cannot delete a published product. Unpublish it first.", "CANNOT_DELETE_PUBLISHED");
+  // Delete associated data first, then the product
+  await prisma.$transaction(async (tx) => {
+    await tx.review.deleteMany({ where: { productId } });
+    await tx.transaction.deleteMany({ where: { subscription: { productId } } });
+    await tx.subscription.deleteMany({ where: { productId } });
+    await tx.pricingPlan.deleteMany({ where: { productId } });
+    await tx.product.delete({ where: { id: productId } });
+  });
+
+  return { deleted: true };
+}
+
+export async function unpublishProduct(productId: string, developerId: string) {
+  const product = await getOwnedProduct(productId, developerId);
+
+  if (product.status !== "PUBLISHED") {
+    throw new AppError(400, "Only published products can be unpublished", "INVALID_STATUS");
   }
 
-  await prisma.product.delete({ where: { id: productId } });
+  return prisma.product.update({
+    where: { id: productId },
+    data: { status: "UNPUBLISHED" },
+    include: {
+      pricingPlans: true,
+      site: true,
+      _count: { select: { subscriptions: true, reviews: true } },
+    },
+  });
+}
+
+export async function adminDeleteProduct(productId: string) {
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) {
+    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.review.deleteMany({ where: { productId } });
+    await tx.transaction.deleteMany({ where: { subscription: { productId } } });
+    await tx.subscription.deleteMany({ where: { productId } });
+    await tx.pricingPlan.deleteMany({ where: { productId } });
+    await tx.product.delete({ where: { id: productId } });
+  });
+
   return { deleted: true };
 }
 

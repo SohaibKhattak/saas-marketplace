@@ -215,6 +215,19 @@ export default function ProductDetailPage() {
 
   const canEdit = product.status === "DRAFT" || product.status === "REJECTED";
   const canSubmit = (product.status === "DRAFT" || product.status === "REJECTED") && product.pricingPlans.length > 0;
+  const isPublished = product.status === "PUBLISHED";
+
+  async function handleUnpublish() {
+    if (!confirm("Are you sure you want to unpublish this product? It will be removed from the marketplace.")) return;
+    setError("");
+    try {
+      await api.post(`/products/${productId}/unpublish`, {}, { token: accessToken! });
+      setSuccess("Product unpublished from marketplace");
+      fetchProduct();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to unpublish");
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -237,12 +250,15 @@ export default function ProductDetailPage() {
               Submit for Review
             </Button>
           )}
-          {canEdit && (
-            <Button variant="destructive" size="sm" onClick={handleDeleteProduct}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
+          {isPublished && (
+            <Button variant="outline" size="sm" onClick={handleUnpublish}>
+              Unpublish
             </Button>
           )}
+          <Button variant="destructive" size="sm" onClick={handleDeleteProduct}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </Button>
         </div>
       </div>
 

@@ -209,6 +209,7 @@ router.delete("/:id", authenticate, requireRole("DEVELOPER", "ADMIN"), productCo
  *       400: { description: Product needs at least one pricing plan }
  */
 router.post("/:id/submit", authenticate, requireRole("DEVELOPER", "ADMIN"), productController.submitForReview);
+router.post("/:id/unpublish", authenticate, requireRole("DEVELOPER", "ADMIN"), productController.unpublishProduct);
 
 // --- Pricing plan routes ---
 

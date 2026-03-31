@@ -27,7 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, Sparkles } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Star, Sparkles, Trash2 } from "lucide-react";
 
 interface Product {
   id: string;
@@ -61,6 +69,8 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("PUBLISHED");
   const [error, setError] = useState("");
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const limit = 20;
 
   const fetchProducts = useCallback(async () => {
@@ -98,6 +108,20 @@ export default function AdminProductsPage() {
       );
     } catch {
       setError("Failed to toggle featured status");
+    }
+  }
+
+  async function handleDeleteProduct() {
+    if (!deletingProduct) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/admin/products/${deletingProduct.id}`, { token: accessToken! });
+      setDeletingProduct(null);
+      fetchProducts();
+    } catch {
+      setError("Failed to delete product");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -152,7 +176,8 @@ export default function AdminProductsPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Rating</TableHead>
                     <TableHead>Subscribers</TableHead>
-                    <TableHead className="text-right">Featured</TableHead>
+                    <TableHead>Featured</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -179,7 +204,7 @@ export default function AdminProductsPage() {
                         </div>
                       </TableCell>
                       <TableCell>{product._count.subscriptions}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>
                         <Button
                           size="sm"
                           variant={product.isFeatured ? "default" : "ghost"}
@@ -187,6 +212,15 @@ export default function AdminProductsPage() {
                           disabled={product.status !== "PUBLISHED"}
                         >
                           <Sparkles className={`h-4 w-4 ${product.isFeatured ? "text-yellow-300" : ""}`} />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeletingProduct(product)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -207,6 +241,29 @@ export default function AdminProductsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={!!deletingProduct}
+        onOpenChange={(open) => { if (!open) setDeletingProduct(null); }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete <strong>{deletingProduct?.name}</strong>?
+              This will remove all associated pricing plans, subscriptions, reviews, and transactions.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeletingProduct(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteProduct} disabled={deleting}>
+              {deleting ? "Deleting..." : "Delete Product"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
