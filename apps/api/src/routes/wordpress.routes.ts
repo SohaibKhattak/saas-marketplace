@@ -37,8 +37,83 @@ router.get("/check-access", async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+/**
+ * @swagger
+ * /wp/validate-token:
+ *   get:
+ *     tags: [WordPress]
+ *     summary: Validate a launch token (called by MU-plugin)
+ *     parameters:
+ *       - { in: query, name: token, required: true, schema: { type: string } }
+ *     responses:
+ *       200: { description: Token validation result with user email }
+ *       400: { description: Missing token }
+ */
+router.get("/validate-token", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      res.status(400).json({ error: { message: "token is required" } });
+      return;
+    }
+    const result = wordpressService.validateLaunchToken(token as string);
+    if (!result) {
+      res.json({ data: { valid: false } });
+      return;
+    }
+    // Also verify the user actually has access
+    const access = await wordpressService.checkSubscriptionAccess(result.email, result.site);
+    if (!access.hasAccess) {
+      res.json({ data: { valid: false } });
+      return;
+    }
+    res.json({ data: { valid: true, email: result.email, plan: access.plan } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // --- Authenticated routes below ---
 router.use(authenticate);
+
+/**
+ * @swagger
+ * /wp/launch-token:
+ *   post:
+ *     tags: [WordPress]
+ *     summary: Generate a short-lived token to launch a WordPress subsite
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [siteSlug]
+ *             properties:
+ *               siteSlug: { type: string }
+ *     responses:
+ *       200: { description: Launch token and redirect URL }
+ */
+router.post("/launch-token", async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { siteSlug } = req.body;
+    if (!siteSlug) {
+      res.status(400).json({ error: { message: "siteSlug is required" } });
+      return;
+    }
+    const { prisma } = await import("../config/database.js");
+    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    if (!user) {
+      res.status(404).json({ error: { message: "User not found" } });
+      return;
+    }
+    const token = wordpressService.generateLaunchToken(user.email, siteSlug);
+    res.json({ data: { token } });
+  } catch (err) {
+    next(err);
+  }
+});
 
 /**
  * @swagger

@@ -69,6 +69,47 @@ function saas_check_subscription($user_email, $site_slug) {
 }
 
 /**
+ * Validate a launch token via the platform API and set a session cookie.
+ * Called when a customer clicks "Launch App" and arrives with ?saas_token=xxx
+ */
+function saas_handle_launch_token() {
+    if (empty($_GET['saas_token'])) {
+        return false;
+    }
+
+    $token = sanitize_text_field($_GET['saas_token']);
+    $url = SAAS_API_URL . '/wp/validate-token?' . http_build_query(['token' => $token]);
+
+    $response = wp_remote_get($url, [
+        'timeout' => 10,
+        'headers' => ['Accept' => 'application/json'],
+    ]);
+
+    if (is_wp_error($response)) {
+        return false;
+    }
+
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+    $data = $body['data'] ?? [];
+
+    if (!empty($data['valid']) && !empty($data['email'])) {
+        $email = sanitize_email($data['email']);
+        // Set a cookie on the parent domain so it works across subsites
+        // Cookie lasts 24 hours — user will need to re-launch after that
+        $domain = '.' . preg_replace('/^[^.]+\./', '', $_SERVER['HTTP_HOST']);
+        setcookie('saas_user_email', $email, time() + 86400, '/', $domain, true, true);
+        $_COOKIE['saas_user_email'] = $email; // Make available immediately for this request
+
+        // Redirect to remove the token from the URL (so it's not bookmarked/shared)
+        $clean_url = strtok($_SERVER['REQUEST_URI'], '?');
+        wp_redirect('https://' . $_SERVER['HTTP_HOST'] . $clean_url);
+        exit;
+    }
+
+    return false;
+}
+
+/**
  * Get the logged-in user's email from WordPress or from a platform cookie.
  */
 function saas_get_user_email() {
@@ -269,6 +310,9 @@ function saas_access_control() {
     if (empty($site_slug)) {
         return;
     }
+
+    // Handle launch token from platform (validates + sets cookie + redirects)
+    saas_handle_launch_token();
 
     // Site admins/developers always have access
     if (is_user_logged_in() && current_user_can('manage_options')) {

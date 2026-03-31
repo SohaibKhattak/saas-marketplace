@@ -170,6 +170,26 @@ function SubscriptionsContent() {
     }
   }
 
+  const [launchingSlug, setLaunchingSlug] = useState<string | null>(null);
+
+  async function handleLaunchApp(siteUrl: string, subdomain: string) {
+    setLaunchingSlug(subdomain);
+    try {
+      const res = await api.post<{ data: { token: string } }>(
+        "/wp/launch-token",
+        { siteSlug: subdomain },
+        { token: accessToken! }
+      );
+      const launchUrl = `${siteUrl}?saas_token=${res.data.token}`;
+      window.open(launchUrl, "_blank");
+    } catch {
+      // Fallback: open without token
+      window.open(siteUrl, "_blank");
+    } finally {
+      setLaunchingSlug(null);
+    }
+  }
+
   const totalPages = Math.ceil(total / limit);
 
   return (
@@ -252,12 +272,14 @@ function SubscriptionsContent() {
               </CardContent>
               <CardFooter className="flex gap-2 flex-wrap">
                 {sub.product.site && (sub.status === "ACTIVE" || sub.status === "TRIALING") && (
-                  <a href={sub.product.site.siteUrl} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Launch App
-                    </Button>
-                  </a>
+                  <Button
+                    size="sm"
+                    onClick={() => handleLaunchApp(sub.product.site!.siteUrl, sub.product.site!.subdomain)}
+                    disabled={launchingSlug === sub.product.site.subdomain}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    {launchingSlug === sub.product.site.subdomain ? "Launching..." : "Launch App"}
+                  </Button>
                 )}
                 <Link href={`/marketplace/${sub.product.slug}`}>
                   <Button size="sm" variant="outline">View Product</Button>

@@ -3,6 +3,7 @@ import { AppError } from "../middleware/error-handler.js";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { env } from "../config/env.js";
+import jwt from "jsonwebtoken";
 
 const execFileAsync = promisify(execFile);
 
@@ -267,4 +268,36 @@ export async function checkSubscriptionAccess(
     hasAccess: true,
     plan: subscription.pricingPlan.name,
   };
+}
+
+/**
+ * Generate a short-lived launch token for a customer to access a WordPress subsite.
+ * The token is a JWT containing the user's email and site slug, valid for 5 minutes.
+ */
+export function generateLaunchToken(userEmail: string, siteSlug: string): string {
+  return jwt.sign(
+    { email: userEmail, site: siteSlug, purpose: "wp_launch" },
+    env.JWT_ACCESS_SECRET,
+    { expiresIn: "5m", algorithm: "HS256" }
+  );
+}
+
+/**
+ * Validate a launch token and return the user email if valid.
+ * Called by the WordPress mu-plugin to verify the token.
+ */
+export function validateLaunchToken(token: string): { email: string; site: string } | null {
+  try {
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET, {
+      algorithms: ["HS256"],
+    }) as { email: string; site: string; purpose: string };
+
+    if (payload.purpose !== "wp_launch") {
+      return null;
+    }
+
+    return { email: payload.email, site: payload.site };
+  } catch {
+    return null;
+  }
 }
