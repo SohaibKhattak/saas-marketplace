@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Suspense } from "react";
+import { ExternalLink } from "lucide-react";
 
 interface PlanOption {
   id: string;
@@ -54,6 +55,7 @@ interface Subscription {
     slug: string;
     logoUrl: string | null;
     category: string;
+    site: { siteUrl: string; subdomain: string } | null;
     developer: { user: { fullName: string } };
   };
   pricingPlan: {
@@ -248,7 +250,15 @@ function SubscriptionsContent() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex gap-2">
+              <CardFooter className="flex gap-2 flex-wrap">
+                {sub.product.site && (sub.status === "ACTIVE" || sub.status === "TRIALING") && (
+                  <a href={sub.product.site.siteUrl} target="_blank" rel="noopener noreferrer">
+                    <Button size="sm">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Launch App
+                    </Button>
+                  </a>
+                )}
                 <Link href={`/marketplace/${sub.product.slug}`}>
                   <Button size="sm" variant="outline">View Product</Button>
                 </Link>

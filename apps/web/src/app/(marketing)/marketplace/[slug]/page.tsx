@@ -50,6 +50,7 @@ interface ProductDetail {
   totalReviews: number;
   totalSubscribers: number;
   publishedAt: string;
+  site: { siteUrl: string; subdomain: string } | null;
   developer: {
     user: { id: string; fullName: string; avatarUrl: string | null };
   };
@@ -240,6 +241,18 @@ export default function ProductPage() {
                       <Badge key={tag} variant="secondary">{tag}</Badge>
                     ))}
                   </div>
+                  {product.site && (
+                    <div className="mt-3">
+                      <a
+                        href={product.site.siteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      >
+                        Visit Product Site &rarr;
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 

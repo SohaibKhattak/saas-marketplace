@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -30,6 +30,13 @@ const CATEGORIES = [
   "Developer Tools", "Other",
 ];
 
+interface Site {
+  id: string;
+  subdomain: string;
+  siteUrl: string;
+  status: string;
+}
+
 export default function NewProductPage() {
   const router = useRouter();
   const { accessToken } = useAuthStore();
@@ -41,6 +48,16 @@ export default function NewProductPage() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+  const [siteId, setSiteId] = useState("");
+  const [sites, setSites] = useState<Site[]>([]);
+  const [sitesLoaded, setSitesLoaded] = useState(false);
+
+  useEffect(() => {
+    api.get<{ data: Site[] }>("/wp/sites", { token: accessToken! })
+      .then((res) => setSites(res.data.filter((s) => s.status === "ACTIVE")))
+      .catch(() => {})
+      .finally(() => setSitesLoaded(true));
+  }, [accessToken]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,6 +78,7 @@ export default function NewProductPage() {
           description,
           category,
           tags,
+          siteId: siteId || undefined,
         },
         { token: accessToken! }
       );
@@ -164,6 +182,45 @@ export default function NewProductPage() {
               />
               <p className="text-xs text-muted-foreground">Up to 10 tags, comma separated</p>
             </div>
+
+            {sitesLoaded && sites.length > 0 && (
+              <div className="space-y-2">
+                <Label>Link WordPress Site *</Label>
+                <Select value={siteId} onValueChange={(val) => setSiteId(val ?? "")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your WordPress site" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sites.map((site) => (
+                      <SelectItem key={site.id} value={site.id}>
+                        {site.subdomain} — {site.siteUrl}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Subscribers will get access to this WordPress site
+                </p>
+              </div>
+            )}
+
+            {sitesLoaded && sites.length === 0 && (
+              <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">No WordPress sites found</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Create a WordPress site first, then link it to your product.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => router.push("/developer/sites")}
+                >
+                  Create WordPress Site
+                </Button>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button type="button" variant="outline" onClick={() => router.back()}>

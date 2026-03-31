@@ -15,6 +15,7 @@ export async function getCustomerSubscriptions(customerId: string, page: number,
             slug: true,
             logoUrl: true,
             category: true,
+            site: { select: { siteUrl: true, subdomain: true } },
             developer: {
               include: {
                 user: { select: { fullName: true } },
