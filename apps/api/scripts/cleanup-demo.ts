@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../src/config/database.js";
 
 const ADMIN_EMAIL = "sohaibktk969@gmail.com";
 
@@ -72,4 +70,4 @@ cleanup()
     console.error("Cleanup failed:", e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => process.exit(0));
