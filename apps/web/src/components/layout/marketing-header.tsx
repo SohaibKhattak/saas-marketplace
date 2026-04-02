@@ -22,9 +22,9 @@ export function MarketingHeader() {
   return (
     <header className="sticky top-0 z-50 glass-card border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Store className="h-4 w-4" />
+        <Link href="/" className="flex items-center gap-2.5 text-xl font-bold tracking-tight">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Store className="h-4.5 w-4.5" />
           </div>
           <span>Saasifyy</span>
         </Link>
@@ -35,10 +35,10 @@ export function MarketingHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className={`px-3 py-2 text-sm rounded-md transition-colors ${
+              className={`px-3.5 py-2 text-sm rounded-full transition-all duration-200 ${
                 pathname === link.href
-                  ? "text-foreground font-medium bg-accent"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "text-primary font-semibold bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {link.label}
@@ -49,14 +49,14 @@ export function MarketingHeader() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Link href="/login">
-            <Button variant="ghost" size="sm">Sign in</Button>
+            <Button variant="ghost" size="sm" className="rounded-full">Sign in</Button>
           </Link>
           <Link href="/register" className="hidden sm:inline-flex">
-            <Button size="sm" className="shadow-md shadow-primary/20">Get started</Button>
+            <Button size="sm" className="rounded-full shadow-md shadow-primary/20 font-semibold">Get started</Button>
           </Link>
           {/* Mobile menu button */}
           <button
-            className="md:hidden p-2 rounded-md hover:bg-accent transition-colors"
+            className="md:hidden p-2 rounded-full hover:bg-accent transition-colors"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
@@ -68,23 +68,23 @@ export function MarketingHeader() {
       {/* Mobile nav */}
       {mobileOpen && (
         <div className="md:hidden border-t bg-background/95 backdrop-blur">
-          <nav className="container mx-auto px-4 py-3 flex flex-col gap-1">
+          <nav className="container mx-auto px-4 py-4 flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                className={`px-4 py-2.5 text-sm rounded-lg transition-all ${
                   pathname === link.href
-                    ? "text-foreground font-medium bg-accent"
+                    ? "text-primary font-semibold bg-primary/10"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
-            <Link href="/register" className="sm:hidden mt-2" onClick={() => setMobileOpen(false)}>
-              <Button size="sm" className="w-full shadow-md shadow-primary/20">Get started</Button>
+            <Link href="/register" className="sm:hidden mt-3" onClick={() => setMobileOpen(false)}>
+              <Button size="sm" className="w-full rounded-full shadow-md shadow-primary/20 font-semibold">Get started</Button>
             </Link>
           </nav>
         </div>
