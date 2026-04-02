@@ -91,18 +91,17 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Quick sign-in badges */}
-            <div className="animate-fade-in-delay-3 mt-12 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
-              <span>Try the demo:</span>
-              <Link href="/login?role=customer" className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 hover:bg-accent transition-colors">
-                <Users className="h-3 w-3" /> Customer
-              </Link>
-              <Link href="/login?role=developer" className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 hover:bg-accent transition-colors">
-                <Code className="h-3 w-3" /> Developer
-              </Link>
-              <Link href="/login?role=admin" className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1 hover:bg-accent transition-colors">
-                <Shield className="h-3 w-3" /> Admin
-              </Link>
+            {/* Trust indicators */}
+            <div className="animate-fade-in-delay-3 mt-12 flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1">
+                <Shield className="h-3 w-3 text-primary" /> Secure Payments
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1">
+                <CreditCard className="h-3 w-3 text-primary" /> Powered by Stripe
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border bg-background/80 px-3 py-1">
+                <Globe className="h-3 w-3 text-primary" /> WordPress Multisite
+              </span>
             </div>
           </div>
         </section>
@@ -285,11 +284,13 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="/marketplace" className="hover:text-foreground transition-colors">Marketplace</Link>
-              <Link href="/login" className="hover:text-foreground transition-colors">Sign in</Link>
-              <Link href="/register" className="hover:text-foreground transition-colors">Register</Link>
+              <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+              <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
             </div>
             <p className="text-sm text-muted-foreground">
-              FYP Project - UET Peshawar
+              &copy; {new Date().getFullYear()} Saasifyy. All rights reserved.
             </p>
           </div>
         </div>
