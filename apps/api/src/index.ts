@@ -24,6 +24,9 @@ import notificationRoutes from "./routes/notification.routes.js";
 const app = express();
 const PORT = env.PORT;
 
+// Trust nginx proxy so req.ip returns the real client IP
+app.set("trust proxy", 1);
+
 // Global middleware
 app.use(helmet());
 app.use(

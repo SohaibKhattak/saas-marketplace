@@ -39,9 +39,9 @@ export function rateLimit(windowMs = 60_000, maxRequests = 100) {
   };
 }
 
-// Stricter rate limits for auth endpoints
+// Rate limits for auth endpoints
 export const authRateLimit = {
-  login: rateLimit(15 * 60 * 1000, 5),        // 5 attempts per 15 minutes
-  register: rateLimit(60 * 60 * 1000, 3),      // 3 registrations per hour
-  forgotPassword: rateLimit(60 * 60 * 1000, 3), // 3 reset requests per hour
+  login: rateLimit(15 * 60 * 1000, 20),        // 20 attempts per 15 minutes
+  register: rateLimit(60 * 60 * 1000, 10),     // 10 registrations per hour
+  forgotPassword: rateLimit(60 * 60 * 1000, 5), // 5 reset requests per hour
 };
