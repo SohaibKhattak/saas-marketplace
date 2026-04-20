@@ -127,19 +127,19 @@ export default function SitesPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-sm text-gray-500">
         <Link href="/developer/products" className="hover:text-foreground transition-colors">
           Dashboard
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground font-medium">WordPress Sites</span>
+        <span className="text-foreground font-semibold tracking-tight">WordPress Sites</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">WordPress Sites</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-gray-500 mt-1">
             Create and manage your no-code WordPress sites
           </p>
         </div>
@@ -160,7 +160,7 @@ export default function SitesPage() {
               </DialogHeader>
               <div className="py-4 space-y-4">
                 {error && (
-                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+                  <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {error}
                   </div>
@@ -176,15 +176,15 @@ export default function SitesPage() {
                       required
                       className="rounded-r-none"
                     />
-                    <span className="inline-flex items-center px-3 h-9 rounded-r-md border border-l-0 border-input bg-muted text-sm text-muted-foreground">
+                    <span className="inline-flex items-center px-3 h-9 rounded-r-md border border-l-0 border-input bg-muted text-sm text-gray-500">
                       .{WP_DOMAIN}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500">
                     Lowercase letters, numbers, and hyphens only (3-32 characters)
                   </p>
                   {subdomain && (
-                    <p className="text-xs text-primary">
+                    <p className="text-xs text-neutral-900">
                       Your site will be available at: <strong>https://{subdomain}.{WP_DOMAIN}</strong>
                     </p>
                   )}
@@ -224,25 +224,25 @@ export default function SitesPage() {
           </DialogHeader>
           {credentials && (
             <div className="space-y-4 py-2">
-              <div className="rounded-lg bg-muted p-4 space-y-3">
+              <div className="rounded-sm bg-muted p-4 space-y-3">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Site URL</p>
-                  <p className="text-sm font-medium">https://{credentials.subdomain}.{WP_DOMAIN}</p>
+                  <p className="text-xs text-gray-500 mb-1">Site URL</p>
+                  <p className="text-sm font-semibold tracking-tight">https://{credentials.subdomain}.{WP_DOMAIN}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">WordPress Admin</p>
-                  <p className="text-sm font-medium">{credentials.loginUrl}</p>
+                  <p className="text-xs text-gray-500 mb-1">WordPress Admin</p>
+                  <p className="text-sm font-semibold tracking-tight">{credentials.loginUrl}</p>
                 </div>
                 <div className="border-t pt-3">
-                  <p className="text-xs text-muted-foreground mb-1">Username</p>
-                  <p className="text-sm font-mono font-medium bg-background rounded px-2 py-1">{credentials.username}</p>
+                  <p className="text-xs text-gray-500 mb-1">Username</p>
+                  <p className="text-sm font-mono font-semibold tracking-tight bg-background rounded px-2 py-1">{credentials.username}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Password</p>
-                  <p className="text-sm font-mono font-medium bg-background rounded px-2 py-1">{credentials.password}</p>
+                  <p className="text-xs text-gray-500 mb-1">Password</p>
+                  <p className="text-sm font-mono font-semibold tracking-tight bg-background rounded px-2 py-1">{credentials.password}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded-sm p-3">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>Save these credentials now. You can change your password later from WordPress admin.</span>
               </div>
@@ -264,22 +264,22 @@ export default function SitesPage() {
         </DialogContent>
       </Dialog>
 
-      {error && !dialogOpen && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && !dialogOpen && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       {/* Sites Grid */}
       {loading ? (
         <div className="py-16 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="mt-4 text-muted-foreground">Loading your sites...</p>
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-500" />
+          <p className="mt-4 text-gray-500">Loading your sites...</p>
         </div>
       ) : sites.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mx-auto mb-4">
-              <Globe className="h-8 w-8 text-primary" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-gray-100 mx-auto mb-4">
+              <Globe className="h-8 w-8 text-neutral-900" />
             </div>
             <h3 className="text-lg font-semibold">No WordPress sites yet</h3>
-            <p className="text-muted-foreground mt-1 max-w-md mx-auto">
+            <p className="text-gray-500 mt-1 max-w-md mx-auto">
               Create your first WordPress site to start building your SaaS product with no code.
               You&apos;ll get a fully hosted WordPress environment with themes, plugins, and WooCommerce.
             </p>
@@ -301,7 +301,7 @@ export default function SitesPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-500/10">
                         <Globe className="h-5 w-5 text-green-500" />
                       </div>
                       <div>
@@ -313,7 +313,7 @@ export default function SitesPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="text-xs text-gray-500 space-y-1">
                     <div className="flex justify-between">
                       <span>Created</span>
                       <span>{new Date(site.createdAt).toLocaleDateString()}</span>
@@ -359,7 +359,7 @@ export default function SitesPage() {
                   )}
 
                   {site.status === "PROVISIONING" && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 bg-muted/50 rounded-sm p-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Setting up your WordPress site...</span>
                     </div>
@@ -367,7 +367,7 @@ export default function SitesPage() {
 
                   {site.status === "SUSPENDED" && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-sm p-3">
                         <AlertCircle className="h-4 w-4" />
                         <span>Site creation failed. Please try again.</span>
                       </div>
@@ -397,11 +397,11 @@ export default function SitesPage() {
             onClick={() => setDialogOpen(true)}
           >
             <CardContent className="text-center py-8">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted mx-auto mb-3">
-                <Plus className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted mx-auto mb-3">
+                <Plus className="h-6 w-6 text-gray-500" />
               </div>
-              <p className="text-sm font-medium">Create New Site</p>
-              <p className="text-xs text-muted-foreground mt-1">Add another WordPress site</p>
+              <p className="text-sm font-semibold tracking-tight">Create New Site</p>
+              <p className="text-xs text-gray-500 mt-1">Add another WordPress site</p>
             </CardContent>
           </Card>
         </div>

@@ -20,5 +20,8 @@
   "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.0"
   }
 }

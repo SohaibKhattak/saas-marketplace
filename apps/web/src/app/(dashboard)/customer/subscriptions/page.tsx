@@ -195,25 +195,25 @@ function SubscriptionsContent() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">My Subscriptions</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Manage your active SaaS subscriptions ({total} total)
       </p>
 
-      {fetchError && <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{fetchError}</div>}
+      {fetchError && <div className="mt-4 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{fetchError}</div>}
 
       {justSubscribed && (
-        <div className="mt-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
-          <p className="text-sm font-medium text-green-700 dark:text-green-400">
+        <div className="mt-4 rounded-sm border border-green-500/50 bg-green-500/10 p-4">
+          <p className="text-sm font-semibold tracking-tight text-green-700 dark:text-green-400">
             Subscription created successfully! Welcome aboard.
           </p>
         </div>
       )}
 
       {loading ? (
-        <div className="mt-8 py-12 text-center text-muted-foreground">Loading...</div>
+        <div className="mt-8 py-12 text-center text-gray-500">Loading...</div>
       ) : subscriptions.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-          <p className="text-lg font-medium">No subscriptions yet</p>
+        <div className="mt-8 rounded-sm border border-dashed p-12 text-center text-gray-500">
+          <p className="text-lg font-semibold tracking-tight">No subscriptions yet</p>
           <p className="mt-1 text-sm">Browse the marketplace to find SaaS products</p>
           <Link href="/marketplace">
             <Button className="mt-4" variant="outline">Browse Marketplace</Button>
@@ -227,7 +227,7 @@ function SubscriptionsContent() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     {sub.product.logoUrl && (
-                      <img src={sub.product.logoUrl} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                      <img src={sub.product.logoUrl} alt="" className="h-10 w-10 rounded-sm object-cover" />
                     )}
                     <div>
                       <CardTitle className="text-lg">
@@ -248,8 +248,8 @@ function SubscriptionsContent() {
               <CardContent>
                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                   <div>
-                    <span className="text-muted-foreground">Billing: </span>
-                    <span className="font-medium">
+                    <span className="text-gray-500">Billing: </span>
+                    <span className="font-semibold tracking-tight">
                       ${sub.billingCycle === "YEARLY" && sub.pricingPlan.priceYearly
                         ? sub.pricingPlan.priceYearly
                         : sub.pricingPlan.priceMonthly}
@@ -258,14 +258,14 @@ function SubscriptionsContent() {
                   </div>
                   {sub.currentPeriodEnd && (
                     <div>
-                      <span className="text-muted-foreground">
+                      <span className="text-gray-500">
                         {sub.canceledAt ? "Access until: " : "Renews: "}
                       </span>
                       <span>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</span>
                     </div>
                   )}
                   <div>
-                    <span className="text-muted-foreground">Since: </span>
+                    <span className="text-gray-500">Since: </span>
                     <span>{new Date(sub.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -301,7 +301,7 @@ function SubscriptionsContent() {
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-4">
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
-              <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+              <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
               <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
             </div>
           )}
@@ -322,7 +322,7 @@ function SubscriptionsContent() {
             </DialogDescription>
           </DialogHeader>
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCancelingSub(null)}>Keep Subscription</Button>
@@ -347,15 +347,15 @@ function SubscriptionsContent() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Current Plan</label>
-              <p className="text-sm text-muted-foreground">
+              <label className="text-sm font-semibold tracking-tight">Current Plan</label>
+              <p className="text-sm text-gray-500">
                 {switchingSub?.pricingPlan.name} — ${switchingSub?.billingCycle === "YEARLY" && switchingSub?.pricingPlan.priceYearly
                   ? switchingSub.pricingPlan.priceYearly
                   : switchingSub?.pricingPlan.priceMonthly}/{switchingSub?.billingCycle === "YEARLY" ? "year" : "month"}
               </p>
             </div>
             <div>
-              <label className="text-sm font-medium">New Plan</label>
+              <label className="text-sm font-semibold tracking-tight">New Plan</label>
               <Select value={selectedPlanId} onValueChange={(v) => setSelectedPlanId(v ?? "")}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select a plan" />
@@ -371,7 +371,7 @@ function SubscriptionsContent() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Billing Cycle</label>
+              <label className="text-sm font-semibold tracking-tight">Billing Cycle</label>
               <Select value={selectedBilling} onValueChange={(v) => { if (v) setSelectedBilling(v as "MONTHLY" | "YEARLY"); }}>
                 <SelectTrigger className="mt-1">
                   <SelectValue />
@@ -384,7 +384,7 @@ function SubscriptionsContent() {
             </div>
           </div>
           {switchError && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{switchError}</div>
+            <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{switchError}</div>
           )}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setSwitchingSub(null)}>Cancel</Button>

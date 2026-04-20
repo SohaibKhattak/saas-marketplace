@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as userController from "../controllers/user.controller.js";
 import { authenticate } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
+import { avatarUpload } from "../middleware/avatar-upload.js";
 
 const router = Router();
 
@@ -33,7 +34,7 @@ router.use(authenticate);
  *       200: { description: Updated user }
  */
 router.get("/me", userController.getMe);
-router.patch("/me", userController.updateMe);
+router.patch("/me", avatarUpload.single("avatar"), userController.updateMe);
 
 /**
  * @swagger

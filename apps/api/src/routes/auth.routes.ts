@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as authController from "../controllers/auth.controller.js";
 import { validate } from "../middleware/validate.js";
 import { authRateLimit } from "../middleware/rate-limit.js";
+import { authenticate } from "../middleware/auth.js";
 import { z } from "zod";
 
 const router = Router();
@@ -28,6 +29,17 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+const completeOnboardingSchema = z.object({
+  role: z.enum(["CUSTOMER", "DEVELOPER"]),
+  fullName: z.string().min(2).max(100),
+  avatarUrl: z.string().url().optional().or(z.literal("")),
+  businessName: z.string().min(2).max(200).optional(),
+  businessEmail: z.string().email().optional().or(z.literal("")),
+}).refine(
+  (data) => data.role !== "DEVELOPER" || !!data.businessName,
+  { message: "Business name is required for developer accounts", path: ["businessName"] }
+);
 
 /**
  * @swagger
@@ -124,7 +136,7 @@ router.post("/verify-email", authController.verifyEmail);
  *     responses:
  *       200: { description: Reset email sent (always returns 200) }
  */
-router.post("/forgot-password", authRateLimit.forgotPassword, authController.forgotPassword);
+router.post("/forgot-password", validate(z.object({ email: z.string().email() })), authController.forgotPassword);
 
 /**
  * @swagger
@@ -157,5 +169,35 @@ router.post("/reset-password", authController.resetPassword);
  *       200: { description: Logged out }
  */
 router.post("/logout", authController.logout);
+
+/**
+ * @swagger
+ * /auth/onboarding/complete:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Complete onboarding for Google Sign-In users by selecting role and profile data
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [role, fullName]
+ *             properties:
+ *               role: { type: string, enum: [CUSTOMER, DEVELOPER] }
+ *               fullName: { type: string }
+ *               avatarUrl: { type: string }
+ *               businessName: { type: string }
+ *               businessEmail: { type: string, format: email }
+ *     responses:
+ *       200: { description: Onboarding completed }
+ */
+router.post(
+  "/onboarding/complete",
+  authenticate,
+  validate(completeOnboardingSchema),
+  authController.completeOnboarding
+);
 
 export default router;

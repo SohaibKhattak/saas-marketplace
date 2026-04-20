@@ -8,7 +8,7 @@ export function requireRole(...roles: string[]) {
       return next(new AppError(401, "Authentication required", "UNAUTHORIZED"));
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!req.user.role || !roles.includes(req.user.role)) {
       return next(
         new AppError(403, "You do not have permission to access this resource", "FORBIDDEN")
       );

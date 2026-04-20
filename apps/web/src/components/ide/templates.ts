@@ -77,10 +77,10 @@ export default function Landing() {
       {/* Hero Section */}
       <header className="container mx-auto px-6 py-16">
         <nav className="flex items-center justify-between mb-16">
-          <h1 className="text-2xl font-bold text-indigo-600">YourSaaS</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">YourSaaS</h1>
           <div className="flex gap-4">
             <a href="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
-            <a href="/login" className="bg-indigo-600 text-white px-4 py-2 rounded-lg">
+            <a href="/login" className="bg-black text-white px-4 py-2 rounded-sm">
               Get Started
             </a>
           </div>
@@ -93,8 +93,8 @@ export default function Landing() {
           <p className="text-xl text-gray-600 mb-8">
             The all-in-one platform to launch, grow, and scale your SaaS business.
           </p>
-          <button className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg
-                           hover:bg-indigo-700 transition-colors shadow-lg">
+          <button className="bg-black text-white px-8 py-3 rounded-sm text-lg
+                           hover:bg-black transition-colors shadow-sm">
             Start Free Trial
           </button>
         </div>
@@ -108,7 +108,7 @@ export default function Landing() {
             { title: 'Automation', desc: 'Automate repetitive tasks and workflows' },
             { title: 'Integrations', desc: 'Connect with 100+ popular tools' },
           ].map((feature, i) => (
-            <div key={i} className="bg-white p-6 rounded-xl shadow-sm">
+            <div key={i} className="bg-white p-6 rounded-sm shadow-sm">
               <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
               <p className="text-gray-600">{feature.desc}</p>
             </div>
@@ -134,14 +134,14 @@ const stats = [
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-8">
         <h1 className="text-2xl font-bold mb-8">Dashboard</h1>
 
         {/* Stats Grid */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, i) => (
-            <div key={i} className="bg-white p-6 rounded-xl shadow-sm">
+            <div key={i} className="bg-white p-6 rounded-sm shadow-sm">
               <p className="text-sm text-gray-500">{stat.label}</p>
               <p className="text-2xl font-bold mt-1">{stat.value}</p>
               <p className="text-sm text-green-600 mt-1">{stat.change}</p>
@@ -150,9 +150,9 @@ export default function Dashboard() {
         </div>
 
         {/* Chart Placeholder */}
-        <div className="bg-white p-6 rounded-xl shadow-sm">
+        <div className="bg-white p-6 rounded-sm shadow-sm">
           <h2 className="text-lg font-semibold mb-4">Revenue Over Time</h2>
-          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+          <div className="h-64 bg-white rounded-sm flex items-center justify-center">
             <p className="text-gray-400">Chart Component Here</p>
           </div>
         </div>
@@ -184,41 +184,41 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="max-w-md w-full bg-white rounded-sm shadow-sm p-8">
         <h2 className="text-2xl font-bold text-center mb-6">Welcome Back</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-semibold tracking-tight text-gray-700 mb-1">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-sm focus:ring-2 focus:ring-black-500"
               placeholder="you@example.com"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-semibold tracking-tight text-gray-700 mb-1">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-sm focus:ring-2 focus:ring-black-500"
               placeholder="••••••••"
               required
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700"
+            className="w-full bg-black text-white py-2 rounded-sm hover:bg-black"
           >
             Sign In
           </button>
         </form>
         <p className="text-center text-sm text-gray-500 mt-4">
-          Don't have an account? <a href="#" className="text-indigo-600">Sign up</a>
+          Don't have an account? <a href="#" className="text-neutral-900">Sign up</a>
         </p>
       </div>
     </div>
@@ -252,7 +252,7 @@ const plans = [
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
+    <div className="min-h-screen bg-white py-16">
       <div className="container mx-auto px-6">
         <h1 className="text-4xl font-bold text-center mb-4">Simple Pricing</h1>
         <p className="text-gray-600 text-center mb-12">Choose the plan that works for you</p>
@@ -261,12 +261,12 @@ export default function Pricing() {
           {plans.map((plan, i) => (
             <div
               key={i}
-              className={\`bg-white rounded-xl shadow-sm p-8 \${
+              className={\`bg-white rounded-sm shadow-sm p-8 \${
                 plan.popular ? 'ring-2 ring-indigo-600 scale-105' : ''
               }\`}
             >
               {plan.popular && (
-                <span className="bg-indigo-600 text-white text-xs px-3 py-1 rounded-full">
+                <span className="bg-black text-white text-xs px-3 py-1 rounded-sm">
                   Most Popular
                 </span>
               )}
@@ -281,10 +281,10 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
-              <button className={\`w-full mt-8 py-2 rounded-lg \${
+              <button className={\`w-full mt-8 py-2 rounded-sm \${
                 plan.popular
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  : 'border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-black text-white hover:bg-black'
+                  : 'border border-gray-300 hover:bg-white'
               }\`}>
                 Get Started
               </button>
@@ -931,10 +931,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Everything you need to build, launch, and grow your software business.
           </p>
           <div className="flex gap-4 justify-center">
-            <a href="/register" className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100">
+            <a href="/register" className="bg-white text-neutral-900 px-6 py-3 rounded-sm font-semibold hover:bg-white">
               Start Free
             </a>
-            <a href="/demo" className="border border-white px-6 py-3 rounded-lg hover:bg-white/10">
+            <a href="/demo" className="border border-white px-6 py-3 rounded-sm hover:bg-white/10">
               Live Demo
             </a>
           </div>
@@ -942,7 +942,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </section>
 
       {/* Social Proof */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-12 bg-white">
         <div className="container mx-auto px-6 text-center">
           <p className="text-gray-500 mb-6">Trusted by 1,000+ companies worldwide</p>
           <div className="flex justify-center gap-12 opacity-50">
@@ -1058,7 +1058,7 @@ export default function DashboardPage() {
 
 function StatCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="bg-white border rounded-xl p-6 shadow-sm">
+    <div className="bg-white border rounded-sm p-6 shadow-sm">
       <p className="text-sm text-gray-500">{title}</p>
       <p className="text-3xl font-bold mt-2">{value}</p>
     </div>
@@ -1088,7 +1088,7 @@ export function Navbar() {
   return (
     <nav className="border-b bg-white sticky top-0 z-50">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-indigo-600">
+        <Link href="/" className="text-xl font-bold text-neutral-900">
           YourSaaS
         </Link>
 
@@ -1096,7 +1096,7 @@ export function Navbar() {
           <Link href="/pricing" className="text-gray-600 hover:text-gray-900">Pricing</Link>
           <Link href="/docs" className="text-gray-600 hover:text-gray-900">Docs</Link>
           <Link href="/login" className="text-gray-600 hover:text-gray-900">Login</Link>
-          <Link href="/register" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+          <Link href="/register" className="bg-black text-white px-4 py-2 rounded-sm hover:bg-black">
             Get Started
           </Link>
         </div>

@@ -127,8 +127,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-4 py-3">
-        <Link href="/marketplace" className="flex items-center gap-2 font-semibold">
+      <SidebarHeader className="border-b border-gray-200 px-4 py-4">
+        <Link href="/marketplace" className="inline-flex items-center gap-3 text-black uppercase tracking-tight font-bold text-sm hover:opacity-70">
           <Store className="h-5 w-5" />
           <span>Saasifyy</span>
         </Link>
@@ -223,8 +223,8 @@ export function AppSidebar() {
               />
               <DropdownMenuContent side="top" align="start" className="w-56">
                 <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium">{user.fullName}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-sm font-semibold tracking-tight">{user.fullName}</p>
+                  <p className="text-xs text-gray-500">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()}>

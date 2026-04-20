@@ -3,6 +3,8 @@ import type { Request, Response, NextFunction } from "express";
 import type { AuthRequest } from "../middleware/auth.js";
 import { authenticate } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
+import { supabase } from "../config/supabase.js";
+import { AppError } from "../middleware/error-handler.js";
 import * as wordpressService from "../services/wordpress.service.js";
 
 const router = Router();
@@ -143,7 +145,20 @@ router.post("/launch-token", async (req: AuthRequest, res: Response, next: NextF
  */
 router.get("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
+    const { data: profile, error } = await supabase
+      .from("developer_profiles")
+      .select("id")
+      .eq("user_id", req.user!.userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
+    if (!profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
     const sites = await wordpressService.getDeveloperSites(profile.id);
     res.json({ data: sites });
   } catch (err) {
@@ -159,7 +174,20 @@ router.post("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest
       res.status(400).json({ error: { message: "subdomain is required" } });
       return;
     }
-    const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
+    const { data: profile, error } = await supabase
+      .from("developer_profiles")
+      .select("id")
+      .eq("user_id", req.user!.userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
+    if (!profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
     const site = await wordpressService.provisionSite(profile.id, subdomain);
     res.status(201).json({ data: site });
   } catch (err) {
@@ -171,7 +199,20 @@ router.post("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest
 router.delete("/sites/:id", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
-    const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
+    const { data: profile, error } = await supabase
+      .from("developer_profiles")
+      .select("id")
+      .eq("user_id", req.user!.userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
+    if (!profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
     const result = await wordpressService.deleteSite(id, profile.id);
     res.json({ data: result });
   } catch (err) {

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/components/theme-provider";
 import { AuthInitializer } from "@/components/auth-initializer";
 import "./globals.css";
 
@@ -43,11 +42,11 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <ThemeProvider>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        
           <AuthInitializer />
           <TooltipProvider>{children}</TooltipProvider>
-        </ThemeProvider>
+        
       </body>
     </html>
   );

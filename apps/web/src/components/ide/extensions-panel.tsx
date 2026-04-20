@@ -37,11 +37,11 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={i}
           className={`h-3 w-3 ${
-            i <= full ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
+            i <= full ? "fill-yellow-400 text-yellow-400" : "text-gray-500/30"
           }`}
         />
       ))}
-      <span className="text-[10px] text-muted-foreground ml-1">{rating.toFixed(1)}</span>
+      <span className="text-[10px] text-gray-500 ml-1">{rating.toFixed(1)}</span>
     </div>
   );
 }
@@ -60,9 +60,9 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
 
   return (
     <div
-      className={`group border rounded-lg p-3 transition-all hover:shadow-sm ${
+      className={`group border rounded-sm p-3 transition-all hover:shadow-sm ${
         state.installed
-          ? "border-primary/20 bg-primary/[0.02] dark:bg-primary/[0.04]"
+          ? "border-gray-200 bg-black/[0.02] dark:bg-black/[0.04]"
           : "border-border hover:border-border/80"
       }`}
     >
@@ -70,7 +70,7 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div
-          className={`h-10 w-10 rounded-lg ${ext.color} flex items-center justify-center text-lg shrink-0 shadow-sm`}
+          className={`h-10 w-10 rounded-sm ${ext.color} flex items-center justify-center text-lg shrink-0 shadow-sm`}
         >
           {ext.icon}
         </div>
@@ -79,30 +79,30 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-semibold truncate">{ext.name}</h4>
-            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+            <span className="text-[10px] text-gray-500 bg-muted px-1.5 py-0.5 rounded">
               v{ext.version}
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground truncate">{ext.publisher}</p>
+          <p className="text-[11px] text-gray-500 truncate">{ext.publisher}</p>
         </div>
 
         {/* Action Button */}
         <div className="shrink-0">
           {state.loading ? (
             <div className="h-7 w-16 flex items-center justify-center">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <Loader2 className="h-4 w-4 animate-spin text-neutral-900" />
             </div>
           ) : state.installed ? (
             <button
               onClick={() => onUninstall(ext.id)}
-              className="h-7 px-2.5 text-xs rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
+              className="h-7 px-2.5 text-xs rounded-sm border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
             >
               Uninstall
             </button>
           ) : (
             <button
               onClick={() => onInstall(ext.id)}
-              className="h-7 px-3 text-xs rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+              className="h-7 px-3 text-xs rounded-sm bg-black text-primary-foreground hover:bg-gray-100 transition-colors shadow-sm"
             >
               Install
             </button>
@@ -116,7 +116,7 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
         className="mt-2 w-full text-left"
       >
         <p
-          className={`text-xs text-muted-foreground ${
+          className={`text-xs text-gray-500 ${
             expanded ? "" : "line-clamp-1"
           }`}
         >
@@ -128,7 +128,7 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
         <div className="flex items-center gap-3">
           <StarRating rating={ext.rating} />
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-1 text-[10px] text-gray-500">
             <Download className="h-3 w-3" />
             {ext.downloads}
           </div>
@@ -138,8 +138,8 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
         {state.installed && (
           <button
             onClick={() => onToggle(ext.id)}
-            className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
-              state.enabled ? "text-green-500" : "text-muted-foreground"
+            className={`flex items-center gap-1 text-[10px] font-semibold tracking-tight transition-colors ${
+              state.enabled ? "text-green-500" : "text-gray-500"
             }`}
             title={state.enabled ? "Disable extension" : "Enable extension"}
           >
@@ -259,24 +259,24 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
       {/* Header */}
       <div className="px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2 mb-2">
-          <Blocks className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <Blocks className="h-4 w-4 text-gray-500" />
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Extensions
           </span>
-          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full ml-auto">
+          <span className="text-[10px] text-gray-500 bg-muted px-1.5 py-0.5 rounded-sm ml-auto">
             {installedExts.length} installed
           </span>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search extensions..."
-            className="w-full h-8 pl-8 pr-3 text-xs bg-muted/50 border border-border rounded-md outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
+            className="w-full h-8 pl-8 pr-3 text-xs bg-muted/50 border border-border rounded-sm outline-none focus:ring-1 focus:ring-black focus:border-primary transition-colors"
             spellCheck={false}
           />
           {search && (
@@ -284,7 +284,7 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
               onClick={() => setSearch("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
             >
-              <X className="h-3 w-3 text-muted-foreground" />
+              <X className="h-3 w-3 text-gray-500" />
             </button>
           )}
         </div>
@@ -294,10 +294,10 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
       <div className="flex items-center gap-1 px-3 py-2 border-b border-border overflow-x-auto scrollbar-thin">
         <button
           onClick={() => setSelectedCategory("all")}
-          className={`px-2 py-0.5 text-[10px] rounded-full whitespace-nowrap transition-colors ${
+          className={`px-2 py-0.5 text-[10px] rounded-sm whitespace-nowrap transition-colors ${
             selectedCategory === "all"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-accent"
+              ? "bg-black text-primary-foreground"
+              : "bg-muted text-gray-500 hover:bg-accent"
           }`}
         >
           All
@@ -306,10 +306,10 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-2 py-0.5 text-[10px] rounded-full whitespace-nowrap transition-colors ${
+            className={`px-2 py-0.5 text-[10px] rounded-sm whitespace-nowrap transition-colors ${
               selectedCategory === cat
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent"
+                ? "bg-black text-primary-foreground"
+                : "bg-muted text-gray-500 hover:bg-accent"
             }`}
           >
             {categoryLabels[cat]}
@@ -324,7 +324,7 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
           <div>
             <button
               onClick={() => setShowInstalled(!showInstalled)}
-              className="flex items-center gap-1.5 w-full px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hover:bg-accent/50 transition-colors"
+              className="flex items-center gap-1.5 w-full px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wider hover:bg-accent/50 transition-colors"
             >
               {showInstalled ? (
                 <ChevronDown className="h-3 w-3" />
@@ -332,7 +332,7 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
                 <ChevronRight className="h-3 w-3" />
               )}
               Installed
-              <span className="ml-auto text-[10px] font-normal bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+              <span className="ml-auto text-[10px] font-normal bg-gray-100 text-neutral-900 px-1.5 py-0.5 rounded-sm">
                 {installedExts.length}
               </span>
             </button>
@@ -358,7 +358,7 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
           <div>
             <button
               onClick={() => setShowRecommended(!showRecommended)}
-              className="flex items-center gap-1.5 w-full px-3 py-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hover:bg-accent/50 transition-colors"
+              className="flex items-center gap-1.5 w-full px-3 py-2 text-[11px] font-semibold text-gray-500 uppercase tracking-wider hover:bg-accent/50 transition-colors"
             >
               {showRecommended ? (
                 <ChevronDown className="h-3 w-3" />
@@ -366,7 +366,7 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
                 <ChevronRight className="h-3 w-3" />
               )}
               Recommended
-              <span className="ml-auto text-[10px] font-normal bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+              <span className="ml-auto text-[10px] font-normal bg-muted text-gray-500 px-1.5 py-0.5 rounded-sm">
                 {recommendedExts.length}
               </span>
             </button>
@@ -389,7 +389,7 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
 
         {/* Empty state */}
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500/50">
             <Search className="h-8 w-8 mb-2" />
             <p className="text-xs">No extensions found</p>
             <p className="text-[10px] mt-1">Try a different search term</p>

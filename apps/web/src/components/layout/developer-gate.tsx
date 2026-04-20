@@ -48,7 +48,7 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-neutral-900" />
       </div>
     );
   }
@@ -58,7 +58,7 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-center py-12">
         <Card className="max-w-lg w-full">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-amber-500/10">
               <Clock className="h-8 w-8 text-amber-500" />
             </div>
             <CardTitle className="text-2xl">Application Under Review</CardTitle>
@@ -69,17 +69,17 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
           <CardContent className="space-y-3">
             {profile && (
               <>
-                <div className="flex items-center justify-between rounded-lg border p-3">
-                  <span className="text-sm font-medium">Status</span>
+                <div className="flex items-center justify-between rounded-sm border p-3">
+                  <span className="text-sm font-semibold tracking-tight">Status</span>
                   <Badge variant="outline" className="text-amber-600">Pending Review</Badge>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border p-3">
-                  <span className="text-sm font-medium">Business</span>
-                  <span className="text-sm text-muted-foreground">{profile.businessName}</span>
+                <div className="flex items-center justify-between rounded-sm border p-3">
+                  <span className="text-sm font-semibold tracking-tight">Business</span>
+                  <span className="text-sm text-gray-500">{profile.businessName}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border p-3">
-                  <span className="text-sm font-medium">Submitted</span>
-                  <span className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between rounded-sm border p-3">
+                  <span className="text-sm font-semibold tracking-tight">Submitted</span>
+                  <span className="text-sm text-gray-500">
                     {new Date(profile.createdAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -96,7 +96,7 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-center py-12">
         <Card className="max-w-lg w-full">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-destructive/10">
               <XCircle className="h-8 w-8 text-destructive" />
             </div>
             <CardTitle className="text-2xl">Application Rejected</CardTitle>
@@ -106,12 +106,12 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
           </CardHeader>
           <CardContent className="space-y-3">
             {profile?.rejectionReason && (
-              <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-                <p className="text-sm font-medium text-destructive">Reason</p>
+              <div className="rounded-sm border border-destructive/50 bg-destructive/10 p-4">
+                <p className="text-sm font-semibold tracking-tight text-destructive">Reason</p>
                 <p className="mt-1 text-sm text-destructive/80">{profile.rejectionReason}</p>
               </div>
             )}
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-sm text-gray-500 text-center">
               Please contact support if you believe this was a mistake.
             </p>
           </CardContent>

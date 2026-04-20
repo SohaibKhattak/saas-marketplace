@@ -106,7 +106,7 @@ export default function OnboardingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-gray-500">Loading...</p>
       </div>
     );
   }
@@ -141,17 +141,17 @@ export default function OnboardingPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <span className="text-sm font-medium">Status</span>
+          <div className="flex items-center justify-between rounded-sm border p-3">
+            <span className="text-sm font-semibold tracking-tight">Status</span>
             <Badge variant="outline">Pending Review</Badge>
           </div>
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <span className="text-sm font-medium">Business Name</span>
-            <span className="text-sm text-muted-foreground">{profile.businessName}</span>
+          <div className="flex items-center justify-between rounded-sm border p-3">
+            <span className="text-sm font-semibold tracking-tight">Business Name</span>
+            <span className="text-sm text-gray-500">{profile.businessName}</span>
           </div>
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <span className="text-sm font-medium">Submitted</span>
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center justify-between rounded-sm border p-3">
+            <span className="text-sm font-semibold tracking-tight">Submitted</span>
+            <span className="text-sm text-gray-500">
               {new Date(profile.createdAt).toLocaleDateString()}
             </span>
           </div>
@@ -166,27 +166,27 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto max-w-lg">
       <h1 className="text-2xl font-bold tracking-tight">Become a Developer</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Apply for developer status to publish SaaS products on our marketplace
       </p>
 
       {isRejected && (
-        <div className="mt-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm font-medium text-destructive">Your previous application was rejected</p>
+        <div className="mt-4 rounded-sm border border-destructive/50 bg-destructive/10 p-4">
+          <p className="text-sm font-semibold tracking-tight text-destructive">Your previous application was rejected</p>
           {profile?.rejectionReason && (
             <p className="mt-1 text-sm text-destructive/80">
               Reason: {profile.rejectionReason}
             </p>
           )}
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-gray-500">
             You may update your information and reapply below.
           </p>
         </div>
       )}
 
       {success && (
-        <div className="mt-4 rounded-lg border border-green-500/50 bg-green-500/10 p-4">
-          <p className="text-sm font-medium text-green-700 dark:text-green-400">
+        <div className="mt-4 rounded-sm border border-green-500/50 bg-green-500/10 p-4">
+          <p className="text-sm font-semibold tracking-tight text-green-700 dark:text-green-400">
             Application submitted successfully! We'll review it shortly.
           </p>
         </div>
@@ -202,7 +202,7 @@ export default function OnboardingPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -247,7 +247,7 @@ export default function OnboardingPage() {
                 rows={4}
                 maxLength={1000}
               />
-              <p className="text-xs text-muted-foreground">{bio.length}/1000 characters</p>
+              <p className="text-xs text-gray-500">{bio.length}/1000 characters</p>
             </div>
           </CardContent>
           <CardFooter>

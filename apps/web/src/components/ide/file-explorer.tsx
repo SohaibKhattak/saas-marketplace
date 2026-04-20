@@ -21,7 +21,7 @@ function getFileIconColor(name: string): string {
   const ext = name.split(".").pop()?.toLowerCase();
   const colors: Record<string, string> = {
     tsx: "text-blue-400",
-    ts: "text-blue-500",
+    ts: "text-neutral-900",
     jsx: "text-yellow-400",
     js: "text-yellow-500",
     css: "text-pink-400",
@@ -34,7 +34,7 @@ function getFileIconColor(name: string): string {
     py: "text-yellow-400",
     txt: "text-gray-400",
   };
-  return colors[ext || ""] || "text-muted-foreground";
+  return colors[ext || ""] || "text-gray-500";
 }
 
 // ─── Inline Name Input ───────────────────────────────────────────────
@@ -77,7 +77,7 @@ function InlineInput({ initialValue, onConfirm, onCancel, placeholder }: InlineI
         }}
         onBlur={handleSubmit}
         placeholder={placeholder}
-        className="flex-1 bg-accent text-foreground text-sm px-1.5 py-0.5 rounded border border-primary/50 outline-none focus:ring-1 focus:ring-primary min-w-0"
+        className="flex-1 bg-accent text-foreground text-sm px-1.5 py-0.5 rounded border border-primary/50 outline-none focus:ring-1 focus:ring-black min-w-0"
         spellCheck={false}
       />
     </div>
@@ -141,7 +141,7 @@ function FileTreeItem({
     <div>
       <div
         className={`flex items-center w-full px-2 py-1 text-sm cursor-pointer transition-colors group ${
-          isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50"
+          isActive ? "bg-accent text-accent-foreground" : "text-gray-500 hover:bg-accent/50"
         }`}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
         onClick={() => {
@@ -185,7 +185,7 @@ function FileTreeItem({
             {isFolder && (
               <>
                 <button
-                  className="p-0.5 rounded hover:bg-background/50 text-muted-foreground hover:text-foreground"
+                  className="p-0.5 rounded hover:bg-background/50 text-gray-500 hover:text-foreground"
                   title="New file inside"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -196,7 +196,7 @@ function FileTreeItem({
                   <FilePlus className="h-3 w-3" />
                 </button>
                 <button
-                  className="p-0.5 rounded hover:bg-background/50 text-muted-foreground hover:text-foreground"
+                  className="p-0.5 rounded hover:bg-background/50 text-gray-500 hover:text-foreground"
                   title="New folder inside"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -210,7 +210,7 @@ function FileTreeItem({
             )}
             {/* Rename */}
             <button
-              className="p-0.5 rounded hover:bg-background/50 text-muted-foreground hover:text-foreground"
+              className="p-0.5 rounded hover:bg-background/50 text-gray-500 hover:text-foreground"
               title="Rename"
               onClick={(e) => {
                 e.stopPropagation();
@@ -221,7 +221,7 @@ function FileTreeItem({
             </button>
             {/* Delete */}
             <button
-              className="p-0.5 rounded hover:bg-background/50 text-muted-foreground hover:text-destructive"
+              className="p-0.5 rounded hover:bg-background/50 text-gray-500 hover:text-destructive"
               title="Delete"
               onClick={(e) => {
                 e.stopPropagation();
@@ -281,7 +281,7 @@ function NewItemInput({ depth, type, onConfirm, onCancel }: NewItemInputProps) {
       {type === "folder" ? (
         <Folder className="h-4 w-4 text-amber-400 shrink-0" />
       ) : (
-        <File className="h-4 w-4 text-muted-foreground shrink-0" />
+        <File className="h-4 w-4 text-gray-500 shrink-0" />
       )}
       <input
         ref={inputRef}
@@ -301,7 +301,7 @@ function NewItemInput({ depth, type, onConfirm, onCancel }: NewItemInputProps) {
           }
         }}
         placeholder={type === "folder" ? "folder name" : "filename.ext"}
-        className="flex-1 bg-accent text-foreground text-sm px-1.5 py-0.5 rounded border border-primary/50 outline-none focus:ring-1 focus:ring-primary min-w-0"
+        className="flex-1 bg-accent text-foreground text-sm px-1.5 py-0.5 rounded border border-primary/50 outline-none focus:ring-1 focus:ring-black min-w-0"
         spellCheck={false}
       />
     </div>
@@ -394,7 +394,7 @@ export function FileExplorer({
     <div className="h-full flex flex-col bg-background border-r border-border">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           {projectName}
         </span>
         <div className="flex gap-1">
@@ -403,14 +403,14 @@ export function FileExplorer({
             title="New File"
             onClick={() => setPendingCreate({ parentPath: "/", type: "file" })}
           >
-            <FilePlus className="h-3.5 w-3.5 text-muted-foreground" />
+            <FilePlus className="h-3.5 w-3.5 text-gray-500" />
           </button>
           <button
             className="p-1 hover:bg-accent rounded transition-colors"
             title="New Folder"
             onClick={() => setPendingCreate({ parentPath: "/", type: "folder" })}
           >
-            <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
+            <FolderPlus className="h-3.5 w-3.5 text-gray-500" />
           </button>
         </div>
       </div>

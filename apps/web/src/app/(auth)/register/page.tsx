@@ -1,22 +1,11 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { FormError } from "@/components/ui/form-error";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Store, Users, Code, ArrowRight, Loader2, Check } from "lucide-react";
+import { Store, Users, Code, Loader2, Check, Eye, EyeOff } from "lucide-react";
 
 type RoleOption = "customer" | "developer";
 
@@ -32,6 +21,14 @@ function RegisterForm() {
   const [businessName, setBusinessName] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
   const [localError, setLocalError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  function handleGoogleContinue() {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+    const redirectTo = `${window.location.origin}/auth/google/callback`;
+    window.location.href = `${apiBase}/auth/google?redirectTo=${encodeURIComponent(redirectTo)}`;
+  }
 
   useEffect(() => {
     const roleParam = searchParams.get("role");
@@ -64,188 +61,218 @@ function RegisterForm() {
     }
   }
 
-  const displayError = localError || error;
+  const [showError, setShowError] = useState(true);
+  const displayError = (localError || error) && showError;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Store className="h-4 w-4" />
+    <div className="min-h-screen bg-white text-black font-sans flex flex-col items-center justify-center p-4">
+      {/* Fixed-width container */}
+      <div className="w-full max-w-[480px] mx-auto my-auto p-8 pt-8 pb-12 border border-gray-200 shadow-sm rounded-sm">
+        {/* Header Section */}
+        <div className="mb-10 text-center">
+          <Link href="/" className="inline-flex items-center gap-3 text-black uppercase tracking-tight font-bold text-sm mb-8 hover:opacity-70 transition-all duration-200">
+            <Store className="h-5 w-5" />
+            <span>Saasifyy</span>
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Create Account</h1>
+          <p className="text-gray-500 text-sm">Register to {role === "developer" ? "publish products" : "discover tools"}.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <FormError
+            message={displayError ? (localError || error) : undefined}
+            onClose={() => setShowError(false)}
+          />
+
+          <button
+            type="button"
+            onClick={handleGoogleContinue}
+            className="w-full h-12 bg-white text-black font-semibold tracking-tight rounded-sm border border-gray-300 hover:bg-white hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center gap-3"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+              <path fill="currentColor" d="M12 10.2v3.9h5.5c-.2 1.3-1.5 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.2.8 3.9 1.5l2.7-2.6C16.9 3.3 14.6 2.4 12 2.4 6.8 2.4 2.6 6.6 2.6 11.8S6.8 21.2 12 21.2c6.9 0 9.2-4.8 9.2-7.3 0-.5-.1-.9-.1-1.3H12z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="h-px flex-1 bg-gray-300" />
+            <span>or sign up with email</span>
+            <div className="h-px flex-1 bg-gray-300" />
           </div>
-          <span>Saasifyy</span>
-        </Link>
-        <ThemeToggle />
-      </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-12">
-        <div className="w-full max-w-md space-y-6 animate-fade-in">
-          <Card className="shadow-xl border-0 shadow-black/5 dark:shadow-black/30">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-              <CardDescription>
-                Join Saasifyy to {role === "developer" ? "publish products" : "discover tools"}
-              </CardDescription>
-            </CardHeader>
-
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-5">
-                {displayError && (
-                  <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive animate-fade-in">
-                    {displayError}
-                  </div>
-                )}
-
-                {/* Role selector */}
-                <div className="space-y-2">
-                  <Label>I want to</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setRole("customer")}
-                      className={`flex items-center gap-3 rounded-xl border-2 p-4 transition-all text-left ${
-                        role === "customer"
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-border hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      <div className={`rounded-lg p-2 ${role === "customer" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"} transition-colors`}>
-                        <Users className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Subscribe</p>
-                        <p className="text-xs text-muted-foreground">Find & use SaaS</p>
-                      </div>
-                      {role === "customer" && <Check className="h-4 w-4 text-primary ml-auto" />}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setRole("developer")}
-                      className={`flex items-center gap-3 rounded-xl border-2 p-4 transition-all text-left ${
-                        role === "developer"
-                          ? "border-primary bg-primary/5 shadow-sm"
-                          : "border-border hover:border-muted-foreground/30"
-                      }`}
-                    >
-                      <div className={`rounded-lg p-2 ${role === "developer" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"} transition-colors`}>
-                        <Code className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Develop</p>
-                        <p className="text-xs text-muted-foreground">Publish SaaS</p>
-                      </div>
-                      {role === "developer" && <Check className="h-4 w-4 text-primary ml-auto" />}
-                    </button>
-                  </div>
+          {/* Role selector */}
+          <div className="space-y-3 mb-8">
+            <label className="block text-sm font-semibold tracking-tight text-neutral-900">Account Type</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setRole("customer")}
+                className={`flex items-start gap-3 rounded-sm border border-gray-200 hover:border-gray-300 p-4 transition-all duration-200 text-left focus:outline-none transition-all duration-200 ${
+                  role === "customer"
+                    ? "border-black ring-1 ring-black bg-white shadow-sm"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <div className="mt-0.5">
+                  <Users className="h-4 w-4" />
                 </div>
+                <div>
+                  <p className="text-sm font-semibold">Subscriber</p>
+                  <p className={`text-xs mt-0.5 ${role === "customer" ? "text-gray-300" : "text-gray-500"}`}>Find tools</p>
+                </div>
+              </button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    className="h-11"
-                  />
+              <button
+                type="button"
+                onClick={() => setRole("developer")}
+                className={`flex items-start gap-3 rounded-sm border border-gray-200 hover:border-gray-300 p-4 transition-all duration-200 text-left focus:outline-none transition-all duration-200 ${
+                  role === "developer"
+                    ? "border-black ring-1 ring-black bg-white shadow-sm"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
+              >
+                <div className="mt-0.5">
+                  <Code className="h-4 w-4" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="h-11"
-                  />
+                <div>
+                  <p className="text-sm font-semibold">Developer</p>
+                  <p className={`text-xs mt-0.5 ${role === "developer" ? "text-gray-300" : "text-gray-500"}`}>Publish SaaS</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Min 8 chars, uppercase, number, special"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={8}
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
+              </button>
+            </div>
+          </div>
 
-                {role === "developer" && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="businessName">Business Name *</Label>
-                      <Input
-                        id="businessName"
-                        placeholder="Your company or brand name"
-                        value={businessName}
-                        onChange={(e) => setBusinessName(e.target.value)}
-                        required
-                        minLength={2}
-                        maxLength={200}
-                        className="h-11"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="businessEmail">Business Email (optional)</Label>
-                      <Input
-                        id="businessEmail"
-                        type="email"
-                        placeholder="contact@yourbusiness.com"
-                        value={businessEmail}
-                        onChange={(e) => setBusinessEmail(e.target.value)}
-                        className="h-11"
-                      />
-                    </div>
-                  </>
-                )}
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4">
-                <Button type="submit" className="w-full h-11 shadow-md shadow-primary/20" disabled={isLoading}>
-                  {isLoading ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...</>
-                  ) : (
-                    <>
-                      {role === "developer" ? "Create Developer Account" : "Create Account"}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Link href="/login" className="text-primary font-medium hover:underline">
-                    Sign in
-                  </Link>
-                </p>
-              </CardFooter>
-            </form>
-          </Card>
+          <div className="space-y-2">
+            <label htmlFor="fullName" className="block text-sm font-semibold tracking-tight text-neutral-900">Full Name</label>
+            <input
+              id="fullName"
+              placeholder="John Doe"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="w-full h-11 px-3 bg-white text-black border border-gray-300 rounded-sm hover:border-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 placeholder:text-gray-400"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-semibold tracking-tight text-neutral-900">Email</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full h-11 px-3 bg-white text-black border border-gray-300 rounded-sm hover:border-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 placeholder:text-gray-400"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="password" className="block text-sm font-semibold tracking-tight text-neutral-900">Password</label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Min 8 chars, uppercase, number, special"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="w-full h-11 px-3 bg-white text-black border border-gray-300 rounded-sm hover:border-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 pr-10 placeholder:text-gray-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="block text-sm font-semibold tracking-tight text-neutral-900">Confirm Password</label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="w-full h-11 px-3 bg-white text-black border border-gray-300 rounded-sm hover:border-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 pr-10 placeholder:text-gray-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-600"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
 
           {role === "developer" && (
-            <div className="rounded-xl border bg-primary/5 p-4 text-sm text-muted-foreground animate-fade-in">
-              <p className="font-medium text-foreground mb-1">Developer accounts</p>
-              <p>After registering, an admin will review your application. Once approved, you can create products and WordPress sites.</p>
+            <div className="pt-4 border-t border-gray-200 space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="businessName" className="block text-sm font-semibold tracking-tight text-neutral-900">Business Name *</label>
+                <input
+                  id="businessName"
+                  placeholder="Your company or brand name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  required
+                  minLength={2}
+                  maxLength={200}
+                  className="w-full h-11 px-3 bg-white text-black border border-gray-300 rounded-sm hover:border-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 placeholder:text-gray-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="businessEmail" className="block text-sm font-semibold tracking-tight text-neutral-900">Business Email (optional)</label>
+                <input
+                  id="businessEmail"
+                  type="email"
+                  placeholder="contact@yourbusiness.com"
+                  value={businessEmail}
+                  onChange={(e) => setBusinessEmail(e.target.value)}
+                  className="w-full h-11 px-3 bg-white text-black border border-gray-300 rounded-sm hover:border-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition-all duration-200 placeholder:text-gray-400"
+                />
+              </div>
             </div>
           )}
+
+          <div className="pt-2">
+            <button 
+              type="submit" 
+              className="w-full h-12 bg-black text-white font-semibold tracking-tight cursor-pointer rounded-[4px] hover:bg-gray-900 border border-black focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all duration-200 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</>
+              ) : (
+                "Register"
+              )}
+            </button>
+          </div>
+        </form>
+
+        {role === "developer" && (
+          <div className="mt-8 border border-gray-200 bg-white p-4 text-sm text-black rounded-[4px]">
+            <p className="font-semibold mb-1">Developer Notice</p>
+            <p className="text-gray-600">Accounts are manually vetted. Upon approval you can begin publishing apps to our marketplace.</p>
+          </div>
+        )}
+
+        <div className="mt-8 text-center">
+          <p className="text-sm text-black">
+            Already have an account?{" "}
+            <Link href="/login" className="text-black font-semibold underline hover:text-gray-600 transition-all duration-200 ml-1">
+              Switch to Login
+            </Link>
+          </p>
         </div>
       </div>
     </div>
@@ -254,7 +281,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-black" /></div>}>
       <RegisterForm />
     </Suspense>
   );

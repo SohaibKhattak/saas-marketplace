@@ -22,8 +22,15 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
 
+  // Email
+  SMTP_HOST: z.string().default("smtp.mailtrap.io"),
+  SMTP_PORT: z.coerce.number().default(2525),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("Saasifyy <noreply@saasifyy.com>"),
+  
   // Email (Resend)
-  RESEND_API_KEY: z.string().startsWith("re_"),
+  RESEND_API_KEY: z.string().startsWith("re_").optional(),
 
   // Supabase Storage (optional — only needed for file uploads)
   SUPABASE_URL: z.string().url().optional(),

@@ -13,42 +13,49 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const router = useRouter();
   const { user, accessToken, refreshToken } = useAuthStore();
-  const [isRestoring, setIsRestoring] = useState(!accessToken && !!user);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // If user is persisted but no access token, try refreshing first
   useEffect(() => {
+    if (!isHydrated) return;
+    
     if (!accessToken && user) {
       setIsRestoring(true);
       refreshToken().finally(() => setIsRestoring(false));
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isHydrated, accessToken, user, refreshToken]);
 
   useEffect(() => {
-    if (isRestoring) return; // Wait for token refresh to complete
+    if (!isHydrated || isRestoring) return;
 
     if (!accessToken || !user) {
       router.replace("/login");
       return;
     }
 
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (allowedRoles && user.role && !allowedRoles.includes(user.role)) {
       switch (user.role) {
         case "ADMIN":
           router.replace("/admin/analytics");
           break;
         case "DEVELOPER":
-          router.replace("/developer/products");
+          router.replace("/developer/revenue");
           break;
         default:
           router.replace("/customer/subscriptions");
       }
     }
-  }, [user, accessToken, allowedRoles, router, isRestoring]);
+  }, [isHydrated, user, accessToken, allowedRoles, router, isRestoring]);
 
-  if (isRestoring) {
+  if (!isHydrated || isRestoring) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 text-black animate-spin" />
       </div>
     );
   }
@@ -57,7 +64,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return null;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && user.role && !allowedRoles.includes(user.role)) {
     return null;
   }
 

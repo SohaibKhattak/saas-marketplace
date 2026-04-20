@@ -169,7 +169,7 @@ export function DeployDialog({
           <form onSubmit={handleDeploy}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Rocket className="h-5 w-5 text-primary" />
+                <Rocket className="h-5 w-5 text-neutral-900" />
                 Deploy to Marketplace
               </DialogTitle>
               <DialogDescription>
@@ -180,7 +180,7 @@ export function DeployDialog({
 
             <div className="space-y-4 py-4">
               {error && (
-                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+                <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   {error}
                 </div>
@@ -224,7 +224,7 @@ export function DeployDialog({
                   maxLength={10000}
                   rows={4}
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   {description.length}/10000 characters
                 </p>
               </div>
@@ -254,7 +254,7 @@ export function DeployDialog({
                   onChange={(e) => setTagsInput(e.target.value)}
                   className="h-10"
                 />
-                <p className="text-xs text-muted-foreground">Up to 10 tags, comma separated</p>
+                <p className="text-xs text-gray-500">Up to 10 tags, comma separated</p>
               </div>
             </div>
 
@@ -278,24 +278,24 @@ export function DeployDialog({
             </DialogHeader>
             <div className="flex flex-col items-center gap-6 mt-6">
               <div className="relative">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                <Rocket className="h-6 w-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <Loader2 className="h-16 w-16 animate-spin text-neutral-900" />
+                <Rocket className="h-6 w-6 text-neutral-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
 
               {/* Progress bar */}
               <div className="w-full max-w-xs">
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-sm overflow-hidden">
                   <div
-                    className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+                    className="h-full bg-black rounded-sm transition-all duration-500 ease-out"
                     style={{ width: `${deployProgress}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">
+                <p className="text-xs text-gray-500 text-center mt-2">
                   {deployProgress}% — Building and uploading...
                 </p>
               </div>
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 Please wait while we deploy your product
               </p>
             </div>
@@ -309,17 +309,17 @@ export function DeployDialog({
               <DialogTitle className="text-center">Deployed Successfully!</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4 mt-6">
-              <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
+              <div className="h-16 w-16 rounded-sm bg-green-500/10 flex items-center justify-center">
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
 
               <div className="text-center space-y-2">
                 <p className="font-semibold">{name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-gray-500">
                   Your product has been submitted for admin review.
                   You&apos;ll be notified once it&apos;s approved and listed on the marketplace.
                 </p>
-                <div className="inline-flex items-center gap-2 bg-muted px-3 py-1.5 rounded-md text-xs text-muted-foreground mt-2">
+                <div className="inline-flex items-center gap-2 bg-muted px-3 py-1.5 rounded-sm text-xs text-gray-500 mt-2">
                   <span>Product ID:</span>
                   <code className="font-mono">{productId}</code>
                 </div>
@@ -349,13 +349,13 @@ export function DeployDialog({
               <DialogTitle className="text-center">Deployment Failed</DialogTitle>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4 mt-6">
-              <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+              <div className="h-16 w-16 rounded-sm bg-destructive/10 flex items-center justify-center">
                 <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
 
               <div className="text-center space-y-2">
                 <p className="text-sm text-destructive">{error}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   Please check the error and try again.
                 </p>
               </div>

@@ -164,7 +164,7 @@ export default function ProductPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-gray-500">Loading...</p>
       </div>
     );
   }
@@ -172,7 +172,7 @@ export default function ProductPage() {
   if (error || !product) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">{error || "Product not found"}</p>
+        <p className="text-gray-500">{error || "Product not found"}</p>
         <Link href="/marketplace">
           <Button variant="outline">Back to Marketplace</Button>
         </Link>
@@ -187,7 +187,7 @@ export default function ProductPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="text-xl font-bold">Saasifyy</Link>
           <nav className="flex items-center gap-4">
-            <Link href="/marketplace" className="text-sm font-medium">Marketplace</Link>
+            <Link href="/marketplace" className="text-sm font-semibold tracking-tight">Marketplace</Link>
             {user ? (
               <Link href={user.role === "ADMIN" ? "/admin/analytics" : user.role === "DEVELOPER" ? "/developer/products" : "/customer/subscriptions"}>
                 <Button size="sm" variant="ghost">Dashboard</Button>
@@ -205,7 +205,7 @@ export default function ProductPage() {
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
           {/* Breadcrumb */}
-          <Link href="/marketplace" className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <Link href="/marketplace" className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back to Marketplace
           </Link>
@@ -216,22 +216,22 @@ export default function ProductPage() {
               {/* Product Header */}
               <div className="flex items-start gap-4">
                 {product.logoUrl && (
-                  <img src={product.logoUrl} alt={product.name} className="h-16 w-16 rounded-xl object-cover" />
+                  <img src={product.logoUrl} alt={product.name} className="h-16 w-16 rounded-sm object-cover" />
                 )}
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
-                  <p className="mt-1 text-muted-foreground">
+                  <p className="mt-1 text-gray-500">
                     by {product.developer.user.fullName}
                   </p>
                   <div className="mt-2 flex items-center gap-3">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{product.avgRating.toFixed(1)}</span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm font-semibold tracking-tight">{product.avgRating.toFixed(1)}</span>
+                      <span className="text-sm text-gray-500">
                         ({product._count.reviews} review{product._count.reviews !== 1 ? "s" : ""})
                       </span>
                     </div>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-gray-500">
                       {product._count.subscriptions} subscriber{product._count.subscriptions !== 1 ? "s" : ""}
                     </span>
                   </div>
@@ -247,7 +247,7 @@ export default function ProductPage() {
                         href={product.site.siteUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                        className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight text-neutral-900 hover:underline"
                       >
                         Visit Product Site &rarr;
                       </a>
@@ -262,7 +262,7 @@ export default function ProductPage() {
               <div>
                 <h2 className="text-xl font-semibold">About</h2>
                 {product.shortDescription && (
-                  <p className="mt-2 text-lg text-muted-foreground">{product.shortDescription}</p>
+                  <p className="mt-2 text-lg text-gray-500">{product.shortDescription}</p>
                 )}
                 <div className="mt-4 whitespace-pre-wrap text-sm leading-relaxed">
                   {product.description}
@@ -275,7 +275,7 @@ export default function ProductPage() {
                   <h2 className="text-xl font-semibold">Screenshots</h2>
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     {product.screenshots.map((url, i) => (
-                      <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="rounded-lg border object-cover" />
+                      <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="rounded-sm border object-cover" />
                     ))}
                   </div>
                 </div>
@@ -289,11 +289,11 @@ export default function ProductPage() {
                 {user && user.role === "CUSTOMER" && reviewLoaded && !userReview && (
                   <Card className="mt-4">
                     <CardContent className="pt-4 space-y-3">
-                      <p className="text-sm font-medium">Leave a review</p>
+                      <p className="text-sm font-semibold tracking-tight">Leave a review</p>
                       <div className="flex items-center gap-1">
                         {Array.from({ length: 5 }).map((_, i) => (
                           <button key={i} type="button" onClick={() => setReviewRating(i + 1)}>
-                            <Star className={`h-5 w-5 cursor-pointer ${i < reviewRating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                            <Star className={`h-5 w-5 cursor-pointer ${i < reviewRating ? "fill-yellow-400 text-yellow-400" : "text-gray-500"}`} />
                           </button>
                         ))}
                       </div>
@@ -318,11 +318,11 @@ export default function ProductPage() {
                   <Card className="mt-4 border-primary/30">
                     <CardContent className="pt-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-primary">Your review</span>
+                        <span className="text-sm font-semibold tracking-tight text-neutral-900">Your review</span>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`h-3 w-3 ${i < userReview.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`} />
+                              <Star key={i} className={`h-3 w-3 ${i < userReview.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-500"}`} />
                             ))}
                           </div>
                           <Button variant="ghost" size="sm" className="text-destructive h-7 text-xs" onClick={handleDeleteReview}>
@@ -331,34 +331,34 @@ export default function ProductPage() {
                         </div>
                       </div>
                       {userReview.comment && (
-                        <p className="mt-2 text-sm text-muted-foreground">{userReview.comment}</p>
+                        <p className="mt-2 text-sm text-gray-500">{userReview.comment}</p>
                       )}
                     </CardContent>
                   </Card>
                 )}
 
                 {product.reviews.length === 0 && !userReview ? (
-                  <p className="mt-4 text-sm text-muted-foreground">No reviews yet</p>
+                  <p className="mt-4 text-sm text-gray-500">No reviews yet</p>
                 ) : (
                   <div className="mt-4 space-y-4">
                     {product.reviews.map((review) => (
                       <Card key={review.id}>
                         <CardContent className="pt-4">
                           <div className="flex items-center justify-between">
-                            <span className="font-medium">{review.customer.fullName}</span>
+                            <span className="font-semibold tracking-tight">{review.customer.fullName}</span>
                             <div className="flex items-center gap-1">
                               {Array.from({ length: 5 }).map((_, i) => (
                                 <Star
                                   key={i}
-                                  className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+                                  className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-500"}`}
                                 />
                               ))}
                             </div>
                           </div>
                           {review.comment && (
-                            <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
+                            <p className="mt-2 text-sm text-gray-500">{review.comment}</p>
                           )}
-                          <p className="mt-2 text-xs text-muted-foreground">
+                          <p className="mt-2 text-xs text-gray-500">
                             {new Date(review.createdAt).toLocaleDateString()}
                           </p>
                         </CardContent>
@@ -372,7 +372,7 @@ export default function ProductPage() {
             {/* Pricing Sidebar */}
             <div className="space-y-4">
               {checkoutError && (
-                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                   {checkoutError}
                 </div>
               )}
@@ -384,9 +384,9 @@ export default function ProductPage() {
                       <span className="text-3xl font-bold text-foreground">
                         ${plan.priceMonthly}
                       </span>
-                      <span className="text-muted-foreground">/month</span>
+                      <span className="text-gray-500">/month</span>
                       {plan.priceYearly && (
-                        <span className="ml-2 text-sm text-muted-foreground">
+                        <span className="ml-2 text-sm text-gray-500">
                           or ${plan.priceYearly}/year
                         </span>
                       )}
@@ -394,7 +394,7 @@ export default function ProductPage() {
                   </CardHeader>
                   <CardContent>
                     {plan.trialDays > 0 && (
-                      <p className="mb-3 text-sm font-medium text-green-600 dark:text-green-400">
+                      <p className="mb-3 text-sm font-semibold tracking-tight text-green-600 dark:text-green-400">
                         {plan.trialDays}-day free trial
                       </p>
                     )}

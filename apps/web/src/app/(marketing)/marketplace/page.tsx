@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight, X } from "lucide-react";
 
 const CATEGORIES = [
@@ -67,7 +66,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
           }`}
         />
       ))}
-      <span className="ml-1 text-sm text-muted-foreground">({count})</span>
+      <span className="ml-1 text-sm text-gray-500">({count})</span>
     </div>
   );
 }
@@ -134,21 +133,21 @@ export default function MarketplacePage() {
       <header className="sticky top-0 z-50 glass-card border-b">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-bold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
             <span>Saasifyy</span>
           </Link>
           <nav className="flex items-center gap-2">
-            <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-foreground">
+            <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-semibold tracking-tight text-foreground">
               Marketplace
             </Link>
-            <ThemeToggle />
+            
             <Link href="/login">
               <Button variant="ghost" size="sm">Sign in</Button>
             </Link>
             <Link href="/register">
-              <Button size="sm" className="shadow-md shadow-primary/20">Get started</Button>
+              <Button size="sm" className="shadow-sm shadow-primary/20">Get started</Button>
             </Link>
           </nav>
         </div>
@@ -161,7 +160,7 @@ export default function MarketplacePage() {
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight animate-fade-in">
               Explore the <span className="gradient-text">Marketplace</span>
             </h1>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto animate-fade-in-delay-1">
+            <p className="mt-3 text-gray-500 max-w-lg mx-auto animate-fade-in-delay-1">
               Discover SaaS products built by developers on our platform
             </p>
           </div>
@@ -171,7 +170,7 @@ export default function MarketplacePage() {
           {/* Search & Filters */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center animate-fade-in-delay-2">
             <form onSubmit={handleSearch} className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               <Input
                 placeholder="Search products..."
                 value={search}
@@ -218,15 +217,15 @@ export default function MarketplacePage() {
           {/* Active tag filters */}
           {allTags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2 items-center">
-              <span className="text-xs text-muted-foreground">Tags:</span>
+              <span className="text-xs text-gray-500">Tags:</span>
               {allTags.map((tag) => (
                 <button
                   key={tag}
                   onClick={() => { setTagFilter(tagFilter === tag ? "" : tag); setPage(1); }}
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center rounded-sm px-2.5 py-0.5 text-xs font-semibold tracking-tight transition-colors ${
                     tagFilter === tag
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      ? "bg-black text-primary-foreground"
+                      : "bg-muted text-gray-500 hover:bg-muted/80"
                   }`}
                 >
                   {tag}
@@ -237,39 +236,39 @@ export default function MarketplacePage() {
           )}
 
           {/* Results count */}
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-gray-500">
             {total} product{total !== 1 ? "s" : ""} found
           </p>
 
           {/* Error */}
           {error && (
-            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div className="mt-4 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
 
           {/* Product Grid */}
           {loading ? (
             <div className="mt-8 py-16 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-              <p className="mt-3 text-muted-foreground">Loading products...</p>
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-neutral-900" />
+              <p className="mt-3 text-gray-500">Loading products...</p>
             </div>
           ) : products.length === 0 ? (
-            <div className="mt-8 rounded-2xl border border-dashed p-16 text-center">
-              <Package className="mx-auto h-12 w-12 text-muted-foreground/40" />
-              <p className="mt-4 text-lg font-medium">No products found</p>
-              <p className="mt-2 text-sm text-muted-foreground">Try adjusting your search or filters</p>
+            <div className="mt-8 rounded-sm border border-dashed p-16 text-center">
+              <Package className="mx-auto h-12 w-12 text-gray-500/40" />
+              <p className="mt-4 text-lg font-semibold tracking-tight">No products found</p>
+              <p className="mt-2 text-sm text-gray-500">Try adjusting your search or filters</p>
             </div>
           ) : (
             <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((product, i) => (
                 <Link key={product.id} href={`/marketplace/${product.slug}`}>
-                  <Card className={`h-full group border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-slide-up${i < 3 ? (i > 0 ? `-delay-${i}` : "") : ""}`}>
+                  <Card className={`h-full group border hover:shadow-sm hover:-translate-y-1 transition-all duration-300 animate-slide-up${i < 3 ? (i > 0 ? `-delay-${i}` : "") : ""}`}>
                     {/* Gradient top bar */}
                     <div className={`h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-t-lg transition-opacity ${product.isFeatured ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
                     <div className="p-6 pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{product.name}</h3>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
+                          <h3 className="font-semibold text-lg group-hover:text-neutral-900 transition-colors">{product.name}</h3>
+                          <p className="mt-0.5 text-xs text-gray-500">
                             by {product.developer.user.fullName}
                           </p>
                         </div>
@@ -277,14 +276,14 @@ export default function MarketplacePage() {
                           {product.isFeatured && (
                             <Badge className="text-[10px] px-1.5 py-0">Featured</Badge>
                           )}
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-gray-100 text-neutral-900 group-hover:bg-black group-hover:text-primary-foreground transition-colors">
                             <Package className="h-5 w-5" />
                           </div>
                         </div>
                       </div>
                     </div>
                     <CardContent className="pt-0">
-                      <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
+                      <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
                         {product.shortDescription ?? product.name}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -298,7 +297,7 @@ export default function MarketplacePage() {
                     </CardContent>
                     <CardFooter className="flex items-center justify-between border-t pt-4">
                       <StarRating rating={product.avgRating} count={product._count.reviews} />
-                      <div className="text-sm font-semibold text-primary">
+                      <div className="text-sm font-semibold text-neutral-900">
                         {product.pricingPlans.length > 0
                           ? `$${product.pricingPlans[0].priceMonthly}/mo`
                           : "Free"}
@@ -339,7 +338,7 @@ export default function MarketplacePage() {
 
       {/* Footer */}
       <footer className="border-t bg-muted/30 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        <div className="container mx-auto px-4 text-center text-sm text-gray-500">
           <p>Saasifyy - Multi-Tenant SaaS Platform</p>
         </div>
       </footer>

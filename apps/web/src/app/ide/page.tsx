@@ -489,23 +489,23 @@ export default function IDEPage() {
         <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
           <header class="container mx-auto px-6 py-16">
             <nav class="flex items-center justify-between mb-16">
-              <h1 class="text-2xl font-bold text-indigo-600">YourSaaS</h1>
+              <h1 class="text-2xl font-bold text-neutral-900">YourSaaS</h1>
               <div class="flex gap-4">
                 <a href="#" class="text-gray-600 hover:text-gray-900">Pricing</a>
-                <a href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Get Started</a>
+                <a href="#" class="bg-black text-white px-4 py-2 rounded-sm hover:bg-black transition">Get Started</a>
               </div>
             </nav>
             <div class="text-center max-w-3xl mx-auto">
               <h2 class="text-5xl font-bold text-gray-900 mb-6">Build Something Amazing</h2>
               <p class="text-xl text-gray-600 mb-8">The all-in-one platform to launch, grow, and scale your SaaS business.</p>
-              <button class="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-indigo-700 transition shadow-lg">Start Free Trial</button>
+              <button class="bg-black text-white px-8 py-3 rounded-sm text-lg hover:bg-black transition shadow-sm">Start Free Trial</button>
             </div>
           </header>
           <section class="container mx-auto px-6 py-16">
             <div class="grid grid-cols-3 gap-8">
-              <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold mb-2">Analytics</h3><p class="text-gray-600">Real-time insights</p></div>
-              <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold mb-2">Automation</h3><p class="text-gray-600">Automate workflows</p></div>
-              <div class="bg-white p-6 rounded-xl shadow-sm"><h3 class="text-lg font-semibold mb-2">Integrations</h3><p class="text-gray-600">100+ tools</p></div>
+              <div class="bg-white p-6 rounded-sm shadow-sm"><h3 class="text-lg font-semibold mb-2">Analytics</h3><p class="text-gray-600">Real-time insights</p></div>
+              <div class="bg-white p-6 rounded-sm shadow-sm"><h3 class="text-lg font-semibold mb-2">Automation</h3><p class="text-gray-600">Automate workflows</p></div>
+              <div class="bg-white p-6 rounded-sm shadow-sm"><h3 class="text-lg font-semibold mb-2">Integrations</h3><p class="text-gray-600">100+ tools</p></div>
             </div>
           </section>
         </div>`,
@@ -513,9 +513,9 @@ export default function IDEPage() {
         <div class="min-h-screen bg-gray-950 text-green-400 font-mono p-8">
           <div class="max-w-2xl mx-auto">
             <div class="flex items-center gap-2 mb-6">
-              <div class="w-3 h-3 rounded-full bg-red-500"></div>
-              <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+              <div class="w-3 h-3 rounded-sm bg-red-500"></div>
+              <div class="w-3 h-3 rounded-sm bg-yellow-500"></div>
+              <div class="w-3 h-3 rounded-sm bg-green-500"></div>
               <span class="text-gray-500 text-sm ml-2">Terminal</span>
             </div>
             <pre class="text-sm leading-relaxed">
@@ -533,10 +533,10 @@ export default function IDEPage() {
         <div class="min-h-screen">
           <nav class="border-b bg-white sticky top-0 z-50">
             <div class="container mx-auto px-6 h-16 flex items-center justify-between">
-              <span class="text-xl font-bold text-indigo-600">YourSaaS</span>
+              <span class="text-xl font-bold text-neutral-900">YourSaaS</span>
               <div class="flex items-center gap-6">
                 <a href="#" class="text-gray-600">Pricing</a>
-                <a href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Get Started</a>
+                <a href="#" class="bg-black text-white px-4 py-2 rounded-sm">Get Started</a>
               </div>
             </div>
           </nav>
@@ -545,8 +545,8 @@ export default function IDEPage() {
               <h1 class="text-5xl font-bold mb-6">Your SaaS Platform</h1>
               <p class="text-xl opacity-90 mb-8 max-w-2xl mx-auto">Everything you need to build and grow.</p>
               <div class="flex gap-4 justify-center">
-                <a href="#" class="bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold">Start Free</a>
-                <a href="#" class="border border-white px-6 py-3 rounded-lg">Live Demo</a>
+                <a href="#" class="bg-white text-neutral-900 px-6 py-3 rounded-sm font-semibold">Start Free</a>
+                <a href="#" class="border border-white px-6 py-3 rounded-sm">Live Demo</a>
               </div>
             </div>
           </section>
@@ -555,9 +555,9 @@ export default function IDEPage() {
         <div class="min-h-screen bg-gray-950 text-green-400 font-mono p-8">
           <div class="max-w-2xl mx-auto">
             <div class="flex items-center gap-2 mb-6">
-              <div class="w-3 h-3 rounded-full bg-red-500"></div>
-              <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+              <div class="w-3 h-3 rounded-sm bg-red-500"></div>
+              <div class="w-3 h-3 rounded-sm bg-yellow-500"></div>
+              <div class="w-3 h-3 rounded-sm bg-green-500"></div>
               <span class="text-gray-500 text-sm ml-2">Django Server</span>
             </div>
             <pre class="text-sm leading-relaxed">
@@ -678,10 +678,10 @@ export default function IDEPage() {
             <div className="w-12 bg-muted/30 border-r border-border flex flex-col items-center py-2 gap-1">
               <button
                 onClick={() => setSidebarTab("files")}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-sm transition-colors ${
                   sidebarTab === "files"
                     ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    : "text-gray-500 hover:text-foreground hover:bg-accent/50"
                 }`}
                 title="Explorer"
               >
@@ -689,10 +689,10 @@ export default function IDEPage() {
               </button>
               <button
                 onClick={() => setSidebarTab("extensions")}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-sm transition-colors ${
                   sidebarTab === "extensions"
                     ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    : "text-gray-500 hover:text-foreground hover:bg-accent/50"
                 }`}
                 title="Extensions"
               >
@@ -750,10 +750,10 @@ export default function IDEPage() {
                     path={activeTab.path}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground/30">
+                  <div className="flex items-center justify-center h-full text-gray-500/30">
                     <div className="text-center">
                       <Code2 className="h-16 w-16 mx-auto mb-4" />
-                      <p className="text-lg font-medium">No file open</p>
+                      <p className="text-lg font-semibold tracking-tight">No file open</p>
                       <p className="text-sm mt-1">
                         Select a file from the explorer to start editing
                       </p>
@@ -803,7 +803,7 @@ export default function IDEPage() {
       />
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between h-6 px-3 bg-primary text-primary-foreground text-xs border-t border-primary/20">
+      <div className="flex items-center justify-between h-6 px-3 bg-black text-primary-foreground text-xs border-t border-gray-200">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowExplorer(!showExplorer)}
@@ -842,7 +842,7 @@ export default function IDEPage() {
           <span>
             {isRunning ? (
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="h-2 w-2 rounded-sm bg-green-400 animate-pulse" />
                 Running
               </span>
             ) : (

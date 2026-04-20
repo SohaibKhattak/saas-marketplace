@@ -52,7 +52,7 @@ export const extensions: Extension[] = [
     rating: 4.6,
     category: "linters",
     icon: "🔍",
-    color: "bg-purple-500",
+    color: "bg-white0",
   },
   {
     id: "tailwind-intellisense",
@@ -126,7 +126,7 @@ export const extensions: Extension[] = [
     rating: 4.5,
     category: "snippets",
     icon: "⚛️",
-    color: "bg-blue-500",
+    color: "bg-white0",
   },
   {
     id: "auto-rename-tag",
@@ -150,7 +150,7 @@ export const extensions: Extension[] = [
     rating: 4.7,
     category: "themes",
     icon: "🌙",
-    color: "bg-slate-600",
+    color: "bg-black",
   },
   {
     id: "dracula-theme",
@@ -174,7 +174,7 @@ export const extensions: Extension[] = [
     rating: 4.5,
     category: "languages",
     icon: "💎",
-    color: "bg-indigo-500",
+    color: "bg-white0",
   },
   {
     id: "docker",
@@ -186,7 +186,7 @@ export const extensions: Extension[] = [
     rating: 4.6,
     category: "tools",
     icon: "🐳",
-    color: "bg-blue-600",
+    color: "bg-black",
   },
   {
     id: "path-intellisense",

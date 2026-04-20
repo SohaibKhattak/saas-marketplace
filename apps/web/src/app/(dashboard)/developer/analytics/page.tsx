@@ -53,11 +53,11 @@ export default function AnalyticsPage() {
   }, [accessToken]);
 
   if (loading) {
-    return <div className="py-12 text-center text-muted-foreground">Loading analytics...</div>;
+    return <div className="py-12 text-center text-gray-500">Loading analytics...</div>;
   }
 
   if (error) {
-    return <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>;
+    return <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>;
   }
 
   const kpiCards = analytics ? [
@@ -72,7 +72,7 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground mt-1">Track your product performance and subscriber metrics</p>
+        <p className="text-gray-500 mt-1">Track your product performance and subscriber metrics</p>
       </div>
 
       {/* KPI Cards */}
@@ -80,8 +80,8 @@ export default function AnalyticsPage() {
         {kpiCards.map((kpi) => (
           <Card key={kpi.label}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.label}</CardTitle>
-              <kpi.icon className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-semibold tracking-tight text-gray-500">{kpi.label}</CardTitle>
+              <kpi.icon className="h-4 w-4 text-gray-500" />
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{kpi.value}</p>
@@ -98,7 +98,7 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent>
           {revenueData.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No revenue data yet</p>
+            <p className="py-8 text-center text-gray-500">No revenue data yet</p>
           ) : (
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">

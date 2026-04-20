@@ -206,11 +206,11 @@ export default function ProductDetailPage() {
   }
 
   if (loading) {
-    return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+    return <div className="py-12 text-center text-gray-500">Loading...</div>;
   }
 
   if (!product) {
-    return <div className="py-12 text-center text-muted-foreground">Product not found</div>;
+    return <div className="py-12 text-center text-gray-500">Product not found</div>;
   }
 
   const canEdit = product.status === "DRAFT" || product.status === "REJECTED";
@@ -238,7 +238,7 @@ export default function ProductDetailPage() {
             <Badge variant={statusVariant[product.status] ?? "secondary"}>
               {product.status.replace("_", " ")}
             </Badge>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-gray-500">
               {product._count.subscriptions} subscribers
             </span>
           </div>
@@ -263,17 +263,17 @@ export default function ProductDetailPage() {
       </div>
 
       {product.rejectionReason && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm font-medium text-destructive">Rejection Reason</p>
+        <div className="rounded-sm border border-destructive/50 bg-destructive/10 p-4">
+          <p className="text-sm font-semibold tracking-tight text-destructive">Rejection Reason</p>
           <p className="mt-1 text-sm text-destructive/80">{product.rejectionReason}</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
       {success && (
-        <div className="rounded-md border border-green-500/50 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+        <div className="rounded-sm border border-green-500/50 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
           {success}
         </div>
       )}
@@ -311,19 +311,19 @@ export default function ProductDetailPage() {
             <div className="space-y-2">
               <Label>Linked WordPress Site</Label>
               {product.site ? (
-                <div className="flex items-center gap-2 rounded-lg border p-3">
-                  <Globe className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2 rounded-sm border p-3">
+                  <Globe className="h-4 w-4 text-gray-500" />
                   <a
                     href={product.site.siteUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-medium text-primary hover:underline"
+                    className="text-sm font-semibold tracking-tight text-neutral-900 hover:underline"
                   >
                     {product.site.siteUrl}
                   </a>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No WordPress site linked</p>
+                <p className="text-sm text-gray-500">No WordPress site linked</p>
               )}
             </div>
           </CardContent>
@@ -357,7 +357,7 @@ export default function ProductDetailPage() {
         </CardHeader>
         <CardContent>
           {product.pricingPlans.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-8 text-center text-gray-500">
               No pricing plans yet. Add one to get started.
             </div>
           ) : (
@@ -376,7 +376,7 @@ export default function ProductDetailPage() {
                 {product.pricingPlans.map((plan) => (
                   <TableRow key={plan.id}>
                     <TableCell>
-                      <span className="font-medium">{plan.name}</span>
+                      <span className="font-semibold tracking-tight">{plan.name}</span>
                       {!plan.isActive && (
                         <Badge variant="secondary" className="ml-2">Inactive</Badge>
                       )}
@@ -385,7 +385,7 @@ export default function ProductDetailPage() {
                     <TableCell>{plan.priceYearly ? `$${plan.priceYearly}/yr` : "—"}</TableCell>
                     <TableCell>{plan.trialDays > 0 ? `${plan.trialDays} days` : "—"}</TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-sm text-gray-500">
                         {(plan.features as string[]).length} features
                       </span>
                     </TableCell>

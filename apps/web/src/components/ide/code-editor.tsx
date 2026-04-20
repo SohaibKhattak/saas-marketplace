@@ -41,7 +41,7 @@ export function CodeEditor({ value, language, onChange, path }: CodeEditorProps)
         onMount={handleMount}
         path={path}
         loading={
-          <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
+          <div className="flex items-center justify-center h-full gap-2 text-gray-500">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Loading editor...</span>
           </div>

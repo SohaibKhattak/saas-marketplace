@@ -53,12 +53,12 @@ function Toggle({ enabled, onChange }: ToggleProps) {
     <button
       type="button"
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        enabled ? "bg-primary" : "bg-muted-foreground/30"
+      className={`relative inline-flex h-6 w-11 items-center rounded-sm transition-colors ${
+        enabled ? "bg-black" : "bg-muted-foreground/30"
       }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        className={`inline-block h-4 w-4 transform rounded-sm bg-white transition-transform ${
           enabled ? "translate-x-6" : "translate-x-1"
         }`}
       />
@@ -99,24 +99,24 @@ export default function DeveloperSettingsPage() {
   return (
     <div className="space-y-6 pb-24">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-sm text-gray-500">
         <Link href="/developer/products" className="hover:text-foreground transition-colors">
           Dashboard
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground font-medium">Settings</span>
+        <span className="text-foreground font-semibold tracking-tight">Settings</span>
       </div>
 
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-gray-500 mt-1">
           Manage your notification preferences, appearance, and account settings.
         </p>
       </div>
 
       {saved && (
-        <div className="flex items-center gap-2 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400 animate-fade-in">
+        <div className="flex items-center gap-2 rounded-sm bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400 animate-fade-in">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Settings saved successfully
         </div>
@@ -126,7 +126,7 @@ export default function DeveloperSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
+            <Bell className="h-5 w-5 text-neutral-900" />
             Notifications
           </CardTitle>
           <CardDescription>
@@ -136,12 +136,12 @@ export default function DeveloperSettingsPage() {
         <CardContent className="space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-                <Mail className="h-4 w-4 text-blue-500" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-white0/10">
+                <Mail className="h-4 w-4 text-neutral-900" />
               </div>
               <div>
-                <p className="text-sm font-medium">Email Notifications</p>
-                <p className="text-xs text-muted-foreground">Receive important updates via email</p>
+                <p className="text-sm font-semibold tracking-tight">Email Notifications</p>
+                <p className="text-xs text-gray-500">Receive important updates via email</p>
               </div>
             </div>
             <Toggle enabled={emailNotifs} onChange={setEmailNotifs} />
@@ -151,12 +151,12 @@ export default function DeveloperSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-green-500/10">
                 <DollarSign className="h-4 w-4 text-green-500" />
               </div>
               <div>
-                <p className="text-sm font-medium">Revenue Alerts</p>
-                <p className="text-xs text-muted-foreground">Get notified about new sales and payouts</p>
+                <p className="text-sm font-semibold tracking-tight">Revenue Alerts</p>
+                <p className="text-xs text-gray-500">Get notified about new sales and payouts</p>
               </div>
             </div>
             <Toggle enabled={revenueAlerts} onChange={setRevenueAlerts} />
@@ -166,12 +166,12 @@ export default function DeveloperSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-orange-500/10">
                 <Package className="h-4 w-4 text-orange-500" />
               </div>
               <div>
-                <p className="text-sm font-medium">New Subscriber Alerts</p>
-                <p className="text-xs text-muted-foreground">Get notified when someone subscribes to your products</p>
+                <p className="text-sm font-semibold tracking-tight">New Subscriber Alerts</p>
+                <p className="text-xs text-gray-500">Get notified when someone subscribes to your products</p>
               </div>
             </div>
             <Toggle enabled={subscriberAlerts} onChange={setSubscriberAlerts} />
@@ -181,12 +181,12 @@ export default function DeveloperSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
-                <Package className="h-4 w-4 text-purple-500" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-white0/10">
+                <Package className="h-4 w-4 text-neutral-900" />
               </div>
               <div>
-                <p className="text-sm font-medium">Product Review Updates</p>
-                <p className="text-xs text-muted-foreground">Get notified when your products are approved or need changes</p>
+                <p className="text-sm font-semibold tracking-tight">Product Review Updates</p>
+                <p className="text-xs text-gray-500">Get notified when your products are approved or need changes</p>
               </div>
             </div>
             <Toggle enabled={productUpdates} onChange={setProductUpdates} />
@@ -196,12 +196,12 @@ export default function DeveloperSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-pink-500/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-pink-500/10">
                 <Megaphone className="h-4 w-4 text-pink-500" />
               </div>
               <div>
-                <p className="text-sm font-medium">Marketing Emails</p>
-                <p className="text-xs text-muted-foreground">Tips, new features, and promotional offers</p>
+                <p className="text-sm font-semibold tracking-tight">Marketing Emails</p>
+                <p className="text-xs text-gray-500">Tips, new features, and promotional offers</p>
               </div>
             </div>
             <Toggle enabled={marketingEmails} onChange={setMarketingEmails} />
@@ -213,7 +213,7 @@ export default function DeveloperSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5 text-primary" />
+            <Palette className="h-5 w-5 text-neutral-900" />
             Appearance
           </CardTitle>
           <CardDescription>
@@ -227,40 +227,40 @@ export default function DeveloperSettingsPage() {
               <button
                 type="button"
                 onClick={() => setTheme("light")}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-sm border-2 p-4 transition-all ${
                   theme === "light"
-                    ? "border-primary bg-primary/5 shadow-sm"
+                    ? "border-primary bg-gray-100 shadow-sm"
                     : "border-border hover:border-muted-foreground/30"
                 }`}
               >
-                <Sun className={`h-6 w-6 ${theme === "light" ? "text-primary" : "text-muted-foreground"}`} />
-                <span className="text-sm font-medium">Light</span>
+                <Sun className={`h-6 w-6 ${theme === "light" ? "text-neutral-900" : "text-gray-500"}`} />
+                <span className="text-sm font-semibold tracking-tight">Light</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setTheme("dark")}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-sm border-2 p-4 transition-all ${
                   theme === "dark"
-                    ? "border-primary bg-primary/5 shadow-sm"
+                    ? "border-primary bg-gray-100 shadow-sm"
                     : "border-border hover:border-muted-foreground/30"
                 }`}
               >
-                <Moon className={`h-6 w-6 ${theme === "dark" ? "text-primary" : "text-muted-foreground"}`} />
-                <span className="text-sm font-medium">Dark</span>
+                <Moon className={`h-6 w-6 ${theme === "dark" ? "text-neutral-900" : "text-gray-500"}`} />
+                <span className="text-sm font-semibold tracking-tight">Dark</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setTheme("system")}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-sm border-2 p-4 transition-all ${
                   theme === "system"
-                    ? "border-primary bg-primary/5 shadow-sm"
+                    ? "border-primary bg-gray-100 shadow-sm"
                     : "border-border hover:border-muted-foreground/30"
                 }`}
               >
-                <Monitor className={`h-6 w-6 ${theme === "system" ? "text-primary" : "text-muted-foreground"}`} />
-                <span className="text-sm font-medium">System</span>
+                <Monitor className={`h-6 w-6 ${theme === "system" ? "text-neutral-900" : "text-gray-500"}`} />
+                <span className="text-sm font-semibold tracking-tight">System</span>
               </button>
             </div>
           </div>
@@ -269,12 +269,12 @@ export default function DeveloperSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-                <Globe className="h-4 w-4 text-blue-500" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-sm bg-white0/10">
+                <Globe className="h-4 w-4 text-neutral-900" />
               </div>
               <div>
-                <p className="text-sm font-medium">Language</p>
-                <p className="text-xs text-muted-foreground">Choose your preferred language</p>
+                <p className="text-sm font-semibold tracking-tight">Language</p>
+                <p className="text-xs text-gray-500">Choose your preferred language</p>
               </div>
             </div>
             <Badge variant="secondary">{language}</Badge>
@@ -286,7 +286,7 @@ export default function DeveloperSettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
+            <Shield className="h-5 w-5 text-neutral-900" />
             Privacy & Data
           </CardTitle>
           <CardDescription>
@@ -296,8 +296,8 @@ export default function DeveloperSettingsPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Export Your Data</p>
-              <p className="text-xs text-muted-foreground">Download a copy of all your data (products, revenue, profile)</p>
+              <p className="text-sm font-semibold tracking-tight">Export Your Data</p>
+              <p className="text-xs text-gray-500">Download a copy of all your data (products, revenue, profile)</p>
             </div>
             <Button variant="outline" size="sm">
               Export Data
@@ -308,8 +308,8 @@ export default function DeveloperSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-destructive">Delete Account</p>
-              <p className="text-xs text-muted-foreground">Permanently delete your account and all associated data</p>
+              <p className="text-sm font-semibold tracking-tight text-destructive">Delete Account</p>
+              <p className="text-xs text-gray-500">Permanently delete your account and all associated data</p>
             </div>
             <Button
               variant="destructive"
@@ -350,9 +350,9 @@ export default function DeveloperSettingsPage() {
               WordPress sites, and revenue history will be permanently deleted.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg bg-destructive/10 p-4 text-sm">
-            <p className="font-medium text-destructive mb-1">This will permanently delete:</p>
-            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+          <div className="rounded-sm bg-destructive/10 p-4 text-sm">
+            <p className="font-semibold tracking-tight text-destructive mb-1">This will permanently delete:</p>
+            <ul className="list-disc list-inside text-gray-500 space-y-1">
               <li>Your profile and personal information</li>
               <li>All your products and pricing plans</li>
               <li>WordPress sites and their content</li>

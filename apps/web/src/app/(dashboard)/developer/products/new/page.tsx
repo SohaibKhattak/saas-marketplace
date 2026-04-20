@@ -97,7 +97,7 @@ export default function NewProductPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold tracking-tight">Create New Product</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Set up your SaaS product listing for the marketplace
       </p>
 
@@ -111,7 +111,7 @@ export default function NewProductPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -138,7 +138,7 @@ export default function NewProductPage() {
                 onChange={(e) => setShortDescription(e.target.value)}
                 maxLength={300}
               />
-              <p className="text-xs text-muted-foreground">{shortDescription.length}/300 characters</p>
+              <p className="text-xs text-gray-500">{shortDescription.length}/300 characters</p>
             </div>
 
             <div className="space-y-2">
@@ -153,7 +153,7 @@ export default function NewProductPage() {
                 maxLength={10000}
                 rows={6}
               />
-              <p className="text-xs text-muted-foreground">{description.length}/10000 characters</p>
+              <p className="text-xs text-gray-500">{description.length}/10000 characters</p>
             </div>
 
             <div className="space-y-2">
@@ -180,7 +180,7 @@ export default function NewProductPage() {
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
               />
-              <p className="text-xs text-muted-foreground">Up to 10 tags, comma separated</p>
+              <p className="text-xs text-gray-500">Up to 10 tags, comma separated</p>
             </div>
 
             {sitesLoaded && sites.length > 0 && (
@@ -198,16 +198,16 @@ export default function NewProductPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-gray-500">
                   Subscribers will get access to this WordPress site
                 </p>
               </div>
             )}
 
             {sitesLoaded && sites.length === 0 && (
-              <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4">
-                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">No WordPress sites found</p>
-                <p className="text-sm text-muted-foreground mt-1">
+              <div className="rounded-sm border border-amber-500/50 bg-amber-500/10 p-4">
+                <p className="text-sm font-semibold tracking-tight text-amber-700 dark:text-amber-400">No WordPress sites found</p>
+                <p className="text-sm text-gray-500 mt-1">
                   Create a WordPress site first, then link it to your product.
                 </p>
                 <Button

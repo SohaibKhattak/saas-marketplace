@@ -8,8 +8,10 @@ interface User {
   id: string;
   email: string;
   fullName: string;
-  role: "CUSTOMER" | "DEVELOPER" | "ADMIN";
+  role: "CUSTOMER" | "DEVELOPER" | "ADMIN" | null;
   avatarUrl: string | null;
+  profileComplete?: boolean;
+  authProvider?: "PASSWORD" | "GOOGLE";
 }
 
 interface AuthState {
@@ -23,6 +25,7 @@ interface AuthState {
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   fetchUser: () => Promise<void>;
+  updateUser: (data: Partial<User>) => void;
   clearError: () => void;
 }
 
@@ -83,6 +86,7 @@ export const useAuthStore = create<AuthState>()(
           const res = await api.post<{ data: { accessToken: string } }>("/auth/refresh");
           set({ accessToken: res.data.accessToken });
         } catch {
+          // If refresh fails or is unsupported (501), clear the session so they must log in again
           set({ user: null, accessToken: null });
         }
       },
@@ -99,12 +103,20 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      updateUser: (data) => {
+        const { user } = get();
+        if (user) {
+          set({ user: { ...user, ...data } });
+        }
+      },
+
       clearError: () => set({ error: null }),
     }),
     {
       name: "auth-store",
       partialize: (state) => ({
         user: state.user,
+        accessToken: state.accessToken,
       }),
     }
   )

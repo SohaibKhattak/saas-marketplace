@@ -115,11 +115,11 @@ export default function ModerationPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Product Moderation</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Review and approve pending product submissions ({total} pending)
       </p>
 
-      {error && !reviewingProduct && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && !reviewingProduct && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>
@@ -130,9 +130,9 @@ export default function ModerationPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : products.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No pending products
             </div>
           ) : (
@@ -153,8 +153,8 @@ export default function ModerationPage() {
                     <TableRow key={product.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
+                          <p className="font-semibold tracking-tight">{product.name}</p>
+                          <p className="text-xs text-gray-500 line-clamp-1">
                             {product.shortDescription ?? product.description.slice(0, 80)}
                           </p>
                         </div>
@@ -162,7 +162,7 @@ export default function ModerationPage() {
                       <TableCell>
                         <div>
                           <p className="text-sm">{product.developer.user.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{product.developer.user.email}</p>
+                          <p className="text-xs text-gray-500">{product.developer.user.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -182,7 +182,7 @@ export default function ModerationPage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+                  <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
                     <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
@@ -216,21 +216,21 @@ export default function ModerationPage() {
           {reviewingProduct && (
             <div className="space-y-4">
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+                <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
               )}
 
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-sm border p-4">
                 <div>
-                  <span className="text-sm text-muted-foreground">Description</span>
+                  <span className="text-sm text-gray-500">Description</span>
                   <p className="mt-1 text-sm line-clamp-4">{reviewingProduct.description}</p>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Category</span>
+                  <span className="text-sm text-gray-500">Category</span>
                   <Badge variant="outline">{reviewingProduct.category}</Badge>
                 </div>
                 {reviewingProduct.tags.length > 0 && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Tags</span>
+                    <span className="text-sm text-gray-500">Tags</span>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {reviewingProduct.tags.map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
@@ -239,7 +239,7 @@ export default function ModerationPage() {
                   </div>
                 )}
                 <div>
-                  <span className="text-sm text-muted-foreground">Pricing Plans</span>
+                  <span className="text-sm text-gray-500">Pricing Plans</span>
                   <div className="mt-1 space-y-1">
                     {reviewingProduct.pricingPlans.map((plan, i) => (
                       <p key={i} className="text-sm">
@@ -249,18 +249,18 @@ export default function ModerationPage() {
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">WordPress Site</span>
+                  <span className="text-sm text-gray-500">WordPress Site</span>
                   {reviewingProduct.site ? (
                     <a
                       href={reviewingProduct.site.siteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-primary hover:underline"
+                      className="text-sm font-semibold tracking-tight text-neutral-900 hover:underline"
                     >
                       {reviewingProduct.site.siteUrl}
                     </a>
                   ) : (
-                    <span className="text-sm text-muted-foreground">Not linked</span>
+                    <span className="text-sm text-gray-500">Not linked</span>
                   )}
                 </div>
               </div>

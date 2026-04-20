@@ -12,16 +12,16 @@ export class AppError extends Error {
 }
 
 export function errorHandler(
-  err: Error,
+  err: Error | any,
   _req: Request,
   res: Response,
   _next: NextFunction
 ) {
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
+  if (err instanceof AppError || err.statusCode) {
+    res.status(err.statusCode || 500).json({
       error: {
         message: err.message,
-        code: err.code,
+        code: err.code || "INTERNAL_ERROR",
       },
     });
     return;
@@ -30,8 +30,9 @@ export function errorHandler(
   console.error("Unhandled error:", err);
   res.status(500).json({
     error: {
-      message: "Internal server error",
+      message: "Internal server error: " + (err?.message || String(err)),
       code: "INTERNAL_ERROR",
+      stack: err?.stack,
     },
   });
 }

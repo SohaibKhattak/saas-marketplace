@@ -15,12 +15,12 @@ export default function TermsPage() {
       <main className="flex-1">
         <div className="container mx-auto px-4 py-16 max-w-3xl">
           <h1 className="text-4xl font-bold tracking-tight mb-2">Terms of Service</h1>
-          <p className="text-muted-foreground mb-12">Last updated: April 2, 2026</p>
+          <p className="text-gray-500 mb-12">Last updated: April 2, 2026</p>
 
           <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
             <section>
               <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 By accessing or using Saasifyy (&quot;the Platform&quot;), you agree to be bound by these
                 Terms of Service. If you do not agree to these terms, you may not use the Platform.
                 These terms apply to all users, including customers, developers, and administrators.
@@ -29,7 +29,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 Saasifyy is a multi-tenant SaaS marketplace that enables developers to publish
                 WordPress-powered software applications and customers to discover, subscribe to,
                 and access those applications. The Platform provides payment processing via Stripe,
@@ -39,10 +39,10 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">3. User Accounts</h2>
-              <p className="text-muted-foreground leading-relaxed mb-3">
+              <p className="text-gray-500 leading-relaxed mb-3">
                 To use certain features of the Platform, you must create an account. You agree to:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+              <ul className="list-disc pl-6 space-y-2 text-gray-500">
                 <li>Provide accurate and complete registration information</li>
                 <li>Maintain the security of your account credentials</li>
                 <li>Notify us immediately of any unauthorized access to your account</li>
@@ -52,10 +52,10 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">4. Developer Terms</h2>
-              <p className="text-muted-foreground leading-relaxed mb-3">
+              <p className="text-gray-500 leading-relaxed mb-3">
                 Developers who publish products on the Platform agree to:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+              <ul className="list-disc pl-6 space-y-2 text-gray-500">
                 <li>Submit accurate product information and pricing</li>
                 <li>Maintain and support their published products</li>
                 <li>Comply with all applicable laws and regulations</li>
@@ -66,7 +66,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">5. Subscription & Payments</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 All payments are processed securely through Stripe. Subscription charges are
                 recurring based on the selected billing cycle (monthly or yearly). You may cancel
                 your subscription at any time from your dashboard. Upon cancellation, you retain
@@ -77,10 +77,10 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">6. Acceptable Use</h2>
-              <p className="text-muted-foreground leading-relaxed mb-3">
+              <p className="text-gray-500 leading-relaxed mb-3">
                 You agree not to use the Platform to:
               </p>
-              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+              <ul className="list-disc pl-6 space-y-2 text-gray-500">
                 <li>Violate any applicable laws or regulations</li>
                 <li>Infringe on the intellectual property rights of others</li>
                 <li>Distribute malware, spam, or harmful content</li>
@@ -91,7 +91,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">7. Content & Intellectual Property</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 Developers retain ownership of their products and content. By publishing on
                 Saasifyy, developers grant the Platform a non-exclusive license to display,
                 distribute, and promote their products within the marketplace. The Saasifyy
@@ -101,7 +101,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">8. Termination</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 We reserve the right to suspend or terminate accounts that violate these terms,
                 engage in fraudulent activity, or harm the Platform community. Users may delete
                 their account at any time. Upon termination, active subscriptions will remain
@@ -111,7 +111,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">9. Limitation of Liability</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 The Platform is provided &quot;as is&quot; without warranties of any kind. Saasifyy is
                 not liable for any indirect, incidental, or consequential damages arising from
                 your use of the Platform or any products available through it. Our total liability
@@ -121,7 +121,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">10. Changes to Terms</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 We may update these terms from time to time. Significant changes will be
                 communicated via email or through a notice on the Platform. Continued use of
                 the Platform after changes constitutes acceptance of the updated terms.
@@ -130,10 +130,10 @@ export default function TermsPage() {
 
             <section>
               <h2 className="text-2xl font-semibold mb-4">11. Contact</h2>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-gray-500 leading-relaxed">
                 If you have questions about these Terms of Service, please contact us
                 at{" "}
-                <Link href="/contact" className="text-primary hover:underline">
+                <Link href="/contact" className="text-neutral-900 hover:underline">
                   our contact page
                 </Link>{" "}
                 or email us at support@saasifyy.tech.

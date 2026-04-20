@@ -68,7 +68,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Financial Reports</h1>
-        <p className="text-muted-foreground mt-1">Generate and export financial reports</p>
+        <p className="text-gray-500 mt-1">Generate and export financial reports</p>
       </div>
 
       <Card className="max-w-lg">
@@ -81,7 +81,7 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+              <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
             )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -132,22 +132,22 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-lg border p-4 text-center">
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
+              <div className="rounded-sm border p-4 text-center">
+                <p className="text-sm text-gray-500">Total Revenue</p>
                 <p className="text-2xl font-bold">${report.totals.amount.toFixed(2)}</p>
               </div>
-              <div className="rounded-lg border p-4 text-center">
-                <p className="text-sm text-muted-foreground">Platform Fees</p>
+              <div className="rounded-sm border p-4 text-center">
+                <p className="text-sm text-gray-500">Platform Fees</p>
                 <p className="text-2xl font-bold">${report.totals.platformFee.toFixed(2)}</p>
               </div>
-              <div className="rounded-lg border p-4 text-center">
-                <p className="text-sm text-muted-foreground">Developer Payouts</p>
+              <div className="rounded-sm border p-4 text-center">
+                <p className="text-sm text-gray-500">Developer Payouts</p>
                 <p className="text-2xl font-bold">${report.totals.developerAmount.toFixed(2)}</p>
               </div>
             </div>
 
             {report.count > 0 && (
-              <div className="mt-4 max-h-64 overflow-auto rounded-lg border bg-muted/50 p-4">
+              <div className="mt-4 max-h-64 overflow-auto rounded-sm border bg-muted/50 p-4">
                 <pre className="text-xs whitespace-pre">{report.csv}</pre>
               </div>
             )}
