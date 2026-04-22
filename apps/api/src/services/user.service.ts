@@ -1,3 +1,4 @@
+import { supabase } from '../config/supabase.js';
 import { pool } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
 

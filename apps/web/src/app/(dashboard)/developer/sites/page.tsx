@@ -40,10 +40,10 @@ import {
 interface Site {
   id: string;
   subdomain: string;
-  siteUrl: string;
-  wpSiteId: number | null;
+  site_url: string;
+  wp_site_id: number | null;
   status: string;
-  createdAt: string;
+  created_at: string;
 }
 
 const WP_DOMAIN = "saasifyy.tech";
@@ -84,7 +84,17 @@ export default function SitesPage() {
 
   useEffect(() => {
     fetchSites();
-  }, [fetchSites]);
+    
+    // Polling: refresh every 5 seconds if there are sites in PROVISIONING status
+    const interval = setInterval(() => {
+      const hasProvisioning = sites.some(s => s.status === "PROVISIONING");
+      if (hasProvisioning) {
+        fetchSites();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchSites, sites]);
 
   async function handleDelete(siteId: string) {
     if (!confirm("Are you sure you want to delete this site? This cannot be undone.")) return;
@@ -293,8 +303,8 @@ export default function SitesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sites.map((site) => {
             const config = statusConfig[site.status] ?? { variant: "secondary" as const, label: site.status };
-            const siteUrl = `https://${site.subdomain}.${WP_DOMAIN}`;
-            const adminUrl = `https://${site.subdomain}.${WP_DOMAIN}/wp-admin`;
+            const siteUrl = site.site_url;
+            const adminUrl = `${site.site_url}/wp-admin`;
 
             return (
               <Card key={site.id} className="hover:border-primary/30 transition-colors">
@@ -316,12 +326,12 @@ export default function SitesPage() {
                   <div className="text-xs text-gray-500 space-y-1">
                     <div className="flex justify-between">
                       <span>Created</span>
-                      <span>{new Date(site.createdAt).toLocaleDateString()}</span>
+                      <span>{new Date(site.created_at).toLocaleDateString()}</span>
                     </div>
-                    {site.wpSiteId && (
+                    {site.wp_site_id && (
                       <div className="flex justify-between">
                         <span>WP Site ID</span>
-                        <span>#{site.wpSiteId}</span>
+                        <span>#{site.wp_site_id}</span>
                       </div>
                     )}
                   </div>

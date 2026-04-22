@@ -42,9 +42,9 @@ export async function getDeveloperPayoutSummary() {
     },
   });
 
-  return developers.map((dev) => {
-    const totalEarned = dev.transactions.reduce((sum, tx) => sum + tx.developerAmount, 0);
-    const totalPaid = dev.payouts.reduce((sum, p) => sum + p.amount, 0);
+  return developers.map((dev: any) => {
+    const totalEarned = dev.transactions.reduce((sum: any, tx: any) => sum + tx.developerAmount, 0);
+    const totalPaid = dev.payouts.reduce((sum: any, p: any) => sum + p.amount, 0);
     const balance = totalEarned - totalPaid;
 
     return {
@@ -55,7 +55,7 @@ export async function getDeveloperPayoutSummary() {
       totalPaid,
       balance,
     };
-  }).filter((d) => d.totalEarned > 0);
+  }).filter((d: any) => d.totalEarned > 0);
 }
 
 export async function createPayout(
@@ -74,7 +74,7 @@ export async function createPayout(
     throw new AppError(404, "Developer not found", "DEVELOPER_NOT_FOUND");
   }
 
-  const payout = await prisma.$transaction(async (tx) => {
+  const payout = await prisma.$transaction(async (tx: any) => {
     const newPayout = await tx.payout.create({
       data: {
         developerId,
@@ -117,7 +117,7 @@ export async function updatePayoutStatus(
     throw new AppError(404, "Payout not found", "PAYOUT_NOT_FOUND");
   }
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx: any) => {
     const updated = await tx.payout.update({
       where: { id: payoutId },
       data: {
@@ -163,7 +163,7 @@ export async function generateFinancialReport(startDate: Date, endDate: Date) {
 
   // Generate CSV
   const header = "Date,Customer,Customer Email,Developer,Product,Plan,Amount,Platform Fee,Developer Amount,Type,Status";
-  const rows = transactions.map((tx) => {
+  const rows = transactions.map((tx: any) => {
     return [
       tx.createdAt.toISOString().split("T")[0],
       `"${tx.customer.fullName}"`,
@@ -180,7 +180,7 @@ export async function generateFinancialReport(startDate: Date, endDate: Date) {
   });
 
   const totals = transactions.reduce(
-    (acc, tx) => ({
+    (acc: any, tx: any) => ({
       amount: acc.amount + tx.amount,
       platformFee: acc.platformFee + tx.platformFee,
       developerAmount: acc.developerAmount + tx.developerAmount,

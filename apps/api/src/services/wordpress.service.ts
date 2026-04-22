@@ -4,6 +4,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { env } from "../config/env.js";
 import jwt from "jsonwebtoken";
+import { supabase } from "../config/supabase.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -11,11 +12,21 @@ const WP_DOMAIN = new URL(env.WP_SITE_URL).hostname;
 const WP_CLI_PATH = env.WP_CLI_PATH;
 const WP_PATH = "/var/www/wordpress";
 
-/**
- * Execute a WP-CLI command on the WordPress Multisite installation.
- * Uses execFile (no shell) to prevent command injection.
- */
 async function wpCli(args: string[]): Promise<string> {
+  // Mock mode for local development on Windows
+  if (process.platform === "win32") {
+    console.log("MOCK WP-CLI (Windows detected):", args.join(" "));
+
+    // Simulate specific WP-CLI responses to keep the logic flowing
+    if (args.includes("create") && args.includes("site")) {
+      return "Success: Site 99 created."; // Simulation of a blog ID
+    }
+    if (args.includes("get") && args.includes("user")) {
+      return "mock_admin";
+    }
+    return "Success: Mocked WP-CLI operation";
+  }
+
   try {
     const { stdout } = await execFileAsync(
       "sudo",
@@ -50,41 +61,74 @@ export async function provisionSite(
   }
 
   // Check developer exists and is approved
-  const profile = await prisma.developerProfile.findUnique({
-    where: { id: developerId },
-    include: { user: true },
-  });
+
+  console.log("Checking developer profile for ID:", developerId);
+  const { data: profile, error } = await supabase
+    .from("developer_profiles")
+    .select(`
+      *,
+      user:user_id (
+        id,
+        full_name
+      )
+    `)
+    .eq("id", developerId)
+    .maybeSingle();
+  console.log("Developer profile query result:", { profile, error });
+  // const profile = await prisma.developerProfile.findUnique({
+  //   where: { id: developerId },
+  //   include: { user: true },
+  // });
 
   if (!profile) {
     throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
   }
 
-  if (profile.applicationStatus !== "APPROVED") {
+
+  if (profile.application_status !== 'APPROVED') {
     throw new AppError(403, "Developer application must be approved first", "NOT_APPROVED");
   }
 
+  // const user = profile.user?.[0];
+  // if (!user) {
+  //   throw new AppError(404, "Developer user not found", "USER_NOT_FOUND");
+  // }
+
   // Check subdomain uniqueness in our database
-  const existing = await prisma.developerSite.findUnique({
-    where: { subdomain },
-  });
+  const { data: existing, error: existingError } = await supabase.from("developer_sites")
+    .select("id")
+    .eq("subdomain", subdomain)
+    .maybeSingle();
+  console.log("Subdomain uniqueness check result:", { existing, existingError });
+  // const existing = await prisma.developerSite.findUnique({
+  //   where: { subdomain },
+  // });
 
   if (existing) {
     throw new AppError(409, "Subdomain is already taken", "SUBDOMAIN_TAKEN");
   }
 
   // Create site record in PROVISIONING status
-  const site = await prisma.developerSite.create({
-    data: {
-      developerId,
-      subdomain,
-      siteUrl: `https://${subdomain}.${WP_DOMAIN}`,
-      status: "PROVISIONING",
-    },
-  });
+  const { data: site, error: siteError } = await supabase.from("developer_sites")
+    .insert({ developer_id: developerId, subdomain, site_url: `https://${subdomain}.${WP_DOMAIN}`, status: "PROVISIONING" })
+    .select("id")
+    .single();
+
+  if (siteError || !site) {
+    throw new AppError(500, siteError?.message || "Failed to create site record", "DB_ERROR");
+  }
+  // const site = await prisma.developerSite.create({
+  //   data: {
+  //     developerId,
+  //     subdomain,
+  //     siteUrl: `https://${subdomain}.${WP_DOMAIN}`,
+  //     status: "PROVISIONING",
+  //   },
+  // });
 
   try {
-    const title = profile.businessName || profile.user.fullName + "'s Site";
-    const email = profile.user.email;
+    const title = profile.business_name + "'s Site";
+    const email = profile.business_email;
     let username = subdomain.replace(/-/g, "") + "admin";
     const password = "Dev@" + Math.random().toString(36).slice(2, 10) + "!";
 
@@ -100,12 +144,14 @@ export async function provisionSite(
     // Step 2: wp site create auto-creates a user with that email if it doesn't exist.
     // Either way, set a known password so the developer can log in.
     try {
-      await wpCli(["user", "update", email, `--user_pass=${password}`, `--display_name=${profile.user.fullName}`]);
+      const displayName = (profile.user as any)?.full_name || subdomain + " Admin";
+      await wpCli(["user", "update", email, `--user_pass=${password}`, `--display_name=${displayName}`]);
     } catch {
       // If update fails, try creating the user
       try {
+        const displayName = (profile.user as any)?.full_name || subdomain + " Admin";
         await wpCli([
-          "user", "create", username, email, `--user_pass=${password}`, `--display_name=${profile.user.fullName}`, "--role=administrator"
+          "user", "create", username, email, `--user_pass=${password}`, `--display_name=${displayName}`, "--role=administrator"
         ]);
       } catch {
         // User might already exist with different lookup — continue anyway
@@ -131,13 +177,21 @@ export async function provisionSite(
     username = actualUsername;
 
     // Update site record to ACTIVE
-    const activeSite = await prisma.developerSite.update({
-      where: { id: site.id },
-      data: {
-        status: "ACTIVE",
-        wpSiteId,
-      },
-    });
+    const { data: activeSite, error: activeError } = await supabase.from("developer_sites")
+      .update({ status: "ACTIVE", wp_site_id: wpSiteId })
+      .eq("id", site.id)
+      .select("*")
+      .single();
+    if (activeError || !activeSite) {
+      throw new AppError(500, activeError?.message || "Failed to update site record", "DB_ERROR");
+    }
+    // const activeSite = await prisma.developerSite.update({
+    //   where: { id: site.id },
+    //   data: {
+    //     status: "ACTIVE",
+    //     wpSiteId,
+    //   },
+    // });
 
     return {
       ...activeSite,
@@ -149,10 +203,18 @@ export async function provisionSite(
     };
   } catch (error) {
     // If WP-CLI fails, mark site as failed and re-throw
-    await prisma.developerSite.update({
-      where: { id: site.id },
-      data: { status: "SUSPENDED" },
-    });
+    // console.error("Provisioning failed, marking site as SUSPENDED:", error);    
+
+    const { error: suspendError } = await supabase.from("developer_sites")
+      .update({ status: "SUSPENDED" })
+      .eq("id", site.id);
+    if (suspendError) {
+      console.error("Failed to update site status to SUSPENDED:", suspendError);
+    }
+    // await prisma.developerSite.update({
+    //   where: { id: site.id },
+    //   data: { status: "SUSPENDED" },
+    // });
     throw error;
   }
 }

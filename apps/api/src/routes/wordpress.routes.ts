@@ -145,10 +145,15 @@ router.post("/launch-token", async (req: AuthRequest, res: Response, next: NextF
  */
 router.get("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const userId = req.user!.userId;
+    if(!userId) {
+      res.status(400).json({ error: { message: "User ID is required" } });
+      return;
+    }     
     const { data: profile, error } = await supabase
       .from("developer_profiles")
       .select("id")
-      .eq("user_id", req.user!.userId)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (error) {
@@ -159,7 +164,16 @@ router.get("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest,
       throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
     }
 
-    const sites = await wordpressService.getDeveloperSites(profile.id);
+    // const sites = await wordpressService.getDeveloperSites(profile.id);
+    const {data:sites, error: sitesError} = await supabase.from("developer_sites")
+      .select("*")
+      .eq("developer_id", profile.id)
+      .order("created_at", { ascending: false })
+
+    if (sitesError) {
+      throw new AppError(500, sitesError.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
     res.json({ data: sites });
   } catch (err) {
     next(err);

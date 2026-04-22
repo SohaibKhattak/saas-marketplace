@@ -110,7 +110,7 @@ export async function deleteProduct(productId: string, developerId: string) {
   const product = await getOwnedProduct(productId, developerId);
 
   // Delete associated data first, then the product
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await tx.review.deleteMany({ where: { productId } });
     await tx.transaction.deleteMany({ where: { subscription: { productId } } });
     await tx.subscription.deleteMany({ where: { productId } });
@@ -145,7 +145,7 @@ export async function adminDeleteProduct(productId: string) {
     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
   }
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await tx.review.deleteMany({ where: { productId } });
     await tx.transaction.deleteMany({ where: { subscription: { productId } } });
     await tx.subscription.deleteMany({ where: { productId } });
@@ -377,7 +377,7 @@ export async function reviewProduct(
     throw new AppError(400, "Product is not pending review", "NOT_PENDING");
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx: any) => {
     const updatedProduct = await tx.product.update({
       where: { id: productId },
       data: {
