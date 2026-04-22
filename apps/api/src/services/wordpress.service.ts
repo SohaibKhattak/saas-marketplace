@@ -17,6 +17,23 @@ const WP_PATH = "/var/www/wordpress";
  * Uses execFile (no shell) to prevent command injection.
  */
 async function wpCli(args: string[]): Promise<string> {
+  // Mock mode for local development on Windows
+  if (process.platform === "win32") {
+    console.log("MOCK WP-CLI (Windows detected):", args.join(" "));
+    
+    // Simulate specific WP-CLI responses to keep the logic flowing
+    if (args.includes("create") && args.includes("site")) {
+      return "Success: Site 99 created."; // Simulation of a blog ID
+    }
+    if (args.includes("get") && args.includes("user")) {
+      return "mock_admin";
+    }
+    if (args.includes("get") && args.includes("user_login")) {
+      return "mock_admin";
+    }
+    return "Success: Mocked WP-CLI operation";
+  }
+
   try {
     const { stdout } = await execFileAsync(
       "sudo",
@@ -53,8 +70,15 @@ export async function provisionSite(
   // Check developer exists and is approved
 
   console.log("Checking developer profile for ID:", developerId);
-  const { data: profile, error: error } = await supabase.from("developer_profiles")
-    .select("*")
+  const { data: profile, error } = await supabase
+    .from("developer_profiles")
+    .select(`
+      *,
+      user:user_id (
+        id,
+        full_name
+      )
+    `)
     .eq("id", developerId)
     .maybeSingle();
   console.log("Developer profile query result:", { profile, error });
@@ -127,12 +151,14 @@ export async function provisionSite(
     // Step 2: wp site create auto-creates a user with that email if it doesn't exist.
     // Either way, set a known password so the developer can log in.
     try {
-      await wpCli(["user", "update", email, `--user_pass=${password}`, `--display_name=${profile.user.fullName}`]);
+      const displayName = (profile.user as any)?.full_name || subdomain + " Admin";
+      await wpCli(["user", "update", email, `--user_pass=${password}`, `--display_name=${displayName}`]);
     } catch {
       // If update fails, try creating the user
       try {
+        const displayName = (profile.user as any)?.full_name || subdomain + " Admin";
         await wpCli([
-          "user", "create", username, email, `--user_pass=${password}`, `--display_name=${profile.user.fullName}`, "--role=administrator"
+          "user", "create", username, email, `--user_pass=${password}`, `--display_name=${displayName}`, "--role=administrator"
         ]);
       } catch {
         // User might already exist with different lookup — continue anyway
@@ -196,7 +222,7 @@ export async function provisionSite(
     //   where: { id: site.id },
     //   data: { status: "SUSPENDED" },
     // });
-    // throw error;
+    throw error;
   }
 }
 

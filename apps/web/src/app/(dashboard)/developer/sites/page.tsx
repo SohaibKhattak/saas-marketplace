@@ -1,0 +1,423 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { api, ApiError } from "@/lib/api-client";
+import { useAuthStore } from "@/stores/auth-store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Globe,
+  Plus,
+  ExternalLink,
+  Settings,
+  ChevronRight,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Rocket,
+  Trash2,
+} from "lucide-react";
+
+interface Site {
+  id: string;
+  subdomain: string;
+  site_url: string;
+  wp_site_id: number | null;
+  status: string;
+  created_at: string;
+}
+
+const WP_DOMAIN = "saasifyy.tech";
+
+const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
+  ACTIVE: { variant: "default", label: "Active" },
+  PROVISIONING: { variant: "secondary", label: "Provisioning..." },
+  SUSPENDED: { variant: "destructive", label: "Suspended" },
+  DELETED: { variant: "outline", label: "Deleted" },
+};
+
+export default function SitesPage() {
+  const { accessToken } = useAuthStore();
+  const [sites, setSites] = useState<Site[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [subdomain, setSubdomain] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [credentials, setCredentials] = useState<{
+    username: string;
+    password: string;
+    loginUrl: string;
+    subdomain: string;
+  } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const fetchSites = useCallback(async () => {
+    try {
+      const res = await api.get<{ data: Site[] }>("/wp/sites", { token: accessToken! });
+      setSites(res.data);
+    } catch {
+      setError("Failed to load sites");
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    fetchSites();
+    
+    // Polling: refresh every 5 seconds if there are sites in PROVISIONING status
+    const interval = setInterval(() => {
+      const hasProvisioning = sites.some(s => s.status === "PROVISIONING");
+      if (hasProvisioning) {
+        fetchSites();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchSites, sites]);
+
+  async function handleDelete(siteId: string) {
+    if (!confirm("Are you sure you want to delete this site? This cannot be undone.")) return;
+    setDeletingId(siteId);
+    try {
+      await api.delete(`/wp/sites/${siteId}`, { token: accessToken! });
+      fetchSites();
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to delete site");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  async function handleProvision(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setCreating(true);
+    try {
+      const res = await api.post<{ data: any }>("/wp/sites", { subdomain: subdomain.toLowerCase() }, { token: accessToken! });
+      const wpCreds = res.data?.wpCredentials;
+      if (wpCreds) {
+        setCredentials({
+          username: wpCreds.username,
+          password: wpCreds.password,
+          loginUrl: wpCreds.loginUrl,
+          subdomain: subdomain.toLowerCase(),
+        });
+      }
+      setSubdomain("");
+      setDialogOpen(false);
+      fetchSites();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to provision site");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-sm text-gray-500">
+        <Link href="/developer/products" className="hover:text-foreground transition-colors">
+          Dashboard
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="text-foreground font-semibold tracking-tight">WordPress Sites</span>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">WordPress Sites</h1>
+          <p className="text-gray-500 mt-1">
+            Create and manage your no-code WordPress sites
+          </p>
+        </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger
+            asChild
+          >
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Site
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleProvision}>
+              <DialogHeader>
+                <DialogTitle>Create WordPress Site</DialogTitle>
+                <DialogDescription>
+                  Launch a new WordPress site for your SaaS product. You&apos;ll get a fully hosted WordPress environment with your own subdomain.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                {error && (
+                  <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="subdomain">Site Name</Label>
+                  <div className="flex items-center">
+                    <Input
+                      id="subdomain"
+                      placeholder="my-saas-app"
+                      value={subdomain}
+                      onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                      required
+                      className="rounded-r-none"
+                    />
+                    <span className="inline-flex items-center px-3 h-9 rounded-r-md border border-l-0 border-input bg-muted text-sm text-gray-500">
+                      .{WP_DOMAIN}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Lowercase letters, numbers, and hyphens only (3-32 characters)
+                  </p>
+                  {subdomain && (
+                    <p className="text-xs text-neutral-900">
+                      Your site will be available at: <strong>https://{subdomain}.{WP_DOMAIN}</strong>
+                    </p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={creating || subdomain.length < 3}>
+                  {creating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Site...
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="mr-2 h-4 w-4" />
+                      Create Site
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Credentials Dialog — shown after site creation */}
+      <Dialog open={!!credentials} onOpenChange={(open) => !open && setCredentials(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <DialogTitle>Site Created Successfully!</DialogTitle>
+            </div>
+            <DialogDescription>
+              Your WordPress site is ready. Save these login credentials — you won&apos;t see the password again.
+            </DialogDescription>
+          </DialogHeader>
+          {credentials && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-sm bg-muted p-4 space-y-3">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Site URL</p>
+                  <p className="text-sm font-semibold tracking-tight">https://{credentials.subdomain}.{WP_DOMAIN}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">WordPress Admin</p>
+                  <p className="text-sm font-semibold tracking-tight">{credentials.loginUrl}</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="text-xs text-gray-500 mb-1">Username</p>
+                  <p className="text-sm font-mono font-semibold tracking-tight bg-background rounded px-2 py-1">{credentials.username}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Password</p>
+                  <p className="text-sm font-mono font-semibold tracking-tight bg-background rounded px-2 py-1">{credentials.password}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded-sm p-3">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>Save these credentials now. You can change your password later from WordPress admin.</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCredentials(null)}>
+              Close
+            </Button>
+            {credentials && (
+              <a href={credentials.loginUrl} target="_blank" rel="noopener noreferrer">
+                <Button>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open WP Admin
+                </Button>
+              </a>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {error && !dialogOpen && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+
+      {/* Sites Grid */}
+      {loading ? (
+        <div className="py-16 text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-500" />
+          <p className="mt-4 text-gray-500">Loading your sites...</p>
+        </div>
+      ) : sites.length === 0 ? (
+        <Card>
+          <CardContent className="py-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-gray-100 mx-auto mb-4">
+              <Globe className="h-8 w-8 text-neutral-900" />
+            </div>
+            <h3 className="text-lg font-semibold">No WordPress sites yet</h3>
+            <p className="text-gray-500 mt-1 max-w-md mx-auto">
+              Create your first WordPress site to start building your SaaS product with no code.
+              You&apos;ll get a fully hosted WordPress environment with themes, plugins, and WooCommerce.
+            </p>
+            <Button className="mt-6" onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Your First Site
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sites.map((site) => {
+            const config = statusConfig[site.status] ?? { variant: "secondary" as const, label: site.status };
+            const siteUrl = site.site_url;
+            const adminUrl = `${site.site_url}/wp-admin`;
+
+            return (
+              <Card key={site.id} className="hover:border-primary/30 transition-colors">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-500/10">
+                        <Globe className="h-5 w-5 text-green-500" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{site.subdomain}</CardTitle>
+                        <CardDescription className="text-xs">.{WP_DOMAIN}</CardDescription>
+                      </div>
+                    </div>
+                    <Badge variant={config.variant}>{config.label}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Created</span>
+                      <span>{new Date(site.created_at).toLocaleDateString()}</span>
+                    </div>
+                    {site.wp_site_id && (
+                      <div className="flex justify-between">
+                        <span>WP Site ID</span>
+                        <span>#{site.wp_site_id}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {site.status === "ACTIVE" && (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                            View Site
+                          </Button>
+                        </a>
+                        <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                          <Button size="sm" className="w-full">
+                            <Settings className="mr-1.5 h-3.5 w-3.5" />
+                            WP Admin
+                          </Button>
+                        </a>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(site.id)}
+                        disabled={deletingId === site.id}
+                      >
+                        {deletingId === site.id ? (
+                          <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting...</>
+                        ) : (
+                          <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete Site</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {site.status === "PROVISIONING" && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500 bg-muted/50 rounded-sm p-3">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Setting up your WordPress site...</span>
+                    </div>
+                  )}
+
+                  {site.status === "SUSPENDED" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-sm p-3">
+                        <AlertCircle className="h-4 w-4" />
+                        <span>Site creation failed. Please try again.</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(site.id)}
+                        disabled={deletingId === site.id}
+                      >
+                        {deletingId === site.id ? (
+                          <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting...</>
+                        ) : (
+                          <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Remove</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+
+          {/* Add New Site Card */}
+          <Card
+            className="border-dashed hover:border-primary/50 transition-colors cursor-pointer flex items-center justify-center min-h-[200px]"
+            onClick={() => setDialogOpen(true)}
+          >
+            <CardContent className="text-center py-8">
+              <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted mx-auto mb-3">
+                <Plus className="h-6 w-6 text-gray-500" />
+              </div>
+              <p className="text-sm font-semibold tracking-tight">Create New Site</p>
+              <p className="text-xs text-gray-500 mt-1">Add another WordPress site</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
