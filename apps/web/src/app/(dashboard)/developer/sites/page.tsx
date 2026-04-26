@@ -70,6 +70,8 @@ export default function SitesPage() {
     subdomain: string;
   } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [siteToDelete, setSiteToDelete] = useState<Site | null>(null);
 
   const fetchSites = useCallback(async () => {
     try {
@@ -96,16 +98,23 @@ export default function SitesPage() {
     return () => clearInterval(interval);
   }, [fetchSites, sites]);
 
-  async function handleDelete(siteId: string) {
-    if (!confirm("Are you sure you want to delete this site? This cannot be undone.")) return;
-    setDeletingId(siteId);
+  function confirmDelete(site: Site) {
+    setSiteToDelete(site);
+    setDeleteModalOpen(true);
+  }
+
+  async function handleDelete() {
+    if (!siteToDelete) return;
+    setDeletingId(siteToDelete.id);
+    setDeleteModalOpen(false);
     try {
-      await api.delete(`/wp/sites/${siteId}`, { token: accessToken! });
+      await api.delete(`/wp/sites/${siteToDelete.id}`, { token: accessToken! });
       fetchSites();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Failed to delete site");
     } finally {
       setDeletingId(null);
+      setSiteToDelete(null);
     }
   }
 
@@ -155,13 +164,13 @@ export default function SitesPage() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger
-            asChild
-          >
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Site
-            </Button>
-          </DialogTrigger>
+            render={
+              <Button className='cursor-pointer hover:bg-mauve-800' onClick={() => setDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4 hover:scale-125 transform duration-200" />
+                New Site
+              </Button>
+            }
+          />
           <DialogContent>
             <form onSubmit={handleProvision}>
               <DialogHeader>
@@ -342,13 +351,13 @@ export default function SitesPage() {
                     <div className="space-y-2">
                       <div className="flex gap-2">
                         <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full">
+                          <Button variant="outline" size="sm" className="w-full cursor-pointer">
                             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
                             View Site
                           </Button>
                         </a>
                         <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button size="sm" className="w-full">
+                          <Button size="sm" className="w-full cursor-pointer">
                             <Settings className="mr-1.5 h-3.5 w-3.5" />
                             WP Admin
                           </Button>
@@ -357,8 +366,8 @@ export default function SitesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(site.id)}
+                        className="w-full text-destructive hover:text-destructive cursor-pointer hover:bg-destructive/10"
+                        onClick={() => site && confirmDelete(site)}
                         disabled={deletingId === site.id}
                       >
                         {deletingId === site.id ? (
@@ -387,7 +396,7 @@ export default function SitesPage() {
                         variant="outline"
                         size="sm"
                         className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(site.id)}
+                        onClick={() => confirmDelete(site)}
                         disabled={deletingId === site.id}
                       >
                         {deletingId === site.id ? (
@@ -405,7 +414,7 @@ export default function SitesPage() {
 
           {/* Add New Site Card */}
           <Card
-            className="border-dashed hover:border-primary/50 transition-colors cursor-pointer flex items-center justify-center min-h-[200px]"
+            className="border-dashed hover:border-primary/50 transition-colors cursor-pointer flex items-center justify-center min-h-50"
             onClick={() => setDialogOpen(true)}
           >
             <CardContent className="text-center py-8">
@@ -418,6 +427,38 @@ export default function SitesPage() {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <DialogTitle>Delete Site?</DialogTitle>
+            </div>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{siteToDelete?.subdomain}.{WP_DOMAIN}</strong>?
+              This action cannot be undone and all site content will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingId !== null}
+            >
+              {deletingId ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Deleting...</>
+              ) : (
+                <><Trash2 className="mr-2 h-4 w-4" />Delete Site</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

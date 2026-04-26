@@ -154,10 +154,15 @@ function logDebug(message: string, meta?: unknown) {
   }
 }
 
-export async function apply(req: AuthRequest, res: Response<DeveloperApplyResponse>, next: NextFunction): Promise<void> {
+export async function apply(
+  req: AuthRequest,
+  res: Response<DeveloperApplyResponse>,
+  next: NextFunction,
+): Promise<void> {
   try {
     const userId = req.user!.userId;
-    const { businessName, businessEmail, bio } = req.body as DeveloperApplicationInput;
+    const { businessName, businessEmail, bio } =
+      req.body as DeveloperApplicationInput;
     // Look up the signed-in user so we can fall back to their email if needed.
     logDebug("Applying as developer", { userId, businessName, businessEmail });
     const { data: user, error: userError } = await supabase
@@ -168,7 +173,11 @@ export async function apply(req: AuthRequest, res: Response<DeveloperApplyRespon
 
     if (userError) {
       logDebug("Failed to fetch user for developer application", userError);
-      throw new AppError(500, userError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        userError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     if (!user) {
@@ -192,18 +201,33 @@ export async function apply(req: AuthRequest, res: Response<DeveloperApplyRespon
 
     if (existingError) {
       logDebug("Failed to check existing developer profile", existingError);
-      throw new AppError(500, existingError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        existingError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     if (existingProfile) {
-      const currentProfile = existingProfile as Pick<DeveloperProfileDatabaseRow, "id" | "application_status">;
+      const currentProfile = existingProfile as Pick<
+        DeveloperProfileDatabaseRow,
+        "id" | "application_status"
+      >;
 
       if (currentProfile.application_status === "PENDING") {
-        throw new AppError(409, "You already have a pending application", "APPLICATION_PENDING");
+        throw new AppError(
+          409,
+          "You already have a pending application",
+          "APPLICATION_PENDING",
+        );
       }
 
       if (currentProfile.application_status === "APPROVED") {
-        throw new AppError(409, "You are already a developer", "ALREADY_DEVELOPER");
+        throw new AppError(
+          409,
+          "You are already a developer",
+          "ALREADY_DEVELOPER",
+        );
       }
 
       // Reapply by updating the existing record instead of creating duplicates.
@@ -216,12 +240,19 @@ export async function apply(req: AuthRequest, res: Response<DeveloperApplyRespon
 
       if (updateError) {
         logDebug("Failed to update developer application", updateError);
-        throw new AppError(500, updateError.message || "Database operation failed", "SUPABASE_ERROR");
+        throw new AppError(
+          500,
+          updateError.message || "Database operation failed",
+          "SUPABASE_ERROR",
+        );
       }
 
       const typedProfile = updatedProfile as DeveloperProfileDatabaseRow;
 
-      logDebug("Developer reapplication updated", { userId, profileId: currentProfile.id });
+      logDebug("Developer reapplication updated", {
+        userId,
+        profileId: currentProfile.id,
+      });
       res.status(201).json({
         data: {
           id: typedProfile.id,
@@ -253,7 +284,11 @@ export async function apply(req: AuthRequest, res: Response<DeveloperApplyRespon
 
     if (createError) {
       logDebug("Failed to create developer application", createError);
-      throw new AppError(500, createError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        createError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     const typedProfile = createdProfile as DeveloperProfileDatabaseRow;
@@ -276,15 +311,22 @@ export async function apply(req: AuthRequest, res: Response<DeveloperApplyRespon
       },
     });
   } catch (err) {
-    logDebug("Error in apply", err instanceof Error ? err.stack ?? err.message : err);
+    logDebug(
+      "Error in apply",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
     next(err);
   }
 }
 
-export async function getProfile(req: AuthRequest, res: Response<DeveloperProfileResponse>, next: NextFunction): Promise<void> {
+export async function getProfile(
+  req: AuthRequest,
+  res: Response<DeveloperProfileResponse>,
+  next: NextFunction,
+): Promise<void> {
   try {
     const userId = req.user!.userId;
-    console.log('Getting developer profile for user ID:', userId);        
+    console.log("Getting developer profile for user ID:", userId);
     // Load the developer profile directly so the API handler owns the whole request flow.
     logDebug("Fetching developer profile", { userId });
 
@@ -296,81 +338,99 @@ export async function getProfile(req: AuthRequest, res: Response<DeveloperProfil
 
     if (profileError) {
       logDebug("Failed to fetch developer profile", profileError);
-      throw new AppError(500, profileError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        profileError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     if (!profile) {
-      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+      throw new AppError(
+        404,
+        "Developer profile not found",
+        "PROFILE_NOT_FOUND",
+      );
     }
-
-    const typedProfile = profile as DeveloperProfileDatabaseRow;
+    const developerId = profile.id;
 
     // Fetch product count and sites in parallel, then project them into the public API shape.
-    const [{ count: productCount, error: productCountError }, { data: sites, error: sitesError }] = await Promise.all([
-      supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("developer_id", typedProfile.id),
-      supabase
-        .from("developer_sites")
-        .select("*")
-        .eq("developer_id", typedProfile.id)
-        .order("created_at", { ascending: false }),
-    ]);
+    // 2. Fetch sites (safe)
+    // ---------------------------
+    const { data: sites, error: sitesError } = await supabase
+      .from("developer_sites")
+      .select("*")
+      .eq("developer_id", developerId);
+
+    if (sitesError) {
+      console.error("[getProfile] sites error:", sitesError);
+    }
+
+    // Always fallback to empty array
+    const safeSites = sites ?? [];
+
+    // 3. Fetch product count (FIXED)
+    // ---------------------------
+    const { count, error: productCountError } = await supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("developer_id", developerId);
 
     if (productCountError) {
-      logDebug("Failed to fetch developer product count", productCountError);
-      throw new AppError(500, productCountError.message || "Database operation failed", "SUPABASE_ERROR");
+      console.error("[getProfile] product count error:", productCountError);
     }
 
     if (sitesError) {
       logDebug("Failed to fetch developer sites", sitesError);
-      throw new AppError(500, sitesError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        sitesError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     res.json({
       data: {
-        id: typedProfile.id,
-        userId: typedProfile.user_id,
-        businessName: typedProfile.business_name,
-        businessEmail: typedProfile.business_email,
-        taxId: typedProfile.tax_id,
-        bio: typedProfile.bio,
-        applicationStatus: typedProfile.application_status,
-        rejectionReason: typedProfile.rejection_reason,
-        stripeAccountId: typedProfile.stripe_account_id,
-        approvedAt: typedProfile.approved_at,
-        createdAt: typedProfile.created_at,
-        updatedAt: typedProfile.updated_at,
-        productCount: productCount ?? 0,
-        sites: (sites ?? []).map((site) => {
-          const typedSite = site as DeveloperSiteDatabaseRow;
-
-          return {
-            id: typedSite.id,
-            developerId: typedSite.developer_id,
-            wpSiteId: typedSite.wp_site_id,
-            subdomain: typedSite.subdomain,
-            siteUrl: typedSite.site_url,
-            status: typedSite.status,
-            createdAt: typedSite.created_at,
-            updatedAt: typedSite.updated_at,
-          };
-        }),
+        id: profile.id,
+        userId: profile.user_id,
+        businessName: profile.business_name,
+        businessEmail: profile.business_email,
+        taxId: profile.tax_id,
+        bio: profile.bio,
+        applicationStatus: profile.application_status,
+        rejectionReason: profile.rejection_reason,
+        stripeAccountId: profile.stripe_account_id,
+        approvedAt: profile.approved_at,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at,
+        productCount: count ?? 0,
+        sites: safeSites,
       },
     });
   } catch (err) {
-    logDebug("Error in getProfile", err instanceof Error ? err.stack ?? err.message : err);
+    logDebug(
+      "Error in getProfile",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
     next(err);
   }
 }
 
-export async function updateProfile(req: AuthRequest, res: Response<DeveloperApplyResponse>, next: NextFunction): Promise<void> {
+export async function updateProfile(
+  req: AuthRequest,
+  res: Response<DeveloperApplyResponse>,
+  next: NextFunction,
+): Promise<void> {
   try {
     const userId = req.user!.userId;
-    const { businessName, businessEmail, bio } = req.body as Partial<DeveloperApplicationInput>;
+    const { businessName, businessEmail, bio } =
+      req.body as Partial<DeveloperApplicationInput>;
     // Update only the fields the client sent, and keep the rest untouched.
-    logDebug("Updating developer profile", { userId, businessName, businessEmail });
+    logDebug("Updating developer profile", {
+      userId,
+      businessName,
+      businessEmail,
+    });
 
     const { data: currentProfile, error: lookupError } = await supabase
       .from("developer_profiles")
@@ -380,16 +440,26 @@ export async function updateProfile(req: AuthRequest, res: Response<DeveloperApp
 
     if (lookupError) {
       logDebug("Failed to lookup developer profile", lookupError);
-      throw new AppError(500, lookupError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        lookupError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     if (!currentProfile) {
-      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+      throw new AppError(
+        404,
+        "Developer profile not found",
+        "PROFILE_NOT_FOUND",
+      );
     }
 
     const updatePayload: DeveloperProfileUpdatePayload = {};
-    if (typeof businessName === "string") updatePayload.business_name = businessName;
-    if (typeof businessEmail === "string") updatePayload.business_email = businessEmail;
+    if (typeof businessName === "string")
+      updatePayload.business_name = businessName;
+    if (typeof businessEmail === "string")
+      updatePayload.business_email = businessEmail;
     if (typeof bio === "string") updatePayload.bio = bio;
 
     const { data: updatedProfile, error: updateError } = await supabase
@@ -401,7 +471,11 @@ export async function updateProfile(req: AuthRequest, res: Response<DeveloperApp
 
     if (updateError) {
       logDebug("Failed to update developer profile", updateError);
-      throw new AppError(500, updateError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        updateError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     const typedProfile = updatedProfile as DeveloperProfileDatabaseRow;
@@ -423,12 +497,19 @@ export async function updateProfile(req: AuthRequest, res: Response<DeveloperApp
       },
     });
   } catch (err) {
-    logDebug("Error in updateProfile", err instanceof Error ? err.stack ?? err.message : err);
+    logDebug(
+      "Error in updateProfile",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
     next(err);
   }
 }
 
-export async function listApplications(req: AuthRequest, res: Response<DeveloperApplicationsListResponse>, next: NextFunction): Promise<void> {
+export async function listApplications(
+  req: AuthRequest,
+  res: Response<DeveloperApplicationsListResponse>,
+  next: NextFunction,
+): Promise<void> {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -436,7 +517,11 @@ export async function listApplications(req: AuthRequest, res: Response<Developer
     // Pull all pending applications directly and enrich them with user records for the admin UI.
     logDebug("Listing developer applications", { page, limit, offset });
 
-    const { data: applications, error, count } = await supabase
+    const {
+      data: applications,
+      error,
+      count,
+    } = await supabase
       .from("developer_profiles")
       .select("*", { count: "exact" })
       .eq("application_status", "PENDING")
@@ -445,7 +530,11 @@ export async function listApplications(req: AuthRequest, res: Response<Developer
 
     if (error) {
       logDebug("Failed to list applications", error);
-      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        error.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     const rows = (applications ?? []) as DeveloperApplicationDatabaseRow[];
@@ -463,7 +552,11 @@ export async function listApplications(req: AuthRequest, res: Response<Developer
 
     if (usersError) {
       logDebug("Failed to load application users", usersError);
-      throw new AppError(500, usersError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        usersError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     const userMap = new Map<string, DeveloperApplicationUserDto>();
@@ -504,15 +597,23 @@ export async function listApplications(req: AuthRequest, res: Response<Developer
       },
     });
   } catch (err) {
-    logDebug("Error in listApplications", err instanceof Error ? err.stack ?? err.message : err);
+    logDebug(
+      "Error in listApplications",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
     next(err);
   }
 }
 
-export async function reviewApplication(req: AuthRequest, res: Response<DeveloperReviewResponse>, next: NextFunction): Promise<void> {
+export async function reviewApplication(
+  req: AuthRequest,
+  res: Response<DeveloperReviewResponse>,
+  next: NextFunction,
+): Promise<void> {
   try {
     const { id } = req.params;
-    const { status, rejectionReason } = req.body as DeveloperApplicationReviewInput;
+    const { status, rejectionReason } =
+      req.body as DeveloperApplicationReviewInput;
     const adminUserId = req.user!.userId;
     // Review the application directly here so the controller owns the entire request lifecycle.
     logDebug("Reviewing developer application", { id, adminUserId, status });
@@ -525,7 +626,11 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
 
     if (profileError) {
       logDebug("Failed to fetch developer profile by id", profileError);
-      throw new AppError(500, profileError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        profileError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     if (!profile) {
@@ -535,14 +640,19 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
     const typedProfile = profile as DeveloperProfileDatabaseRow;
 
     if (typedProfile.application_status !== "PENDING") {
-      throw new AppError(400, "Application has already been reviewed", "ALREADY_REVIEWED");
+      throw new AppError(
+        400,
+        "Application has already been reviewed",
+        "ALREADY_REVIEWED",
+      );
     }
 
     const { data: updatedProfile, error: updateError } = await supabase
       .from("developer_profiles")
       .update({
         application_status: status,
-        rejection_reason: status === "REJECTED" ? rejectionReason ?? null : null,
+        rejection_reason:
+          status === "REJECTED" ? (rejectionReason ?? null) : null,
         approved_at: status === "APPROVED" ? new Date().toISOString() : null,
       })
       .eq("id", typedProfile.id)
@@ -551,7 +661,11 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
 
     if (updateError) {
       logDebug("Failed to update application status", updateError);
-      throw new AppError(500, updateError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        updateError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     const { data: user, error: userError } = await supabase
@@ -562,7 +676,11 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
 
     if (userError) {
       logDebug("Failed to fetch application user", userError);
-      throw new AppError(500, userError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        userError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     if (status === "APPROVED") {
@@ -574,7 +692,11 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
 
       if (roleError) {
         logDebug("Failed to promote user to developer", roleError);
-        throw new AppError(500, roleError.message || "Database operation failed", "SUPABASE_ERROR");
+        throw new AppError(
+          500,
+          roleError.message || "Database operation failed",
+          "SUPABASE_ERROR",
+        );
       }
     }
 
@@ -593,20 +715,29 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
 
     if (auditError) {
       logDebug("Failed to write audit log", auditError);
-      throw new AppError(500, auditError.message || "Database operation failed", "SUPABASE_ERROR");
+      throw new AppError(
+        500,
+        auditError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
 
     res.json({
       data: {
         id: (updatedProfile as DeveloperProfileDatabaseRow).id,
         userId: (updatedProfile as DeveloperProfileDatabaseRow).user_id,
-        businessName: (updatedProfile as DeveloperProfileDatabaseRow).business_name,
-        businessEmail: (updatedProfile as DeveloperProfileDatabaseRow).business_email,
+        businessName: (updatedProfile as DeveloperProfileDatabaseRow)
+          .business_name,
+        businessEmail: (updatedProfile as DeveloperProfileDatabaseRow)
+          .business_email,
         taxId: (updatedProfile as DeveloperProfileDatabaseRow).tax_id,
         bio: (updatedProfile as DeveloperProfileDatabaseRow).bio,
-        applicationStatus: (updatedProfile as DeveloperProfileDatabaseRow).application_status,
-        rejectionReason: (updatedProfile as DeveloperProfileDatabaseRow).rejection_reason,
-        stripeAccountId: (updatedProfile as DeveloperProfileDatabaseRow).stripe_account_id,
+        applicationStatus: (updatedProfile as DeveloperProfileDatabaseRow)
+          .application_status,
+        rejectionReason: (updatedProfile as DeveloperProfileDatabaseRow)
+          .rejection_reason,
+        stripeAccountId: (updatedProfile as DeveloperProfileDatabaseRow)
+          .stripe_account_id,
         approvedAt: (updatedProfile as DeveloperProfileDatabaseRow).approved_at,
         createdAt: (updatedProfile as DeveloperProfileDatabaseRow).created_at,
         updatedAt: (updatedProfile as DeveloperProfileDatabaseRow).updated_at,
@@ -621,7 +752,10 @@ export async function reviewApplication(req: AuthRequest, res: Response<Develope
       },
     });
   } catch (err) {
-    logDebug("Error in reviewApplication", err instanceof Error ? err.stack ?? err.message : err);
+    logDebug(
+      "Error in reviewApplication",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
     next(err);
   }
 }

@@ -4,6 +4,7 @@ import { validate } from "../middleware/validate.js";
 import { authRateLimit } from "../middleware/rate-limit.js";
 import { authenticate } from "../middleware/auth.js";
 import { z } from "zod";
+import { login } from "../controllers/auth.controller.js";
 
 const router = Router();
 
@@ -84,7 +85,7 @@ router.post("/register", authRateLimit.register, validate(registerSchema), authC
  *       200: { description: Returns access token and user object }
  *       401: { description: Invalid credentials }
  */
-router.post("/login", authRateLimit.login, validate(loginSchema), authController.login);
+router.post("/login", login, validate(loginSchema), authController.login);
 
 /**
  * @swagger

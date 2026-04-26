@@ -49,16 +49,16 @@ interface PricingPlan {
 interface Product {
   id: string;
   name: string;
-  slug: string;
-  shortDescription: string | null;
+  // slug: string;
+  // shortDescription: string | null;
   description: string;
   category: string;
-  tags: string[];
+  // tags: string[];
   logoUrl: string | null;
-  screenshots: string[];
+  // screenshots: string[];
   status: string;
   rejectionReason: string | null;
-  site: { siteUrl: string; subdomain: string } | null;
+  site: { site_url: string; subdomain: string } | null;
   pricingPlans: PricingPlan[];
   _count: { subscriptions: number; reviews: number };
 }
@@ -82,12 +82,12 @@ export default function ProductDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
+  console.log(product)
   // Edit fields
   const [name, setName] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
+  // const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
+  // const [tagsInput, setTagsInput] = useState("");
 
   // Pricing plan dialog
   const [showPlanDialog, setShowPlanDialog] = useState(false);
@@ -105,9 +105,9 @@ export default function ProductDetailPage() {
       });
       setProduct(res.data);
       setName(res.data.name);
-      setShortDescription(res.data.shortDescription ?? "");
+      // setShortDescription(res.data.shortDescription ?? "");
       setDescription(res.data.description);
-      setTagsInput(res.data.tags.join(", "));
+      // setTagsInput(res.data.tags.join(", "));
     } catch {
       setError("Failed to load product");
     } finally {
@@ -126,10 +126,10 @@ export default function ProductDetailPage() {
     setSuccess("");
 
     try {
-      const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+      // const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
       await api.patch(
         `/products/${productId}`,
-        { name, shortDescription: shortDescription || undefined, description, tags },
+        { name, description },
         { token: accessToken! }
       );
       setSuccess("Product updated successfully");
@@ -292,10 +292,10 @@ export default function ProductDetailPage() {
               <Label htmlFor="name">Name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} required minLength={3} />
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="shortDesc">Short Description</Label>
               <Input id="shortDesc" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} disabled={!canEdit} maxLength={300} />
-            </div>
+            </div> */}
             <div className="space-y-2">
               <Label htmlFor="desc">Description</Label>
               <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canEdit} rows={6} required minLength={20} />
@@ -304,22 +304,22 @@ export default function ProductDetailPage() {
               <Label>Category</Label>
               <Input value={product.category} disabled />
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="tags">Tags</Label>
               <Input id="tags" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit} placeholder="Comma separated" />
-            </div>
+            </div> */}
             <div className="space-y-2">
               <Label>Linked WordPress Site</Label>
               {product.site ? (
                 <div className="flex items-center gap-2 rounded-sm border p-3">
                   <Globe className="h-4 w-4 text-gray-500" />
                   <a
-                    href={product.site.siteUrl}
+                    href={product.site.site_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-semibold tracking-tight text-neutral-900 hover:underline"
                   >
-                    {product.site.siteUrl}
+                    {product.site.site_url}
                   </a>
                 </div>
               ) : (

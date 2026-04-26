@@ -227,8 +227,44 @@ router.delete("/sites/:id", requireRole("DEVELOPER", "ADMIN"), async (req: AuthR
       throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
     }
 
-    const result = await wordpressService.deleteSite(id, profile.id);
-    res.json({ data: result });
+    // const result = await wordpressService.deleteSite(id, profile.id);
+     // Find the site
+  const { data: site, error: siteError } = await supabase
+    .from("developer_sites")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (siteError) {
+    throw new AppError(500, siteError.message, "DB_ERROR");
+  }
+
+  if (!site) {
+    throw new AppError(404, "Site not found", "SITE_NOT_FOUND");
+  }
+
+  if (site.developer_id !== profile.id) {
+    throw new AppError(403, "You do not own this site", "FORBIDDEN");
+  }
+
+  // Delete the WordPress subsite via WP-CLI if it has a wpSiteId
+  
+  const result = wordpressService.deleteWPSite(site);
+  if (!result) {
+    throw new AppError(500, "Failed to delete WordPress site", "WP_DELETE_ERROR");
+  } 
+
+  // Delete from database
+  const { error: deleteError } = await supabase
+    .from("developer_sites")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    throw new AppError(500, deleteError.message, "DB_ERROR");
+  }
+
+  res.json({ data: { message: "Site deleted" } });
   } catch (err) {
     next(err);
   }

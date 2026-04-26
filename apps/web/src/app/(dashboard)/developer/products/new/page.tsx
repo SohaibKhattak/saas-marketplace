@@ -50,12 +50,13 @@ export default function NewProductPage() {
   const [tagsInput, setTagsInput] = useState("");
   const [siteId, setSiteId] = useState("");
   const [sites, setSites] = useState<Site[]>([]);
+  console.log(sites)
   const [sitesLoaded, setSitesLoaded] = useState(false);
 
   useEffect(() => {
     api.get<{ data: Site[] }>("/wp/sites", { token: accessToken! })
       .then((res) => setSites(res.data.filter((s) => s.status === "ACTIVE")))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setSitesLoaded(true));
   }, [accessToken]);
 
@@ -129,7 +130,7 @@ export default function NewProductPage() {
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="shortDescription">Short Description</Label>
               <Input
                 id="shortDescription"
@@ -139,7 +140,7 @@ export default function NewProductPage() {
                 maxLength={300}
               />
               <p className="text-xs text-gray-500">{shortDescription.length}/300 characters</p>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
@@ -172,7 +173,7 @@ export default function NewProductPage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="tags">Tags</Label>
               <Input
                 id="tags"
@@ -181,7 +182,7 @@ export default function NewProductPage() {
                 onChange={(e) => setTagsInput(e.target.value)}
               />
               <p className="text-xs text-gray-500">Up to 10 tags, comma separated</p>
-            </div>
+            </div> */}
 
             {sitesLoaded && sites.length > 0 && (
               <div className="space-y-2">
@@ -222,7 +223,7 @@ export default function NewProductPage() {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancel
             </Button>

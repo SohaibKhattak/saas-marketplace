@@ -54,7 +54,7 @@ export async function authenticate(req: AuthRequest, _res: Response, next: NextF
       profileComplete: dbUser.profileComplete,
     };
 
-    const isOnboardingCompleteEndpoint = req.originalUrl.includes("/api/v1/auth/onboarding/complete") || req.originalUrl.includes("/change-password") || req.originalUrl.includes("/users/me");
+    const isOnboardingCompleteEndpoint = req.originalUrl.includes("/api/v1/auth/onboarding/complete") || req.originalUrl.includes("/change-password") || req.originalUrl.includes("/users/me") || req.originalUrl.includes("/subscriptions/me");
     if (!dbUser.profileComplete && !isOnboardingCompleteEndpoint) {
       return next(new AppError(403, "Profile onboarding is incomplete", "PROFILE_INCOMPLETE"));
     }
