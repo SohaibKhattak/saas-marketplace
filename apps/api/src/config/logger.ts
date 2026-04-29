@@ -5,8 +5,10 @@ export const logger = pino({
   level: env.NODE_ENV === "production" ? "info" : "debug",
   ...(env.NODE_ENV !== "production" && {
     transport: {
-      target: "pino/file",
-      options: { destination: 1 }, // stdout
+      target: "pino-pretty",
+      options: {
+        colorize: true,
+      },
     },
   }),
 });

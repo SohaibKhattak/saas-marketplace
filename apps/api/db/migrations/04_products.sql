@@ -38,6 +38,11 @@ CREATE TABLE IF NOT EXISTS public.products (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+ALTER TABLE public.products
+    ADD COLUMN IF NOT EXISTS isDeleted BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE public.products
+    ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE;   
+
 -- Indexes
 -- CREATE INDEX IF NOT EXISTS idx_products_category ON public.products(category);
 -- CREATE INDEX IF NOT EXISTS idx_products_status ON public.products(status);

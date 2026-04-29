@@ -157,18 +157,100 @@ export async function createProduct(
 export async function updateProduct(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const product = await productService.updateProduct(id as string, req.user!.userId, req.body);
-    res.json({ data: product });
+    const data = req.body;
+    const userId = req.user!.userId;
+
+    // const product = await productService.updateProduct(id as string, req.user!.userId, req.body);
+    // verify ownership
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("id, developer_id, isdeleted")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !product) {
+      logger.error({ err: fetchError }, "Failed to fetch product for update");    
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+    }
+
+    if (product.developer_id !== userId) {
+      logger.error({ err: fetchError }, "User not authorized to update this product");  
+      throw new AppError(403, "Forbidden", "FORBIDDEN");
+    }
+
+    if (product.isdeleted) {
+      logger.error({ err: fetchError }, "Product already deleted");
+      throw new AppError(400, "Product already deleted", "ALREADY_DELETED");
+    }
+
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from("products")
+      .update({ 
+        name: data.name,
+        description: data.description,
+      })
+      .eq("id", id)
+      .select("*")
+      .single();
+
+    if (updateError || !updatedProduct) { 
+      logger.error({ err: updateError }, "Failed to update product");
+      throw new AppError(500, "Failed to update product", "UPDATE_FAILED");
+    }
+
+    res.json({ data: updatedProduct });
   } catch (err) {
     next(err);
   }
 }
 
-export async function deleteProduct(req: AuthRequest, res: Response, next: NextFunction) {
+export async function deleteProduct(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
   try {
     const { id } = req.params;
-    const result = await productService.deleteProduct(id as string, req.user!.userId);
-    res.json({ data: result });
+    const userId = req.user!.userId;
+
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("id, developer_id, isdeleted")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !product) {
+      logger.error({ err: fetchError }, "Failed to fetch product for deletion");      
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+    }
+
+    if (product.developer_id !== userId) {
+      logger.error({ err: fetchError }, "User not authorized to delete this product");  
+      throw new AppError(403, "Forbidden", "FORBIDDEN");
+    }
+
+    if (product.isdeleted) {
+      logger.error({ err: fetchError }, "Product already deleted"); 
+      throw new AppError(400, "Product already deleted", "ALREADY_DELETED");
+    }
+
+    const { error: updateError } = await supabase
+      .from("products")
+      .update({
+        isDeleted: true,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .eq("developer_id", userId);
+
+    if (updateError) {
+      throw new AppError(500, "Failed to delete product", "DELETE_FAILED");
+    }
+
+    res.json({
+      success: true,
+      message: "Product deleted successfully",
+    });
   } catch (err) {
     next(err);
   }
@@ -367,7 +449,6 @@ export async function getProductById(
 
     // Get site
     let site = null;
-    console.log(".......................prod..........................", product)
     if (product.site_id) {
       const { data: siteData } = await supabase
         .from("developer_sites")
@@ -377,7 +458,6 @@ export async function getProductById(
 
       site = siteData;
     }
-    console.log(".......................site..........................", site)
     // Get counts
     const [{ count: subscriptions }, { count: reviews }] = await Promise.all([
       supabase
@@ -528,7 +608,69 @@ export async function toggleFeatured(req: AuthRequest, res: Response, next: Next
 export async function createPricingPlan(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { productId } = req.params;
-    const plan = await pricingPlanService.createPricingPlan(productId as string, req.user!.userId, req.body);
+    const userId = req.user!.userId;
+    const body = req.body;
+
+    // 1. Verify product ownership
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("id, developer_id, isdeleted")
+      .eq("id", productId)
+      .single();
+
+    if (fetchError || !product) {
+      logger.error({ err: fetchError }, "Failed to fetch product for pricing plan creation");
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+    }
+
+    if (product.developer_id !== userId) {
+      logger.error({ err: fetchError }, "User not authorized to add pricing plan to this product");
+      throw new AppError(403, "Forbidden", "FORBIDDEN");
+    }
+
+    if (product.isdeleted) {
+      logger.error({ err: fetchError }, "Cannot add pricing plan to deleted product");
+      throw new AppError(400, "Product is deleted", "PRODUCT_DELETED");
+    }
+
+    // 2. Get max sort_order
+    const { data: maxRow, error: maxError } = await supabase
+      .from("pricing_plans")
+      .select("sort_order")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (maxError) {
+      logger.error({ err: maxError }, "Failed to fetch max sort_order for pricing plan");
+      throw new AppError(500, "Internal Server Error", "INTERNAL_SERVER_ERROR");
+    }
+
+    const nextOrder = (maxRow?.sort_order ?? 0) + 1;
+
+    // 3. Insert
+    const { data: plan, error: insertError } = await supabase
+      .from("pricing_plans")
+      .insert([
+        {
+          product_id: productId,
+          name: body.name,
+          price_monthly: body.priceMonthly,
+          price_yearly: body.priceYearly,
+          features: body.features ?? [],
+          trial_days: body.trialDays ?? 0,
+          sort_order: nextOrder,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) {
+      logger.error({ err: insertError }, "Failed to insert pricing plan");
+      throw new AppError(500, "Internal Server Error", "INTERNAL_SERVER_ERROR");
+    }
+
     res.status(201).json({ data: plan });
   } catch (err) {
     next(err);
@@ -548,8 +690,47 @@ export async function updatePricingPlan(req: AuthRequest, res: Response, next: N
 export async function deletePricingPlan(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { planId } = req.params;
-    const result = await pricingPlanService.deletePricingPlan(planId as string, req.user!.userId);
-    res.json({ data: result });
+    // const result = await pricingPlanService.deletePricingPlan(planId as string, req.user!.userId);
+    // find plan and verify ownership
+    const { data: plan, error: fetchError } = await supabase
+      .from("pricing_plans")
+      .select("id, product_id")
+      .eq("id", planId)
+      .single();  
+
+    if (fetchError || !plan) {
+      logger.error({ err: fetchError }, "Failed to fetch pricing plan for deletion");
+      throw new AppError(404, "Pricing plan not found", "NOT_FOUND");
+    } 
+    // verify ownership 
+    const { data: product, error: productError } = await supabase      
+      .from("products")
+      .select("id, developer_id")
+      .eq("id", plan.product_id)
+      .single();
+
+    if (productError || !product) {
+      logger.error({ err: productError }, "Failed to fetch product for pricing plan deletion");
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+    }
+
+    if (product.developer_id !== req.user!.userId) {  
+      logger.error({ err: productError }, "User not authorized to delete this pricing plan");
+      throw new AppError(403, "Forbidden", "FORBIDDEN");
+    }
+    
+    // delete plan 
+    const { error: deleteError } = await supabase
+      .from("pricing_plans")
+      .delete()
+      .eq("id", planId);
+
+    if (deleteError) {
+      logger.error({ err: deleteError }, "Failed to delete pricing plan");
+      throw new AppError(500, "Internal Server Error", "INTERNAL_SERVER_ERROR");
+    }
+
+    res.json({ data: true });
   } catch (err) {
     next(err);
   }

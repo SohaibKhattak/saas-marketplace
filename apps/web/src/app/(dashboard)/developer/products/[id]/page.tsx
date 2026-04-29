@@ -33,7 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, Send, Globe } from "lucide-react";
+import { Trash2, Plus, Send, Globe, Pencil, Loader2 } from "lucide-react";
 
 interface PricingPlan {
   id: string;
@@ -84,10 +84,13 @@ export default function ProductDetailPage() {
   const [success, setSuccess] = useState("");
   console.log(product)
   // Edit fields
+  const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   // const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   // const [tagsInput, setTagsInput] = useState("");
+
+  const isChanged = product ? (name !== product.name || description !== product.description) : false;
 
   // Pricing plan dialog
   const [showPlanDialog, setShowPlanDialog] = useState(false);
@@ -97,8 +100,14 @@ export default function ProductDetailPage() {
   const [planFeatures, setPlanFeatures] = useState("");
   const [planTrialDays, setPlanTrialDays] = useState("0");
   const [savingPlan, setSavingPlan] = useState(false);
+  
+  // Delete plan dialog
+  const [planToDelete, setPlanToDelete] = useState<string | null>(null);
+  const [deletingPlan, setDeletingPlan] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchProduct = useCallback(async () => {
+    setIsRefreshing(true);
     try {
       const res = await api.get<{ data: Product }>(`/products/detail/${productId}`, {
         token: accessToken!,
@@ -112,6 +121,7 @@ export default function ProductDetailPage() {
       setError("Failed to load product");
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [productId, accessToken]);
 
@@ -133,6 +143,7 @@ export default function ProductDetailPage() {
         { token: accessToken! }
       );
       setSuccess("Product updated successfully");
+      setIsEditing(false);
       fetchProduct();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to save");
@@ -195,13 +206,19 @@ export default function ProductDetailPage() {
     }
   }
 
-  async function handleDeletePlan(planId: string) {
-    if (!confirm("Delete this pricing plan?")) return;
+  async function executeDeletePlan() {
+    if (!planToDelete) return;
+    setDeletingPlan(true);
+    setError("");
+    
     try {
-      await api.delete(`/products/plans/${planId}`, { token: accessToken! });
+      await api.delete(`/products/plans/${planToDelete}`, { token: accessToken! });
+      setPlanToDelete(null);
       fetchProduct();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete plan");
+    } finally {
+      setDeletingPlan(false);
     }
   }
 
@@ -255,8 +272,13 @@ export default function ProductDetailPage() {
               Unpublish
             </Button>
           )}
-          <Button variant="destructive" size="sm" onClick={handleDeleteProduct}>
-            <Trash2 className="mr-2 h-4 w-4" />
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDeleteProduct}
+            className="flex items-center gap-2 px-3 cursor-pointer"
+          >
+            <Trash2 className="h-4 w-4" />
             Delete
           </Button>
         </div>
@@ -282,23 +304,38 @@ export default function ProductDetailPage() {
       <Card>
         <form onSubmit={handleSave}>
           <CardHeader>
-            <CardTitle>Product Information</CardTitle>
-            <CardDescription>
-              {canEdit ? "Edit your product details" : "Product details (read-only while published/pending)"}
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Product Information</CardTitle>
+                <CardDescription>
+                  {canEdit ? "Edit your product details" : "Product details (read-only while published/pending)"}
+                </CardDescription>
+              </div>
+              {canEdit && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  className={"cursor-pointer"}
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  <Pencil className="h-4 w-4 text-green-600 hover:text-blue-500" />
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit} required minLength={3} />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit || !isEditing} required minLength={3} />
             </div>
             {/* <div className="space-y-2">
               <Label htmlFor="shortDesc">Short Description</Label>
-              <Input id="shortDesc" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} disabled={!canEdit} maxLength={300} />
+              <Input id="shortDesc" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} disabled={!canEdit || !isEditing} maxLength={300} />
             </div> */}
             <div className="space-y-2">
               <Label htmlFor="desc">Description</Label>
-              <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canEdit} rows={6} required minLength={20} />
+              <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canEdit || !isEditing} rows={6} required minLength={20} />
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -306,7 +343,7 @@ export default function ProductDetailPage() {
             </div>
             {/* <div className="space-y-2">
               <Label htmlFor="tags">Tags</Label>
-              <Input id="tags" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit} placeholder="Comma separated" />
+              <Input id="tags" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit || !isEditing} placeholder="Comma separated" />
             </div> */}
             <div className="space-y-2">
               <Label>Linked WordPress Site</Label>
@@ -327,9 +364,17 @@ export default function ProductDetailPage() {
               )}
             </div>
           </CardContent>
-          {canEdit && (
-            <CardFooter>
-              <Button type="submit" disabled={saving}>
+          {canEdit && isEditing && (
+            <CardFooter className="flex justify-end gap-2">
+              <Button type="button" variant="outline"  className={"cursor-pointer" } onClick={() => {
+                setIsEditing(false);
+                setName(product?.name || "");
+                setDescription(product?.description || "");
+               
+              }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving || !isChanged} className={"cursor-pointer"}>
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
             </CardFooter>
@@ -342,20 +387,30 @@ export default function ProductDetailPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Pricing Plans</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>Pricing Plans</CardTitle>
+                {isRefreshing && !loading && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
               <CardDescription>
                 {product.pricingPlans.length === 0
                   ? "Add at least one pricing plan before submitting for review"
                   : `${product.pricingPlans.length} plan(s)`}
               </CardDescription>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setShowPlanDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button size="sm" variant="default" onClick={() => setShowPlanDialog(true)} disabled={isRefreshing} className={"cursor-pointer" } >
+              <Plus className="h-4 w-4" />
               Add Plan
             </Button>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
+          {isRefreshing && !loading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-b-lg">
+               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
           {product.pricingPlans.length === 0 ? (
             <div className="rounded-sm border border-dashed p-8 text-center text-gray-500">
               No pricing plans yet. Add one to get started.
@@ -390,7 +445,7 @@ export default function ProductDetailPage() {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" onClick={() => handleDeletePlan(plan.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => setPlanToDelete(plan.id)} disabled={isRefreshing} className={"cursor-pointer" } >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -435,12 +490,34 @@ export default function ProductDetailPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowPlanDialog(false)}>Cancel</Button>
-              <Button type="submit" disabled={savingPlan}>
+              <Button type="button" variant="outline" onClick={() => setShowPlanDialog(false)}  className={"cursor-pointer" } >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingPlan} className={"cursor-pointer" } >
                 {savingPlan ? "Adding..." : "Add Plan"}
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Plan Confirm Dialog */}
+      <Dialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Pricing Plan</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this pricing plan? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setPlanToDelete(null)} className="cursor-pointer">
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" onClick={executeDeletePlan} disabled={deletingPlan} className="cursor-pointer">
+              {deletingPlan ? "Deleting..." : "Delete Plan"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

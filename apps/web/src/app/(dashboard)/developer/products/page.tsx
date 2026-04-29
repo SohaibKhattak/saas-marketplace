@@ -131,7 +131,7 @@ export default function ProductsPage() {
                     <TableRow key={product.id}>
                       <TableCell>
                         <p className="font-semibold tracking-tight">{product.name}</p>
-                        <p className="text-xs text-gray-500">/{product.slug}</p>
+                        {/* <p className="text-xs text-gray-500">/{product.slug}</p> */}
                       </TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell>
