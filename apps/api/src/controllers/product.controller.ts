@@ -680,8 +680,49 @@ export async function createPricingPlan(req: AuthRequest, res: Response, next: N
 export async function updatePricingPlan(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { planId } = req.params;
-    const plan = await pricingPlanService.updatePricingPlan(planId as string, req.user!.userId, req.body);
-    res.json({ data: plan });
+    // const plan = await pricingPlanService.updatePricingPlan(planId as string, req.user!.userId, req.body);
+
+    // get plan 
+    const { data: plan, error: fetchError } = await supabase
+      .from("pricing_plans")
+      .select("id, product_id")
+      .eq("id", planId)
+      .single();        
+    if (fetchError || !plan) {
+      logger.error({ err: fetchError }, "Failed to fetch pricing plan for update");   
+      throw new AppError(404, "Pricing plan not found", "NOT_FOUND"); 
+    } 
+
+    // verify ownership
+    const { data: product, error: productError } = await supabase
+      .from("products")
+      .select("id, developer_id")
+      .eq("id", plan.product_id)
+      .single();  
+    if (productError || !product) {
+      logger.error({ err: productError }, "Failed to fetch product for pricing plan update");
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+    }
+
+    if (product.developer_id !== req.user!.userId) {
+      logger.error({ err: productError }, "User not authorized to update this pricing plan");
+      throw new AppError(403, "Forbidden", "FORBIDDEN");
+    }
+
+    // update plan
+    const { data: updatedPlan, error : updateError } = await supabase
+      .from("pricing_plans")
+      .update({
+        name: req.body.name,
+        price_monthly: req.body.priceMonthly,
+        price_yearly: req.body.priceYearly,
+        features: req.body.features,
+        trial_days: req.body.trialDays,
+      })
+      .eq("id", planId) 
+      .select("*")
+      .single();  
+    res.json({ data: updatedPlan });
   } catch (err) {
     next(err);
   }
@@ -739,7 +780,18 @@ export async function deletePricingPlan(req: AuthRequest, res: Response, next: N
 export async function getProductPlans(req: Request, res: Response, next: NextFunction) {
   try {
     const { productId } = req.params;
-    const plans = await pricingPlanService.getProductPlans(productId as string);
+    // const plans = await pricingPlanService.getProductPlans(productId as string);
+    const { data: plans, error } = await supabase
+      .from("pricing_plans")
+      .select("*")
+      .eq("product_id", productId)
+      .order("sort_order", { ascending: true });
+    
+    if (error) {
+      logger.error({ err: error }, "Failed to fetch pricing plans for product");
+      throw new AppError(500, "Internal Server Error", "INTERNAL_SERVER_ERROR");
+    }
+
     res.json({ data: plans });
   } catch (err) {
     next(err);
