@@ -11,6 +11,15 @@ const envSchema = z.object({
 
   // Database
   DATABASE_URL: z.string().url(),
+  SUPABASE_USER: z.string(),
+  SUPABASE_HOST: z.string(),
+  SUPABASE_DATABASE_NAME: z.string(),
+  SUPABASE_DATABASE_PASSWORD: z.string(),
+  SUPABASE_PORT: z.coerce.number().default(5432),
+  SUPABASE_SSL_REJECT_UNAUTHORIZED: z
+    .string()
+    .transform((v) => v === "true")
+    .default("true"),
 
   // JWT
   JWT_ACCESS_SECRET: z.string().min(32),

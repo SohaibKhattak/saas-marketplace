@@ -106,7 +106,7 @@ router.get("/", productController.listMarketplaceProducts);
  *       200: { description: Product with developer, plans, and reviews }
  *       404: { description: Product not found }
  */
-router.get("/catalog/:slug", productController.getProductBySlug);
+router.get("/catalog/:id", productController.getProductById);
 
 /**
  * @swagger

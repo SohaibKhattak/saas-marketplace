@@ -5,6 +5,7 @@ import * as pricingPlanService from "../services/pricing-plan.service.js";
 import { supabase } from "../config/supabase.js";
 import { logger } from "../config/logger.js";
 import { AppError } from "../middleware/error-handler.js";
+import { query } from "../config/database.js";
 // --- Developer Product CRUD ---
 
 
@@ -137,8 +138,10 @@ export async function createProduct(
       screenshots: createdProduct.screenshots ?? [],
       status: createdProduct.status,
       rejectionReason: createdProduct.rejection_reason,
+      avgRating: 0,
       pricingPlans: pricingPlans ?? [],
       site,
+      reviews: reviews ?? 0,
       _count: {
         subscriptions: subscriptions ?? 0,
         reviews: reviews ?? 0,
@@ -169,12 +172,12 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
       .single();
 
     if (fetchError || !product) {
-      logger.error({ err: fetchError }, "Failed to fetch product for update");    
+      logger.error({ err: fetchError }, "Failed to fetch product for update");
       throw new AppError(404, "Product not found", "NOT_FOUND");
     }
 
     if (product.developer_id !== userId) {
-      logger.error({ err: fetchError }, "User not authorized to update this product");  
+      logger.error({ err: fetchError }, "User not authorized to update this product");
       throw new AppError(403, "Forbidden", "FORBIDDEN");
     }
 
@@ -185,7 +188,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
 
     const { data: updatedProduct, error: updateError } = await supabase
       .from("products")
-      .update({ 
+      .update({
         name: data.name,
         description: data.description,
       })
@@ -193,7 +196,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
       .select("*")
       .single();
 
-    if (updateError || !updatedProduct) { 
+    if (updateError || !updatedProduct) {
       logger.error({ err: updateError }, "Failed to update product");
       throw new AppError(500, "Failed to update product", "UPDATE_FAILED");
     }
@@ -220,17 +223,17 @@ export async function deleteProduct(
       .single();
 
     if (fetchError || !product) {
-      logger.error({ err: fetchError }, "Failed to fetch product for deletion");      
+      logger.error({ err: fetchError }, "Failed to fetch product for deletion");
       throw new AppError(404, "Product not found", "NOT_FOUND");
     }
 
     if (product.developer_id !== userId) {
-      logger.error({ err: fetchError }, "User not authorized to delete this product");  
+      logger.error({ err: fetchError }, "User not authorized to delete this product");
       throw new AppError(403, "Forbidden", "FORBIDDEN");
     }
 
     if (product.isdeleted) {
-      logger.error({ err: fetchError }, "Product already deleted"); 
+      logger.error({ err: fetchError }, "Product already deleted");
       throw new AppError(400, "Product already deleted", "ALREADY_DELETED");
     }
 
@@ -282,10 +285,10 @@ export async function submitForReview(req: AuthRequest, res: Response, next: Nex
     // const product = await productService.submitForReview(id as string, req.user!.userId);
 
     // verify ownership  
-    const { data: product, error: fetchError } = await supabase 
+    const { data: product, error: fetchError } = await supabase
       .from("products")
-      .select("id, developer_id, isdeleted, status ")  
-      .eq("id", id) 
+      .select("id, developer_id, isdeleted, status ")
+      .eq("id", id)
       .single();
     if (fetchError || !product) {
       logger.error({ err: fetchError }, "Failed to fetch product for submission");
@@ -295,7 +298,7 @@ export async function submitForReview(req: AuthRequest, res: Response, next: Nex
     if (product.developer_id !== req.user!.userId) {
       logger.error({ err: fetchError }, "User not authorized to submit this product");
       throw new AppError(403, "Forbidden", "FORBIDDEN");
-    } 
+    }
 
     if (product.isdeleted) {
       logger.error({ err: fetchError }, "Cannot submit a deleted product");
@@ -310,9 +313,9 @@ export async function submitForReview(req: AuthRequest, res: Response, next: Nex
     // Must have at least one pricing plan
     const { data: pricingPlans, error: plansError } = await supabase
       .from("pricing_plans")
-      .select("id") 
+      .select("id")
       .eq("product_id", id);
-      
+
     if (plansError) {
       logger.error({ err: plansError }, "Failed to fetch pricing plans for submission");
       throw new AppError(500, "Failed to submit product", "SUBMISSION_FAILED");
@@ -325,13 +328,13 @@ export async function submitForReview(req: AuthRequest, res: Response, next: Nex
     // Update status to PENDING_REVIEW  
     const { data: updatedProduct, error: updateError } = await supabase
       .from("products")
-      .update({ status: "PENDING_REVIEW" }) 
-      .eq("id", id) 
+      .update({ status: "PENDING_REVIEW" })
+      .eq("id", id)
       .select("*")
-      .single();  
+      .single();
     if (updateError || !updatedProduct) {
       logger.error({ err: updateError }, "Failed to update product status for submission");
-      throw new AppError(500, "Failed to submit product", "SUBMISSION_FAILED"); 
+      throw new AppError(500, "Failed to submit product", "SUBMISSION_FAILED");
     }
 
 
@@ -405,7 +408,26 @@ export async function getDeveloperProducts(
       .from("reviews")
       .select("product_id");
 
-    // 7. Merge manually (Prisma-style result)
+    // 7. Fetch developer profile
+    const { data: profile } = await supabase
+      .from("developer_profiles")
+      .select("*")
+      .eq("user_id", developerId)
+      .single();
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("id, full_name, avatar_url")
+      .eq("id", developerId)
+      .single();
+
+    const developer = profile ? {
+      id: profile.id,
+      businessName: profile.business_name,
+      user: userData
+    } : null;
+
+    // 8. Merge manually (Prisma-style result)
     const enriched = products.map((product) => {
       const site = (sites || [])?.find((s) => s.id === product.site_id);
 
@@ -431,6 +453,8 @@ export async function getDeveloperProducts(
         screenshots: product.screenshots ?? [],
         status: product.status,
         rejectionReason: product.rejection_reason,
+        avgRating: product.avg_rating ?? 0,
+        developer,
         site,
         pricingPlans: pricing,
         _count: {
@@ -440,7 +464,7 @@ export async function getDeveloperProducts(
       };
     });
 
-    // 8. Response
+    // 9. Response
     res.json({
       data: enriched,
       pagination: {
@@ -463,6 +487,7 @@ export async function getProductById(
   try {
     const { id: productId } = req.params;
 
+    console.log("Fetching product with ID:", productId);
     // Get product
     const { data: product, error: productError } = await supabase
       .from("products")
@@ -475,12 +500,16 @@ export async function getProductById(
       throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
     }
 
+    console.log("Product fetched:", { id: product.id, name: product.name, developer_id: product.developer_id });
+
     // Get developer profile
-    const { data: developer } = await supabase
+    const { data: developer, error: devError } = await supabase
       .from("developer_profiles")
       .select("*")
-      .eq("id", product.developer_id)
+      .eq("user_id", product.developer_id)
       .single();
+
+    console.log("Developer profile fetch result:", { developer, error: devError });
 
     // Get developer user
     let user = null;
@@ -538,6 +567,7 @@ export async function getProductById(
       screenshots: product.screenshots ?? [],
       status: product.status,
       rejectionReason: product.rejection_reason,
+      avgRating: product.avg_rating ?? 0,
       developer: developer
         ? {
           id: developer.id,
@@ -548,10 +578,10 @@ export async function getProductById(
       pricingPlans: (pricingPlans ?? []).map((p: any) => ({
         id: p.id,
         name: p.name,
-        priceMonthly: p.price_monthly,
-        priceYearly: p.price_yearly,
+        price_monthly: p.price_monthly,
+        price_yearly: p.price_yearly,
         features: p.features ?? [],
-        trialDays: p.trial_days ?? 0,
+        trial_days: p.trial_days ?? 0,
         isActive: p.is_active,
         sortOrder: p.sort_order,
       })),
@@ -561,7 +591,7 @@ export async function getProductById(
         reviews: reviews ?? 0,
       },
     };
-
+    console.log("Final product:", finalProduct);
     res.json({ data: finalProduct });
   } catch (err) {
     next(err);
@@ -574,34 +604,119 @@ export async function listMarketplaceProducts(req: Request, res: Response, next:
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 12;
+    const offset = (page - 1) * limit;
     const search = req.query.search as string | undefined;
     const category = req.query.category as string | undefined;
-    const tag = req.query.tag as string | undefined;
     const sortBy = req.query.sortBy as string | undefined;
     const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
     const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
 
-    const { products, total } = await productService.listMarketplaceProducts({
-      page, limit, search, category, tag, minPrice, maxPrice, sortBy,
-    });
+    const conditions: string[] = ["p.status = 'PUBLISHED'", "p.isdeleted = false"];
+    const values: any[] = [];
+
+    if (category) {
+      values.push(category);
+      conditions.push(`p.category = $${values.length}`);
+    }
+
+    if (search) {
+      values.push(`%${search}%`);
+      conditions.push(`(p.name ILIKE $${values.length} OR p.description ILIKE $${values.length})`);
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      let priceCondition = `EXISTS (SELECT 1 FROM pricing_plans pp WHERE pp.product_id = p.id AND pp.is_active = true`;
+      if (minPrice !== undefined) {
+        values.push(minPrice);
+        priceCondition += ` AND pp.price_monthly >= $${values.length}`;
+      }
+      if (maxPrice !== undefined) {
+        values.push(maxPrice);
+        priceCondition += ` AND pp.price_monthly <= $${values.length}`;
+      }
+      priceCondition += `)`;
+      conditions.push(priceCondition);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    let orderClause = "ORDER BY p.created_at DESC";
+    if (sortBy === "popular") {
+      orderClause = "ORDER BY p.total_subscribers DESC";
+    } else if (sortBy === "rating") {
+      orderClause = "ORDER BY p.avg_rating DESC";
+    } else if (sortBy === "name") {
+      orderClause = "ORDER BY p.name ASC";
+    }
+
+    const countQuery = `SELECT COUNT(*) FROM products p ${whereClause}`;
+    const dataQuery = `
+      SELECT 
+        p.*,
+        p.avg_rating as "avgRating",
+        jsonb_build_object(
+          'id', dp.id,
+          'businessName', dp.business_name,
+          'user', jsonb_build_object(
+            'fullName', u.full_name,
+            'avatarUrl', u.avatar_url
+          )
+        ) as "developer",
+        COALESCE(
+          (
+            SELECT jsonb_agg(pp)
+            FROM (
+              SELECT * FROM pricing_plans 
+              WHERE product_id = p.id AND is_active = true 
+              ORDER BY price_monthly ASC 
+              LIMIT 1
+            ) pp
+          ),
+          '[]'::jsonb
+        ) as "pricingPlans",
+        jsonb_build_object(
+          'reviews', (SELECT COUNT(*) FROM reviews WHERE product_id = p.id)
+        ) as "_count"
+      FROM products p
+      LEFT JOIN users u ON p.developer_id = u.id
+      LEFT JOIN developer_profiles dp ON p.developer_id = dp.user_id
+      ${whereClause}
+      ${orderClause}
+      LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+    `;
+
+    const [countResult, dataResult] = await Promise.all([
+      query(countQuery, values),
+      query(dataQuery, [...values, limit, offset]),
+    ]);
+
+    const total = parseInt(countResult.rows[0].count);
+    const products = dataResult.rows;
+
     res.json({
       data: products,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
+    logger.error({ err }, "Error listing marketplace products");
     next(err);
   }
 }
 
-export async function getProductBySlug(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { slug } = req.params;
-    const product = await productService.getProductBySlug(slug as string);
-    res.json({ data: product });
-  } catch (err) {
-    next(err);
-  }
-}
+// export async function getProductById(req: Request, res: Response, next: NextFunction) {
+//   try {
+//     const { slug } = req.params;
+//     const product = await productService.getProductBySlug(slug as string);
+//     res.json({ data: product });
+//   } catch (err) {
+//     next(err);
+//   }
+// }
 
 // --- Admin Moderation ---
 
@@ -742,18 +857,18 @@ export async function updatePricingPlan(req: AuthRequest, res: Response, next: N
       .from("pricing_plans")
       .select("id, product_id")
       .eq("id", planId)
-      .single();        
+      .single();
     if (fetchError || !plan) {
-      logger.error({ err: fetchError }, "Failed to fetch pricing plan for update");   
-      throw new AppError(404, "Pricing plan not found", "NOT_FOUND"); 
-    } 
+      logger.error({ err: fetchError }, "Failed to fetch pricing plan for update");
+      throw new AppError(404, "Pricing plan not found", "NOT_FOUND");
+    }
 
     // verify ownership
     const { data: product, error: productError } = await supabase
       .from("products")
       .select("id, developer_id")
       .eq("id", plan.product_id)
-      .single();  
+      .single();
     if (productError || !product) {
       logger.error({ err: productError }, "Failed to fetch product for pricing plan update");
       throw new AppError(404, "Product not found", "NOT_FOUND");
@@ -765,7 +880,7 @@ export async function updatePricingPlan(req: AuthRequest, res: Response, next: N
     }
 
     // update plan
-    const { data: updatedPlan, error : updateError } = await supabase
+    const { data: updatedPlan, error: updateError } = await supabase
       .from("pricing_plans")
       .update({
         name: req.body.name,
@@ -774,9 +889,9 @@ export async function updatePricingPlan(req: AuthRequest, res: Response, next: N
         features: req.body.features,
         trial_days: req.body.trialDays,
       })
-      .eq("id", planId) 
+      .eq("id", planId)
       .select("*")
-      .single();  
+      .single();
     res.json({ data: updatedPlan });
   } catch (err) {
     next(err);
@@ -792,14 +907,14 @@ export async function deletePricingPlan(req: AuthRequest, res: Response, next: N
       .from("pricing_plans")
       .select("id, product_id")
       .eq("id", planId)
-      .single();  
+      .single();
 
     if (fetchError || !plan) {
       logger.error({ err: fetchError }, "Failed to fetch pricing plan for deletion");
       throw new AppError(404, "Pricing plan not found", "NOT_FOUND");
-    } 
+    }
     // verify ownership 
-    const { data: product, error: productError } = await supabase      
+    const { data: product, error: productError } = await supabase
       .from("products")
       .select("id, developer_id")
       .eq("id", plan.product_id)
@@ -810,11 +925,11 @@ export async function deletePricingPlan(req: AuthRequest, res: Response, next: N
       throw new AppError(404, "Product not found", "NOT_FOUND");
     }
 
-    if (product.developer_id !== req.user!.userId) {  
+    if (product.developer_id !== req.user!.userId) {
       logger.error({ err: productError }, "User not authorized to delete this pricing plan");
       throw new AppError(403, "Forbidden", "FORBIDDEN");
     }
-    
+
     // delete plan 
     const { error: deleteError } = await supabase
       .from("pricing_plans")
@@ -841,7 +956,7 @@ export async function getProductPlans(req: Request, res: Response, next: NextFun
       .select("*")
       .eq("product_id", productId)
       .order("sort_order", { ascending: true });
-    
+
     if (error) {
       logger.error({ err: error }, "Failed to fetch pricing plans for product");
       throw new AppError(500, "Internal Server Error", "INTERNAL_SERVER_ERROR");

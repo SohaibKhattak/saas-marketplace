@@ -44,7 +44,7 @@ interface MarketplaceProduct {
   slug: string;
   shortDescription: string | null;
   category: string;
-  tags: string[];
+  // tags: string[];
   logoUrl: string | null;
   avgRating: number;
   totalSubscribers: number;
@@ -52,7 +52,7 @@ interface MarketplaceProduct {
   developer: {
     user: { fullName: string; avatarUrl: string | null };
   };
-  pricingPlans: { priceMonthly: number }[];
+  pricingPlans: { price_monthly: number }[];
   _count: { reviews: number };
 }
 
@@ -62,11 +62,10 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
           key={star}
-          className={`h-3.5 w-3.5 ${
-            star <= Math.round(rating)
-              ? "fill-yellow-400 text-yellow-400"
-              : "fill-muted text-muted"
-          }`}
+          className={`h-3.5 w-3.5 ${star <= Math.round(rating)
+            ? "fill-yellow-400 text-yellow-400"
+            : "text-yellow-400"
+            }`}
         />
       ))}
       <span className="ml-1 text-sm text-gray-500">({count})</span>
@@ -84,12 +83,12 @@ export default function MarketplacePage() {
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
   const [priceRange, setPriceRange] = useState("0");
-  const [tagFilter, setTagFilter] = useState("");
+  // const [tagFilter, setTagFilter] = useState("");
   const [error, setError] = useState("");
   const limit = 12;
 
   // Collect all unique tags from loaded products for the tag filter
-  const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
+  // const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -102,7 +101,7 @@ export default function MarketplacePage() {
       });
       if (search) params.set("search", search);
       if (category !== "all") params.set("category", category);
-      if (tagFilter) params.set("tag", tagFilter);
+      // if (tagFilter) params.set("tag", tagFilter);
       const range = PRICE_RANGES[parseInt(priceRange)];
       if (range?.min !== undefined) params.set("minPrice", range.min.toString());
       if (range?.max !== undefined) params.set("maxPrice", range.max.toString());
@@ -118,7 +117,7 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, category, sortBy, priceRange, tagFilter]);
+  }, [page, search, category, sortBy, priceRange]);
 
   useEffect(() => {
     fetchProducts();
@@ -147,7 +146,7 @@ export default function MarketplacePage() {
               <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-semibold tracking-tight text-foreground">
                 Marketplace
               </Link>
-              
+
               <Link href="/login">
                 <Button variant="ghost" size="sm">Sign in</Button>
               </Link>
@@ -227,7 +226,7 @@ export default function MarketplacePage() {
           </div>
 
           {/* Active tag filters */}
-          {allTags.length > 0 && (
+          {/*{allTags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2 items-center">
               <span className="text-xs text-gray-500">Tags:</span>
               {allTags.map((tag) => (
@@ -245,7 +244,7 @@ export default function MarketplacePage() {
                 </button>
               ))}
             </div>
-          )}
+          )} */}
 
           {/* Results count */}
           <p className="mt-4 text-sm text-gray-500">
@@ -272,7 +271,7 @@ export default function MarketplacePage() {
           ) : (
             <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((product, i) => (
-                <Link key={product.id} href={`/marketplace/${product.slug}`}>
+                <Link key={product.id} href={`/marketplace/${product.id}`}>
                   <Card className={`h-full group border hover:shadow-sm hover:-translate-y-1 transition-all duration-300 animate-slide-up${i < 3 ? (i > 0 ? `-delay-${i}` : "") : ""}`}>
                     {/* Gradient top bar */}
                     <div className={`h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-t-lg transition-opacity ${product.isFeatured ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
@@ -298,20 +297,20 @@ export default function MarketplacePage() {
                       <p className="text-sm text-gray-500 line-clamp-2 min-h-[2.5rem]">
                         {product.shortDescription ?? product.name}
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
+                      {/* <div className="mt-3 flex flex-wrap gap-1.5">
                         <Badge variant="outline" className="text-xs">{product.category}</Badge>
-                        {product.tags.slice(0, 2).map((tag) => (
+                        {product?.tags?.slice(0, 2).map((tag: any) => (
                           <Badge key={tag} variant="secondary" className="text-xs">
                             {tag}
                           </Badge>
                         ))}
-                      </div>
+                      </div> */}
                     </CardContent>
                     <CardFooter className="flex items-center justify-between border-t pt-4">
                       <StarRating rating={product.avgRating} count={product._count.reviews} />
                       <div className="text-sm font-semibold text-neutral-900">
                         {product.pricingPlans.length > 0
-                          ? `$${product.pricingPlans[0].priceMonthly}/mo`
+                          ? `$${product.pricingPlans[0].price_monthly}/mo`
                           : "Free"}
                       </div>
                     </CardFooter>
