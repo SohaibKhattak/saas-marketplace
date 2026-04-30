@@ -41,7 +41,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useTheme } from "@/components/theme-provider";
 
 interface ToggleProps {
   enabled: boolean;
@@ -68,7 +67,8 @@ function Toggle({ enabled, onChange }: ToggleProps) {
 
 export default function DeveloperSettingsPage() {
   const { logout } = useAuthStore();
-  const { theme, setTheme } = useTheme();
+  const theme = "system" as string;
+  const setTheme = (x: string) => {};
 
   // Notification preferences
   const [emailNotifs, setEmailNotifs] = useState(true);

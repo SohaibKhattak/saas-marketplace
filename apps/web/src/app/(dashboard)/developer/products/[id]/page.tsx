@@ -106,6 +106,7 @@ export default function ProductDetailPage() {
   const [deletingPlan, setDeletingPlan] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const [reviewing, setReviewing] = useState(false);
   const fetchProduct = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -155,6 +156,7 @@ export default function ProductDetailPage() {
   async function handleSubmitForReview() {
     setError("");
     setSuccess("");
+    setReviewing(true);
     try {
       await api.post(`/products/${productId}/submit`, {}, { token: accessToken! });
       setSuccess("Product submitted for review");
@@ -162,6 +164,9 @@ export default function ProductDetailPage() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to submit");
     }
+      finally {
+        setReviewing(false);
+      }
   }
 
   async function handleDeleteProduct() {
@@ -262,9 +267,9 @@ export default function ProductDetailPage() {
         </div>
         <div className="flex gap-2">
           {canSubmit && (
-            <Button onClick={handleSubmitForReview}>
+            <Button onClick={handleSubmitForReview} className={"cursor-pointer"}>
               <Send className="mr-2 h-4 w-4" />
-              Submit for Review
+              { !reviewing ? "Submit for Review" : <Loader2 className="animate-spin" /> }
             </Button>
           )}
           {isPublished && (

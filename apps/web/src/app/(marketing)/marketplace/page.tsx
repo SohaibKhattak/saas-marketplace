@@ -19,6 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight, X } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 
 const CATEGORIES = [
   "CRM", "Project Management", "Marketing", "Analytics", "E-Commerce",
@@ -72,6 +75,7 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
 }
 
 export default function MarketplacePage() {
+  const { user } = useAuthStore();
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -127,31 +131,39 @@ export default function MarketplacePage() {
 
   const totalPages = Math.ceil(total / limit);
 
-  return (
-    <div className="flex min-h-screen flex-col">
+  const content = (
+    <div className="flex min-h-screen flex-col w-full">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
-              <Store className="h-4 w-4" />
-            </div>
-            <span>Saasifyy</span>
-          </Link>
-          <nav className="flex items-center gap-2">
-            <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-semibold tracking-tight text-foreground">
-              Marketplace
+      {!user ? (
+        <header className="sticky top-0 z-50 glass-card border-b">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2 font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
+                <Store className="h-4 w-4" />
+              </div>
+              <span>Saasifyy</span>
             </Link>
-            
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Sign in</Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm" className="shadow-sm shadow-primary/20">Get started</Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+            <nav className="flex items-center gap-2">
+              <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-semibold tracking-tight text-foreground">
+                Marketplace
+              </Link>
+              
+              <Link href="/login">
+                <Button variant="ghost" size="sm">Sign in</Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm" className="shadow-sm shadow-primary/20">Get started</Button>
+              </Link>
+            </nav>
+          </div>
+        </header>
+      ) : (
+        <header className="flex h-14 items-center gap-2 border-b px-4 sticky top-0 z-50 bg-background/80 backdrop-blur-md">
+          <SidebarTrigger />
+          <div className="h-6 w-px bg-border mx-1" />
+          <span className="font-bold tracking-tight text-sm uppercase">Explore Marketplace</span>
+        </header>
+      )}
 
       <main className="flex-1">
         {/* Hero banner */}
@@ -344,4 +356,17 @@ export default function MarketplacePage() {
       </footer>
     </div>
   );
+
+  if (user) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          {content}
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  return content;
 }

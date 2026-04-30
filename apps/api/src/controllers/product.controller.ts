@@ -279,7 +279,62 @@ export async function adminDeleteProduct(req: AuthRequest, res: Response, next: 
 export async function submitForReview(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const product = await productService.submitForReview(id as string, req.user!.userId);
+    // const product = await productService.submitForReview(id as string, req.user!.userId);
+
+    // verify ownership  
+    const { data: product, error: fetchError } = await supabase 
+      .from("products")
+      .select("id, developer_id, isdeleted, status ")  
+      .eq("id", id) 
+      .single();
+    if (fetchError || !product) {
+      logger.error({ err: fetchError }, "Failed to fetch product for submission");
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+
+    }
+    if (product.developer_id !== req.user!.userId) {
+      logger.error({ err: fetchError }, "User not authorized to submit this product");
+      throw new AppError(403, "Forbidden", "FORBIDDEN");
+    } 
+
+    if (product.isdeleted) {
+      logger.error({ err: fetchError }, "Cannot submit a deleted product");
+      throw new AppError(400, "Cannot submit a deleted product", "ALREADY_DELETED");
+    }
+
+    if (product.status !== "DRAFT" && product.status !== "REJECTED") {
+      logger.error({ err: fetchError }, "Product cannot be submitted from current status");
+      throw new AppError(400, "Product can only be submitted from draft or rejected status", "INVALID_STATUS");
+    }
+
+    // Must have at least one pricing plan
+    const { data: pricingPlans, error: plansError } = await supabase
+      .from("pricing_plans")
+      .select("id") 
+      .eq("product_id", id);
+      
+    if (plansError) {
+      logger.error({ err: plansError }, "Failed to fetch pricing plans for submission");
+      throw new AppError(500, "Failed to submit product", "SUBMISSION_FAILED");
+    }
+    if (!pricingPlans || pricingPlans.length === 0) {
+      logger.error({ err: plansError }, "Product must have at least one pricing plan");
+      throw new AppError(400, "Product must have at least one pricing plan", "INVALID_PRICING_PLANS");
+    }
+
+    // Update status to PENDING_REVIEW  
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from("products")
+      .update({ status: "PENDING_REVIEW" }) 
+      .eq("id", id) 
+      .select("*")
+      .single();  
+    if (updateError || !updatedProduct) {
+      logger.error({ err: updateError }, "Failed to update product status for submission");
+      throw new AppError(500, "Failed to submit product", "SUBMISSION_FAILED"); 
+    }
+
+
     res.json({ data: product });
   } catch (err) {
     next(err);
