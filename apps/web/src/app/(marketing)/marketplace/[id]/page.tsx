@@ -77,7 +77,7 @@ export default function ProductPage() {
   const [reviewLoaded, setReviewLoaded] = useState(false);
 
   const { accessToken } = useAuthStore();
-
+  console.log(product)
   useEffect(() => {
     async function load() {
       try {
@@ -331,7 +331,7 @@ export default function ProductPage() {
                         <h3 className="text-lg font-semibold text-slate-900 leading-none">Share your experience</h3>
                         <p className="text-sm text-slate-500">Your feedback helps other users and the developer.</p>
                       </div>
-                      
+
                       <div className="space-y-3">
                         <div className="flex items-center gap-1.5">
                           {Array.from({ length: 5 }).map((_, i) => {
@@ -347,11 +347,10 @@ export default function ProductPage() {
                                 className="transition-transform active:scale-95"
                               >
                                 <Star
-                                  className={`h-6 w-6 cursor-pointer transition-all ${
-                                    isFilled 
-                                      ? "fill-yellow-400 text-yellow-400" 
-                                      : "text-slate-200 hover:text-yellow-400/50"
-                                  }`}
+                                  className={`h-6 w-6 cursor-pointer transition-all ${isFilled
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-slate-200 hover:text-yellow-400/50"
+                                    }`}
                                 />
                               </button>
                             );
@@ -376,9 +375,9 @@ export default function ProductPage() {
                       )}
 
                       <div className="flex justify-end">
-                        <Button 
-                          onClick={handleSubmitReview} 
-                          disabled={reviewSubmitting} 
+                        <Button
+                          onClick={handleSubmitReview}
+                          disabled={reviewSubmitting}
                           className="px-6 font-bold"
                         >
                           {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : "Submit Review"}
@@ -407,10 +406,10 @@ export default function ProductPage() {
                               <Star key={i} className={`h-4 w-4 ${i < userReview.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}`} />
                             ))}
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-destructive h-8 px-2 text-xs font-semibold" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive h-8 px-2 text-xs font-semibold"
                             onClick={handleDeleteReview}
                           >
                             Delete Review

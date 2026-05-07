@@ -54,8 +54,8 @@ const customerNav: NavItem[] = [
   { label: "Profile", href: "/customer/profile", icon: UserCircle },
   { label: "My Subscriptions", href: "/customer/subscriptions", icon: Package },
   { label: "Billing History", href: "/customer/billing", icon: CreditCard },
-  { label: "Notifications", href: "/customer/notifications", icon: Bell },
-  { label: "Settings", href: "/customer/settings", icon: Settings },
+  // { label: "Notifications", href: "/customer/notifications", icon: Bell },
+  // { label: "Settings", href: "/customer/settings", icon: Settings },
 ];
 
 // ── Developer sidebar ──────────────────────────────────────

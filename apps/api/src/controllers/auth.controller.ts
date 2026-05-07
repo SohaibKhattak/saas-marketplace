@@ -54,7 +54,7 @@ export async function resetPassword(req: Request, res: Response) {
     // Since we receive an access_token from the recovery link, verify it by getting the user
     // The recovery link gives us an authenticated session token
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
+
     if (userError || !user) {
       return res.status(401).json({ error: { message: "Invalid or expired reset token", code: "INVALID_TOKEN" } });
     }

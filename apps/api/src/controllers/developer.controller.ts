@@ -363,9 +363,13 @@ export async function getProfile(
       .eq("developer_id", developerId);
 
     if (sitesError) {
-      console.error("[getProfile] sites error:", sitesError);
+      logDebug("Failed to fetch developer sites", sitesError);
+      throw new AppError(
+        500,
+        sitesError.message || "Database operation failed",
+        "SUPABASE_ERROR",
+      );
     }
-
     // Always fallback to empty array
     const safeSites = sites ?? [];
 
@@ -380,14 +384,6 @@ export async function getProfile(
       console.error("[getProfile] product count error:", productCountError);
     }
 
-    if (sitesError) {
-      logDebug("Failed to fetch developer sites", sitesError);
-      throw new AppError(
-        500,
-        sitesError.message || "Database operation failed",
-        "SUPABASE_ERROR",
-      );
-    }
 
     res.json({
       data: {
@@ -543,9 +539,9 @@ export async function listApplications(
 
     const usersResult = userIds.length
       ? await supabase
-          .from("users")
-          .select("id, email, full_name, created_at")
-          .in("id", userIds)
+        .from("users")
+        .select("id, email, full_name, created_at")
+        .in("id", userIds)
       : { data: [], error: null };
 
     const { data: users, error: usersError } = usersResult;
@@ -743,11 +739,11 @@ export async function reviewApplication(
         updatedAt: (updatedProfile as DeveloperProfileDatabaseRow).updated_at,
         user: user
           ? {
-              id: (user as UsersListDatabaseRow).id,
-              email: (user as UsersListDatabaseRow).email,
-              fullName: (user as UsersListDatabaseRow).full_name,
-              createdAt: (user as UsersListDatabaseRow).created_at,
-            }
+            id: (user as UsersListDatabaseRow).id,
+            email: (user as UsersListDatabaseRow).email,
+            fullName: (user as UsersListDatabaseRow).full_name,
+            createdAt: (user as UsersListDatabaseRow).created_at,
+          }
           : null,
       },
     });

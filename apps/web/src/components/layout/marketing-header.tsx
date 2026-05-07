@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Store, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useAuthStore } from "@/stores/auth-store";
 
 const navLinks = [
   { href: "/marketplace", label: "Marketplace" },
@@ -16,6 +17,7 @@ const navLinks = [
 
 export function MarketingHeader() {
   const pathname = usePathname();
+  const { accessToken, user, hasHydrated } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -46,13 +48,26 @@ export function MarketingHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="rounded-sm">Sign in</Button>
-          </Link>
-          <Link href="/register" className="hidden sm:inline-flex">
-            <Button size="sm" className="rounded-sm shadow-sm shadow-primary/20 font-semibold">Get started</Button>
-          </Link>
+          {!hasHydrated ? (
+            <div className="w-20 h-8 animate-pulse bg-gray-100 rounded-sm" />
+          ) : accessToken ? (
+            <Link href={
+              user?.role === "ADMIN" ? "/admin/analytics" :
+              user?.role === "DEVELOPER" ? "/developer/profile" :
+              "/customer/profile"
+            }>
+              <Button size="sm" className="rounded-sm shadow-sm shadow-primary/20 font-semibold">Dashboard</Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="rounded-sm">Sign in</Button>
+              </Link>
+              <Link href="/register" className="hidden sm:inline-flex">
+                <Button size="sm" className="rounded-sm shadow-sm shadow-primary/20 font-semibold">Get started</Button>
+              </Link>
+            </>
+          )}
           {/* Mobile menu button */}
           <button
             className="md:hidden p-2 rounded-sm hover:bg-accent transition-colors"
@@ -82,9 +97,21 @@ export function MarketingHeader() {
                 {link.label}
               </Link>
             ))}
-            <Link href="/register" className="sm:hidden mt-3" onClick={() => setMobileOpen(false)}>
-              <Button size="sm" className="w-full rounded-sm shadow-sm shadow-primary/20 font-semibold">Get started</Button>
-            </Link>
+            {!hasHydrated ? (
+              <div className="w-full h-10 animate-pulse bg-gray-100 rounded-sm mt-3" />
+            ) : accessToken ? (
+              <Link href={
+                user?.role === "ADMIN" ? "/admin/analytics" :
+                user?.role === "DEVELOPER" ? "/developer/profile" :
+                "/customer/profile"
+              } className="mt-3" onClick={() => setMobileOpen(false)}>
+                <Button size="sm" className="w-full rounded-sm shadow-sm shadow-primary/20 font-semibold">Dashboard</Button>
+              </Link>
+            ) : (
+              <Link href="/register" className="mt-3" onClick={() => setMobileOpen(false)}>
+                <Button size="sm" className="w-full rounded-sm shadow-sm shadow-primary/20 font-semibold">Get started</Button>
+              </Link>
+            )}
           </nav>
         </div>
       )}
