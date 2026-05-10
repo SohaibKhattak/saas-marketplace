@@ -60,6 +60,7 @@ interface ProductDetail {
   };
   pricingPlans: PricingPlan[];
   reviews: Review[];
+  isSubscribed: boolean;
   _count: { subscriptions: number; reviews: number };
 }
 
@@ -355,64 +356,88 @@ export default function ProductPage() {
 
                   {/* Review Form */}
                   {user && user.role === "CUSTOMER" && reviewLoaded && !userReview && (
-                    <Card className="overflow-hidden border border-slate-200 rounded-3xl shadow-sm">
-                      <CardContent className="p-8 space-y-6">
-                        <div className="space-y-1">
-                          <h3 className="text-lg font-black text-slate-900 leading-none">Share your experience</h3>
-                          <p className="text-sm text-slate-500 font-medium">Your feedback drives the community.</p>
-                        </div>
+                    <>
+                      {!product.isSubscribed ? (
+                        <Card className="overflow-hidden border border-slate-200 rounded-[2rem] bg-slate-50/50">
+                          <CardContent className="p-12 text-center flex flex-col items-center justify-center space-y-6">
+                            <div className="h-20 w-20 rounded-3xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                              <Star className="h-10 w-10 text-slate-300" />
+                            </div>
+                            <div className="max-w-xs mx-auto space-y-2">
+                              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Verified Users Only</h3>
+                              <p className="text-sm text-slate-500 font-semibold leading-relaxed">
+                                To maintain high-quality feedback, only active subscribers can post reviews for this product.
+                              </p>
+                            </div>
+                            <Button 
+                              className="h-11 px-8 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/10"
+                              onClick={() => document.getElementById('pricing-plans')?.scrollIntoView({ behavior: 'smooth' })}
+                            >
+                              Explore Plans
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <Card className="overflow-hidden border border-slate-200 rounded-3xl shadow-sm">
+                          <CardContent className="p-8 space-y-6">
+                            <div className="space-y-1">
+                              <h3 className="text-lg font-black text-slate-900 leading-none">Share your experience</h3>
+                              <p className="text-sm text-slate-500 font-medium">Your feedback drives the community.</p>
+                            </div>
 
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            {Array.from({ length: 5 }).map((_, i) => {
-                              const starValue = i + 1;
-                              const isFilled = hoverRating ? starValue <= hoverRating : starValue <= reviewRating;
-                              return (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  onClick={() => setReviewRating(starValue)}
-                                  onMouseEnter={() => setHoverRating(starValue)}
-                                  onMouseLeave={() => setHoverRating(0)}
-                                  className="transition-transform active:scale-90"
-                                >
-                                  <Star
-                                    className={`h-8 w-8 cursor-pointer transition-all ${isFilled
-                                      ? "fill-yellow-400 text-yellow-400 scale-110"
-                                      : "text-slate-200 hover:text-yellow-400/30"
-                                      }`}
-                                  />
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                {Array.from({ length: 5 }).map((_, i) => {
+                                  const starValue = i + 1;
+                                  const isFilled = hoverRating ? starValue <= hoverRating : starValue <= reviewRating;
+                                  return (
+                                    <button
+                                      key={i}
+                                      type="button"
+                                      onClick={() => setReviewRating(starValue)}
+                                      onMouseEnter={() => setHoverRating(starValue)}
+                                      onMouseLeave={() => setHoverRating(0)}
+                                      className="transition-transform active:scale-90"
+                                    >
+                                      <Star
+                                        className={`h-8 w-8 cursor-pointer transition-all ${isFilled
+                                          ? "fill-yellow-400 text-yellow-400 scale-110"
+                                          : "text-slate-200 hover:text-yellow-400/30"
+                                          }`}
+                                      />
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
 
-                        <Textarea
-                          placeholder="What did you love? Any suggestions?"
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          rows={4}
-                          className="resize-none focus-visible:ring-primary/10 border-slate-200 rounded-2xl p-4 font-medium"
-                        />
+                            <Textarea
+                              placeholder="What did you love? Any suggestions?"
+                              value={reviewComment}
+                              onChange={(e) => setReviewComment(e.target.value)}
+                              rows={4}
+                              className="resize-none focus-visible:ring-primary/10 border-slate-200 rounded-2xl p-4 font-medium"
+                            />
 
-                        {reviewError && (
-                          <p className="text-sm font-bold text-destructive px-2">
-                            {reviewError}
-                          </p>
-                        )}
+                            {reviewError && (
+                              <p className="text-sm font-bold text-destructive px-2">
+                                {reviewError}
+                              </p>
+                            )}
 
-                        <div className="flex justify-end">
-                          <Button
-                            onClick={handleSubmitReview}
-                            disabled={reviewSubmitting}
-                            className="px-6 h-10 text-sm font-semibold rounded-xl shadow-lg shadow-primary/10"
-                          >
-                            {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : "Post Review"}
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                            <div className="flex justify-end">
+                              <Button
+                                onClick={handleSubmitReview}
+                                disabled={reviewSubmitting || reviewRating === 0}
+                                className="px-6 h-10 text-sm font-semibold rounded-xl shadow-lg shadow-primary/10"
+                              >
+                                {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : "Post Review"}
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </>
                   )}
 
                   {user && userReview && (

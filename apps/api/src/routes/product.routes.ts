@@ -1,7 +1,7 @@
 import { Router } from "express";
 import * as productController from "../controllers/product.controller.js";
 import * as reviewController from "../controllers/review.controller.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, optionalAuthenticate } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { validate } from "../middleware/validate.js";
 import { z } from "zod";
@@ -106,7 +106,7 @@ router.get("/", productController.listMarketplaceProducts);
  *       200: { description: Product with developer, plans, and reviews }
  *       404: { description: Product not found }
  */
-router.get("/catalog/:id", productController.getProductById);
+router.get("/catalog/:id", optionalAuthenticate, productController.getProductById);
 
 /**
  * @swagger

@@ -555,6 +555,19 @@ export async function getProductById(
         .eq("product_id", productId),
     ]);
 
+    // Check if current user is subscribed
+    let isSubscribed = false;
+    if (req.user) {
+      const { count } = await supabase
+        .from("subscriptions")
+        .select("*", { count: "exact", head: true })
+        .eq("product_id", productId)
+        .eq("customer_id", req.user.userId)
+        .eq("status", "ACTIVE");
+      
+      isSubscribed = (count ?? 0) > 0;
+    }
+
     const finalProduct = {
       id: product.id,
       name: product.name,
@@ -586,6 +599,7 @@ export async function getProductById(
         sortOrder: p.sort_order,
       })),
       site,
+      isSubscribed,
       _count: {
         subscriptions: subscriptions ?? 0,
         reviews: reviews ?? 0,

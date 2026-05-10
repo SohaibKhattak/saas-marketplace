@@ -64,3 +64,42 @@ export async function authenticate(req: AuthRequest, _res: Response, next: NextF
     next(new AppError(401, "Invalid or expired token", "INVALID_TOKEN"));
   }
 }
+
+export async function optionalAuthenticate(req: AuthRequest, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return next();
+  }
+
+  const token = authHeader.slice(7);
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      return next();
+    }
+
+    const userResult = await pool.query(
+      `SELECT id, role, auth_provider as "authProvider", profile_complete as "profileComplete", is_suspended as "isSuspended"
+       FROM users
+       WHERE id = $1`,
+      [data.user.id]
+    );
+
+    const dbUser = userResult.rows[0];
+    if (!dbUser || dbUser.isSuspended) {
+      return next();
+    }
+
+    req.user = {
+      userId: dbUser.id,
+      role: dbUser.role,
+      authProvider: dbUser.authProvider,
+      profileComplete: dbUser.profileComplete,
+    };
+
+    next();
+  } catch (err) {
+    next();
+  }
+}
