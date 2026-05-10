@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Star, Check, ArrowLeft, Loader2, Package, ArrowRight } from "lucide-react";
+import { PricingSection } from "@/components/marketplace/pricing-section";
+import { cn } from "@/lib/utils";
+
+
 
 interface PricingPlan {
   id: string;
@@ -50,9 +54,9 @@ interface ProductDetail {
   totalReviews: number;
   totalSubscribers: number;
   publishedAt: string;
-  site: { siteUrl: string; subdomain: string } | null;
+  site: { site_url: string; subdomain: string } | null;
   developer: {
-    user: { id: string; fullName: string; avatarUrl: string | null };
+    user: { id: string; full_name: string; avatarUrl: string | null };
   };
   pricingPlans: PricingPlan[];
   reviews: Review[];
@@ -219,339 +223,293 @@ export default function ProductPage() {
             Back to Marketplace
           </Link>
 
-          <div className="mt-4 grid gap-8 lg:grid-cols-3">
+          <div className="mt-4 grid gap-12 lg:grid-cols-1">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-12">
               {/* Product Header */}
-              <div className="flex flex-col sm:flex-row items-start gap-6">
+              <div className="flex flex-col sm:flex-row items-start gap-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
                 {product.logoUrl ? (
-                  <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-muted bg-white p-2 shadow-sm">
+                  <div className="h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-sm ring-4 ring-slate-50/50">
                     <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-2 border-dashed border-muted bg-muted/30">
-                    <Package className="h-8 w-8 text-gray-400" />
+                  <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50">
+                    <Package className="h-10 w-10 text-slate-300" />
                   </div>
                 )}
                 <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest text-primary border-primary/20 bg-primary/5">{product.category}</Badge>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">• Updated recently</span>
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
+                    <Badge className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 bg-primary/5 hover:bg-primary/5 rounded-full">{product.category}</Badge>
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Active Now
+                    </div>
                   </div>
-                  <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-slate-900 mb-2">
+                  <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl text-slate-900 mb-3">
                     {product.name}
                   </h1>
-                  <p className="text-lg text-gray-600 font-medium mb-4 flex items-center gap-2">
-                    by <span className="text-foreground font-bold hover:underline cursor-pointer">{product.developer.user.fullName}</span>
+                  <p className="text-lg text-slate-500 font-semibold mb-6 flex items-center gap-2">
+                    Crafted by <span className="text-slate-900 font-bold hover:text-primary transition-colors cursor-pointer border-b-2 border-slate-100 pb-0.5">{product.developer.user.full_name}</span>
                   </p>
 
                   <div className="flex flex-wrap items-center gap-6">
-                    <div className="flex items-center gap-2 bg-yellow-50 px-3 py-1.5 rounded-full border border-yellow-100 shadow-sm">
-                      <div className="flex items-center gap-0.5">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-base font-bold text-yellow-700">{product.avgRating.toFixed(1)}</span>
+                    <div className="flex items-center gap-2.5 bg-yellow-50/50 px-4 py-2 rounded-2xl border border-yellow-100 shadow-sm">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={cn("h-4 w-4", s <= Math.round(product.avgRating) ? "fill-yellow-400 text-yellow-400" : "text-slate-200")} />
+                        ))}
                       </div>
-                      <div className="h-3 w-px bg-yellow-200" />
-                      <span className="text-xs font-semibold text-yellow-600 uppercase tracking-tight">
-                        {product._count.reviews} review{product._count.reviews !== 1 ? "s" : ""}
+                      <div className="h-4 w-px bg-yellow-200" />
+                      <span className="text-sm font-black text-yellow-700">
+                        {product.avgRating.toFixed(1)} <span className="text-yellow-600/60 font-bold ml-1">({product._count.reviews})</span>
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-gray-500 font-semibold tracking-tight text-sm">
-                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                      {product._count.subscriptions} active subscriber{product._count.subscriptions !== 1 ? "s" : ""}
+                    <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-50 border border-slate-100">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+                            <div className="h-full w-full bg-gradient-to-br from-slate-300 to-slate-400" />
+                          </div>
+                        ))}
+                      </div>
+                      <span className="text-xs font-bold text-slate-600 uppercase tracking-tight">
+                        {product._count.subscriptions.toLocaleString()}+ users
+                      </span>
                     </div>
                   </div>
 
                   {product.site && (
-                    <div className="mt-6">
+                    <div className="mt-8">
                       <a
-                        href={product.site.siteUrl}
+                        href={product.site.site_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:text-primary/80 transition-colors bg-primary/5 px-4 py-2 rounded-full border border-primary/10"
+                        className="group inline-flex items-center gap-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-all px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/10"
                       >
-                        Visit Official Website <ArrowRight className="h-4 w-4" />
+                        Visit Official Site
+                        <div className="p-0.5 rounded-md bg-white/10 group-hover:translate-x-1 transition-transform">
+                          <ArrowRight className="h-3 w-3" />
+                        </div>
                       </a>
                     </div>
                   )}
                 </div>
               </div>
 
-              <Separator />
-
-              {/* Description */}
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">Product Overview</h2>
-                {product.shortDescription && (
-                  <p className="text-xl font-medium text-slate-600 leading-relaxed border-l-4 border-primary/20 pl-4 py-1 bg-primary/5 rounded-r-lg">
-                    {product.shortDescription}
-                  </p>
-                )}
-                <div className="whitespace-pre-wrap text-base text-slate-600 leading-7">
-                  {product.description}
-                </div>
-              </div>
-
-              {/* Screenshots */}
-              {product.screenshots.length > 0 && (
-                <div className="space-y-4 pt-4">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">Screenshots</h2>
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    {product.screenshots.map((url, i) => (
-                      <div key={i} className="group relative overflow-hidden rounded-xl border-2 border-muted transition-all hover:border-primary/30 hover:shadow-xl">
-                        <img
-                          src={url}
-                          alt={`Screenshot ${i + 1}`}
-                          className="aspect-video w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-                          <Button variant="secondary" size="sm" className="font-bold">View Fullsize</Button>
-                        </div>
-                      </div>
-                    ))}
+              <div className="grid gap-12 lg:grid-cols-2">
+                {/* Description Column */}
+                <div className="space-y-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-1.5 bg-primary rounded-full" />
+                      <h2 className="text-2xl font-black tracking-tight text-slate-900">About {product.name}</h2>
+                    </div>
+                    {product.shortDescription && (
+                      <p className="text-xl font-bold text-slate-700 leading-relaxed bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        "{product.shortDescription}"
+                      </p>
+                    )}
+                    <div className="whitespace-pre-wrap text-base text-slate-500 leading-8 font-medium">
+                      {product.description}
+                    </div>
                   </div>
-                </div>
-              )}
 
-              {/* Reviews */}              <div className="space-y-6 pt-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold tracking-tight text-slate-900">Community Reviews</h2>
-                  <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1 rounded-full text-sm font-semibold text-slate-600">
-                    <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                    {product.avgRating.toFixed(1)} / 5.0
+                  {/* Screenshots */}
+                  {product.screenshots.length > 0 && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-1.5 bg-primary rounded-full" />
+                        <h2 className="text-2xl font-black tracking-tight text-slate-900">Product Interface</h2>
+                      </div>
+                      <div className="grid gap-4">
+                        {product.screenshots.map((url, i) => (
+                          <div key={i} className="group relative overflow-hidden rounded-3xl border border-slate-200 transition-all duration-500 hover:border-primary/20 hover:shadow-2xl">
+                            <img
+                              src={url}
+                              alt={`Screenshot ${i + 1}`}
+                              className="aspect-video w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center backdrop-blur-[2px]">
+                              <Button variant="secondary" size="sm" className="font-semibold rounded-lg shadow-xl">Expand View</Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reviews Column */}
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-1.5 bg-primary rounded-full" />
+                      <h2 className="text-2xl font-black tracking-tight text-slate-900">User Reviews</h2>
+                    </div>
+                    <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-2xl text-xs font-black text-slate-600 uppercase tracking-widest">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      {product.avgRating.toFixed(1)} rating
+                    </div>
                   </div>
-                </div>
 
-                {/* Review Form */}
-                {user && user.role === "CUSTOMER" && reviewLoaded && !userReview && (
-                  <Card className="mt-4 overflow-hidden border">
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-lg font-semibold text-slate-900 leading-none">Share your experience</h3>
-                        <p className="text-sm text-slate-500">Your feedback helps other users and the developer.</p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-1.5">
-                          {Array.from({ length: 5 }).map((_, i) => {
-                            const starValue = i + 1;
-                            const isFilled = hoverRating ? starValue <= hoverRating : starValue <= reviewRating;
-                            return (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => setReviewRating(starValue)}
-                                onMouseEnter={() => setHoverRating(starValue)}
-                                onMouseLeave={() => setHoverRating(0)}
-                                className="transition-transform active:scale-95"
-                              >
-                                <Star
-                                  className={`h-6 w-6 cursor-pointer transition-all ${isFilled
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-slate-200 hover:text-yellow-400/50"
-                                    }`}
-                                />
-                              </button>
-                            );
-                          })}
+                  {/* Review Form */}
+                  {user && user.role === "CUSTOMER" && reviewLoaded && !userReview && (
+                    <Card className="overflow-hidden border border-slate-200 rounded-3xl shadow-sm">
+                      <CardContent className="p-8 space-y-6">
+                        <div className="space-y-1">
+                          <h3 className="text-lg font-black text-slate-900 leading-none">Share your experience</h3>
+                          <p className="text-sm text-slate-500 font-medium">Your feedback drives the community.</p>
                         </div>
-                      </div>
 
-                      <div className="space-y-2">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            {Array.from({ length: 5 }).map((_, i) => {
+                              const starValue = i + 1;
+                              const isFilled = hoverRating ? starValue <= hoverRating : starValue <= reviewRating;
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => setReviewRating(starValue)}
+                                  onMouseEnter={() => setHoverRating(starValue)}
+                                  onMouseLeave={() => setHoverRating(0)}
+                                  className="transition-transform active:scale-90"
+                                >
+                                  <Star
+                                    className={`h-8 w-8 cursor-pointer transition-all ${isFilled
+                                      ? "fill-yellow-400 text-yellow-400 scale-110"
+                                      : "text-slate-200 hover:text-yellow-400/30"
+                                      }`}
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         <Textarea
-                          placeholder="Tell us what you think..."
+                          placeholder="What did you love? Any suggestions?"
                           value={reviewComment}
                           onChange={(e) => setReviewComment(e.target.value)}
                           rows={4}
-                          className="resize-none focus-visible:ring-primary/20 border-slate-200"
+                          className="resize-none focus-visible:ring-primary/10 border-slate-200 rounded-2xl p-4 font-medium"
                         />
-                      </div>
 
-                      {reviewError && (
-                        <p className="text-sm font-medium text-destructive">
-                          {reviewError}
-                        </p>
-                      )}
+                        {reviewError && (
+                          <p className="text-sm font-bold text-destructive px-2">
+                            {reviewError}
+                          </p>
+                        )}
 
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={handleSubmitReview}
-                          disabled={reviewSubmitting}
-                          className="px-6 font-bold"
-                        >
-                          {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : "Submit Review"}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {user && userReview && (
-                  <Card className="mt-4 overflow-hidden border bg-slate-50/50">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold uppercase text-sm">
-                            {user.fullName?.charAt(0) || 'U'}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-slate-900 leading-none">Your Review</h4>
-                            <p className="text-xs text-slate-500 mt-1">Thank you for your feedback!</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star key={i} className={`h-4 w-4 ${i < userReview.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}`} />
-                            ))}
-                          </div>
+                        <div className="flex justify-end">
                           <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive h-8 px-2 text-xs font-semibold"
-                            onClick={handleDeleteReview}
+                            onClick={handleSubmitReview}
+                            disabled={reviewSubmitting}
+                            className="px-6 h-10 text-sm font-semibold rounded-xl shadow-lg shadow-primary/10"
                           >
-                            Delete Review
+                            {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : "Post Review"}
                           </Button>
                         </div>
-                      </div>
-                      {userReview.comment && (
-                        <p className="text-sm text-slate-600 leading-relaxed italic border-l-2 border-slate-200 pl-4">
-                          "{userReview.comment}"
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                      </CardContent>
+                    </Card>
+                  )}
 
-                {/* {product.reviews.length === 0 && !userReview ? (
-                  <div className="flex flex-col items-center justify-center py-12 px-4 rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/30">
-                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                       <Star className="h-6 w-6 text-slate-300" />
-                    </div>
-                    <p className="text-lg font-bold text-slate-900">No reviews yet</p>
-                    <p className="text-sm text-slate-500 mt-1">Be the first to share your thoughts!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {product.reviews.map((review) => (
-                      <Card key={review.id} className="border-none shadow-sm bg-white/50 backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10">
-                                <span className="text-sm font-bold text-primary">
+                  {user && userReview && (
+                    <Card className="overflow-hidden border border-primary/20 rounded-3xl bg-primary/5 shadow-xl shadow-primary/5">
+                      <CardContent className="p-8">
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-2xl bg-primary text-white flex items-center justify-center font-black uppercase text-lg shadow-lg shadow-primary/20">
+                              {user.fullName?.charAt(0) || 'U'}
+                            </div>
+                            <div>
+                              <h4 className="font-black text-slate-900 leading-none">Your Honest Feedback</h4>
+                              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1.5">Published</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl shadow-sm">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star key={i} className={`h-3 w-3 ${i < userReview.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}`} />
+                              ))}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/5 h-10 px-4 text-xs font-black uppercase tracking-widest"
+                              onClick={handleDeleteReview}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        {userReview.comment && (
+                          <p className="text-base text-slate-700 leading-relaxed font-semibold italic bg-white/50 p-6 rounded-2xl border border-white/50">
+                            "{userReview.comment}"
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* <div className="space-y-4">
+                    {product.reviews.length > 0 ? (
+                      product.reviews.map((review) => (
+                        <div key={review.id} className="p-8 rounded-3xl bg-white border border-slate-100 hover:border-slate-200 transition-all duration-300">
+                          <div className="flex items-start justify-between mb-6">
+                            <div className="flex items-center gap-4">
+                              <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center">
+                                <span className="text-sm font-black text-slate-900">
                                   {review.customer.fullName.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                               <div>
-                                <h4 className="font-bold text-slate-900 leading-none mb-1">{review.customer.fullName}</h4>
-                                <p className="text-xs text-slate-400 font-medium">{new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                <h4 className="font-black text-slate-900 leading-none mb-1.5">{review.customer.fullName}</h4>
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-0.5">
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200"}`}
-                                />
-                              ))}
+                            <div className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-xl">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="text-xs font-black text-slate-900">{review.rating.toFixed(1)}</span>
                             </div>
                           </div>
                           {review.comment && (
-                            <p className="text-sm text-slate-600 leading-relaxed italic border-l-2 border-slate-100 pl-4">
+                            <p className="text-base text-slate-600 leading-relaxed font-medium">
                               "{review.comment}"
                             </p>
                           )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-16 px-8 rounded-[2rem] border-2 border-dashed border-slate-100 bg-slate-50/50">
+                         <Star className="h-12 w-12 text-slate-200 mb-4" />
+                         <p className="text-xl font-black text-slate-900">No reviews yet</p>
+                         <p className="text-sm text-slate-500 font-medium mt-2">Help others by being the first to review!</p>
+                      </div>
+                    )}
+                  </div> */}
+                </div>
+              </div>
+
+              {/* Pricing Section - Full Width at the bottom */}
+              <div className="pt-12 border-t border-slate-100">
+                {checkoutError && (
+                  <div className="mb-8 rounded-2xl bg-destructive/5 border border-destructive/10 p-4 text-sm font-bold text-destructive flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+                    {checkoutError}
                   </div>
-                )} */}
+                )}
+                <PricingSection
+                  plans={product.pricingPlans}
+                  onSubscribe={handleSubscribe}
+                  subscribingPlanId={subscribing}
+                  isLoggedIn={!!user}
+                />
               </div>
             </div>
-
-            {/* Pricing Sidebar */}
-            <div className="space-y-4">
-              {checkoutError && (
-                <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
-                  {checkoutError}
-                </div>
-              )}
-              {product.pricingPlans.map((plan) => (
-                <Card key={plan.id} className="sticky top-4 overflow-hidden border-2 transition-all hover:border-primary/20 shadow-lg shadow-black/5">
-                  <div className="absolute top-0 right-0 p-2">
-                    {plan.trial_days > 0 && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-none text-[10px] uppercase font-bold">
-                        {plan.trial_days} Day Trial
-                      </Badge>
-                    )}
-                  </div>
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-bold tracking-tight">{plan.name}</CardTitle>
-                    <div className="mt-4 flex flex-col gap-1">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-extrabold tracking-tight text-foreground">
-                          ${plan.price_monthly}
-                        </span>
-                        <span className="text-sm font-medium text-gray-500">/ month</span>
-                      </div>
-                      {plan.price_yearly && (
-                        <div className="text-sm text-gray-500 font-medium">
-                          or <span className="text-primary font-semibold">${plan.price_yearly}</span> billed yearly
-                          <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary uppercase tracking-wider">
-                            Save {(100 - (plan.price_yearly / (plan.price_monthly * 12)) * 100).toFixed(0)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-6">
-                    <Separator className="mb-6 opacity-50" />
-                    <ul className="space-y-3">
-                      {(plan.features as string[]).map((feature, i) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
-                          <div className="mt-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <Check className="h-2.5 w-2.5 stroke-[3]" />
-                          </div>
-                          <span className="leading-snug">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-3 bg-muted/30 pt-6">
-                    <Button
-                      className="w-full h-11 text-base font-bold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
-                      onClick={() => handleSubscribe(plan.id, "MONTHLY")}
-                      disabled={subscribing === plan.id}
-                    >
-                      {subscribing === plan.id
-                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
-                        : user
-                          ? `Start Monthly Subscription`
-                          : "Sign in to Subscribe"}
-                    </Button>
-                    {plan.price_yearly && (
-                      <Button
-                        className="w-full h-11 text-base font-bold transition-all border-2 hover:bg-muted"
-                        variant="outline"
-                        onClick={() => handleSubscribe(plan.id, "YEARLY")}
-                        disabled={subscribing === plan.id}
-                      >
-                        {subscribing === plan.id
-                          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> ...</>
-                          : `Subscribe Yearly — $${plan.price_yearly}/yr`}
-                      </Button>
-                    )}
-                    <p className="text-center text-[10px] text-gray-400 mt-2">
-                      Secure payment via Stripe. Cancel anytime.
-                    </p>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
           </div>
+
         </div>
       </main>
     </div>
