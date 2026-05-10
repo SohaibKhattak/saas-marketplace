@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, createAuthClient } from "../config/supabase.js";
 import { env } from "../config/env.js";
 
 // 1. Redirect user to Supabase Google OAuth
@@ -7,7 +7,9 @@ export async function googleAuthStart(req: Request, res: Response) {
   const redirectTo = typeof req.query.redirectTo === "string"
     ? req.query.redirectTo
     : `${env.FRONTEND_URL}/auth/google/callback`;
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  // Use an ephemeral client to avoid contaminating the shared service-role client's session.
+  const authClient = createAuthClient();
+  const { data, error } = await authClient.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo,

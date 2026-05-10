@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { pool } from "../config/database.js";
-import { supabase } from "../config/supabase.js";
+import { supabase, createAuthClient } from "../config/supabase.js";
 import { env } from "../config/env.js";
 import { sendPasswordResetEmail } from "../services/email.service.js";
 import type { AuthRequest } from "../middleware/auth.js";
@@ -99,7 +99,9 @@ export async function login(req: Request, res: Response) {
     }
 
     // Sign in with Supabase Auth (user pool)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    // Use an ephemeral client to avoid contaminating the shared service-role client's session.
+    const authClient = createAuthClient();
+    const { data, error } = await authClient.auth.signInWithPassword({ email, password });
     if (error || !data.session || !data.user) {
       return res.status(401).json({ error: { message: error?.message || "Invalid credentials", code: "INVALID_CREDENTIALS" } });
     }
@@ -175,7 +177,9 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     }
 
     // 1. Create user in Supabase Auth (triggers verification email via signUp)
-    const { error } = await supabase.auth.signUp({
+    // Use an ephemeral client to avoid contaminating the shared service-role client's session.
+    const authClient = createAuthClient();
+    const { error } = await authClient.auth.signUp({
       email,
       password,
       options: {

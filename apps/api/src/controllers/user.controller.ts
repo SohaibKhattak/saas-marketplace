@@ -1,7 +1,7 @@
 import type { Response, NextFunction } from "express";
 import type { AuthRequest } from "../middleware/auth.js";
 import { pool } from "../config/database.js";
-import { supabase } from "../config/supabase.js";
+import { supabase, createAuthClient } from "../config/supabase.js";
 import { AppError } from "../middleware/error-handler.js";
 
 function logDebug(message: string, meta?: any) {
@@ -126,7 +126,9 @@ export async function changePassword(req: AuthRequest, res: Response, next: Next
       throw new AppError(400, "User email not found", "EMAIL_NOT_FOUND");
     }
     // Verify current password by attempting to sign in
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    // Use an ephemeral client to avoid contaminating the shared service-role client's session.
+    const authClient = createAuthClient();
+    const { error: signInError } = await authClient.auth.signInWithPassword({
       email,
       password: currentPassword,
     });

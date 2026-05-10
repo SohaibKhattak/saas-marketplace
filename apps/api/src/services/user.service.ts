@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase.js';
+import { supabase, createAuthClient } from '../config/supabase.js';
 import { pool } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
 
@@ -71,7 +71,8 @@ export async function changePassword(
   }
 
   // Verify current password by attempting to sign in
-  const { error: signInError } = await supabase.auth.signInWithPassword({
+  const authClient = createAuthClient();
+  const { error: signInError } = await authClient.auth.signInWithPassword({
     email,
     password: currentPassword,
   });
