@@ -240,6 +240,7 @@ router.patch("/plans/:planId", authenticate, requireRole("DEVELOPER", "ADMIN"), 
 router.delete("/plans/:planId", authenticate, requireRole("DEVELOPER", "ADMIN"), productController.deletePricingPlan);
 
 // --- Review routes ---
+router.get("/:productId/reviews", reviewController.getProductReviews);
 router.get("/:productId/reviews/me", authenticate, reviewController.getUserReview);
 router.post("/:productId/reviews", authenticate, validate(createReviewSchema), reviewController.createReview);
 router.patch("/reviews/:reviewId", authenticate, validate(updateReviewSchema), reviewController.updateReview);

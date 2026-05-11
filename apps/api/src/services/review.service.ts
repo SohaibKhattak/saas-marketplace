@@ -104,6 +104,30 @@ export async function getUserReviewForProduct(userId: string, productId: string)
   });
 }
 
+export async function getProductReviews(productId: string, type: 'all' | 'positive' | 'negative' = 'all') {
+  const where: any = { productId };
+  
+  if (type === 'positive') {
+    where.rating = { gte: 3 };
+  } else if (type === 'negative') {
+    where.rating = { lt: 3 };
+  }
+
+  return prisma.review.findMany({
+    where,
+    include: {
+      customer: {
+        select: {
+          id: true,
+          fullName: true,
+          avatarUrl: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 async function recalculateRating(productId: string) {
   const result = await prisma.review.aggregate({
     where: { productId },
