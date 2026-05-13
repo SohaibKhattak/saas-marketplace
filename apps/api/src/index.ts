@@ -37,7 +37,13 @@ app.use(
     credentials: true,
   })
 );
-app.use(pinoHttp({ logger }));
+app.use(
+  pinoHttp({
+    logger,
+    // Disable automatic request/response logging in development to keep terminal clean
+    autoLogging: env.NODE_ENV === "production",
+  })
+);
 app.use(cookieParser());
 
 // Stripe webhooks need raw body — must be before express.json()

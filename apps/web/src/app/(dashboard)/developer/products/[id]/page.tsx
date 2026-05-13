@@ -33,7 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, Send, Globe, Pencil, Loader2 } from "lucide-react";
+import { Trash2, Plus, Send, Globe, Pencil, Loader2, ImageIcon } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface PricingPlan {
   id: string;
@@ -83,14 +84,20 @@ export default function ProductDetailPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   console.log(product)
-  // Edit fields
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
-  // const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
-  // const [tagsInput, setTagsInput] = useState("");
+  const [logoFiles, setLogoFiles] = useState<(File | string)[]>([]);
+  const [screenshotFiles, setScreenshotFiles] = useState<(File | string)[]>([]);
 
-  const isChanged = product ? (name !== product.name || description !== product.description) : false;
+  const isChanged = product ? (
+    name !== product.name || 
+    description !== product.description || 
+    logoFiles.some(f => f instanceof File) ||
+    screenshotFiles.some(f => f instanceof File) ||
+    logoFiles.length === 0 || // Removed logo
+    screenshotFiles.length !== (product.screenshots?.length || 0) // Removed/Added screenshots
+  ) : false;
 
   // Pricing plan dialog
   const [showPlanDialog, setShowPlanDialog] = useState(false);
@@ -115,9 +122,9 @@ export default function ProductDetailPage() {
       });
       setProduct(res.data);
       setName(res.data.name);
-      // setShortDescription(res.data.shortDescription ?? "");
       setDescription(res.data.description);
-      // setTagsInput(res.data.tags.join(", "));
+      setLogoFiles(res.data.logoUrl ? [res.data.logoUrl] : []);
+      setScreenshotFiles(res.data.screenshots || []);
     } catch {
       setError("Failed to load product");
     } finally {
@@ -130,6 +137,39 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [fetchProduct]);
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleScreenshotChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const newFiles = [...screenshotFiles];
+      newFiles[index] = file;
+      setScreenshotFiles(newFiles);
+
+      const newPreviews = [...screenshotPreviews];
+      newPreviews[index] = URL.createObjectURL(file);
+      setScreenshotPreviews(newPreviews);
+    }
+  };
+
+  const addScreenshotSlot = () => {
+    if (screenshotFiles.length < 8) {
+      setScreenshotFiles([...screenshotFiles, null]);
+      setScreenshotPreviews([...screenshotPreviews, ""]);
+    }
+  };
+
+  const removeScreenshotSlot = (index: number) => {
+    setScreenshotFiles(screenshotFiles.filter((_, i) => i !== index));
+    setScreenshotPreviews(screenshotPreviews.filter((_, i) => i !== index));
+  };
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -137,17 +177,43 @@ export default function ProductDetailPage() {
     setSuccess("");
 
     try {
-      // const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+      if (logoFiles.length === 0) throw new Error("Logo is required");
+
+      if (screenshotFiles.length > 0 && (screenshotFiles.length < 5 || screenshotFiles.length > 8)) {
+        throw new Error("Please provide between 5 and 8 screenshots if you choose to add any.");
+      }
+
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      
+      if (logoFiles[0] instanceof File) {
+        formData.append("logo", logoFiles[0]);
+      } else {
+        formData.append("logoUrl", logoFiles[0] as string);
+      }
+      
+      screenshotFiles.forEach((file) => {
+        if (file instanceof File) {
+          formData.append("screenshots", file);
+        } else {
+          // If we want to keep existing screenshots, we need a way to tell the backend.
+          // For now, let's assume the backend replaces them all with what's sent.
+          // We might need to send the URLs of existing screenshots we want to keep.
+          formData.append("existingScreenshots", file);
+        }
+      });
+
       await api.patch(
         `/products/${productId}`,
-        { name, description },
+        formData,
         { token: accessToken! }
       );
       setSuccess("Product updated successfully");
       setIsEditing(false);
       fetchProduct();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save");
+      setError(err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Failed to save");
     } finally {
       setSaving(false);
     }
@@ -305,6 +371,19 @@ export default function ProductDetailPage() {
         </div>
       )}
 
+      {canEdit && (
+        <div className="rounded-lg bg-primary/10 p-4 border border-primary/20 flex items-center gap-3">
+          <div className="bg-primary/20 p-2 rounded-full">
+            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-primary">
+            Pro tip: Adding a professional logo and screenshots can help you achieve your goals by increasing trust and conversions!
+          </p>
+        </div>
+      )}
+
       {/* Product Info */}
       <Card>
         <form onSubmit={handleSave}>
@@ -334,10 +413,17 @@ export default function ProductDetailPage() {
               <Label htmlFor="name">Name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit || !isEditing} required minLength={3} />
             </div>
-            {/* <div className="space-y-2">
-              <Label htmlFor="shortDesc">Short Description</Label>
-              <Input id="shortDesc" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} disabled={!canEdit || !isEditing} maxLength={300} />
-            </div> */}
+
+            <div className="space-y-4">
+              <ImageUpload
+                label="Logo"
+                value={logoFiles}
+                onChange={setLogoFiles}
+                maxFiles={1}
+                description="Square PNG or JPG works best"
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="desc">Description</Label>
               <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canEdit || !isEditing} rows={6} required minLength={20} />
@@ -346,10 +432,16 @@ export default function ProductDetailPage() {
               <Label>Category</Label>
               <Input value={product.category} disabled />
             </div>
-            {/* <div className="space-y-2">
-              <Label htmlFor="tags">Tags</Label>
-              <Input id="tags" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit || !isEditing} placeholder="Comma separated" />
-            </div> */}
+
+            <div className="space-y-4 border-t pt-8">
+              <ImageUpload
+                label="Screenshots"
+                value={screenshotFiles}
+                onChange={setScreenshotFiles}
+                maxFiles={8}
+                description="Upload 5-8 screenshots for best results"
+              />
+            </div>
             <div className="space-y-2">
               <Label>Linked WordPress Site</Label>
               {product.site ? (

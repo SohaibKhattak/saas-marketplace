@@ -416,7 +416,7 @@ export default function ProductPage() {
                           <h2 className="text-2xl font-black tracking-tight text-slate-900">Product Interface</h2>
                         </div>
                         <div className="grid gap-6">
-                          {product.screenshots.slice(0, 3).map((url, i) => (
+                          {product.screenshots.map((url, i) => (
                             <div key={i} className="group relative overflow-hidden rounded-[2rem] border border-slate-200 transition-all duration-500 hover:border-primary/20 hover:shadow-2xl">
                               <img src={url} alt={`Screenshot ${i + 1}`} className="aspect-video w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                               <div className="absolute inset-0 bg-slate-900/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center backdrop-blur-[2px]">
@@ -449,15 +449,15 @@ export default function ProductPage() {
                 {/* Reviews Section - Full Width */}
                 <div className="pt-24 border-t border-slate-100 pb-24">
                   <div className="max-w-4xl mx-auto space-y-12">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                       <div className="space-y-3">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-1.5 bg-primary rounded-full" />
+                          <div className="h-8 w-[4px] bg-primary rounded-lg" />
                           <h2 className="text-3xl font-black tracking-tight text-slate-900">Customer Feedback</h2>
                         </div>
                         <p className="text-slate-500 font-medium text-lg">See what the community is saying about {product.name}</p>
                       </div>
-                      <div className="flex items-center gap-8 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-8 bg-white p-3 rounded-[2rem] border border-slate-100 shadow-sm">
                         <div className="text-center">
                           <div className="text-3xl font-black text-slate-900 leading-none">{product.avgRating.toFixed(1)}</div>
                           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Rating</div>
@@ -470,26 +470,7 @@ export default function ProductPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl w-fit">
-                      {[
-                        { id: 'all', label: 'All' },
-                        { id: 'positive', label: 'Positive' },
-                        { id: 'negative', label: 'Critical' }
-                      ].map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => { setActiveTab(tab.id as any); setCurrentPage(1); }}
-                          className={cn(
-                            "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
-                            activeTab === tab.id
-                              ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                              : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                          )}
-                        >
-                          {tab.label}
-                        </button>
-                      ))}
-                    </div>
+
 
                     <div className="grid gap-8">
                       {/* Review Form */}
@@ -555,7 +536,7 @@ export default function ProductPage() {
                               </CardContent>
                             </Card>
                           ) : (
-                            <div className="p-12 rounded-[3rem] border-2 border-dashed border-slate-200 bg-slate-50/50 text-center space-y-6">
+                            <div className="p-12  border-2 border-dashed border-slate-200 bg-slate-50/50 text-center space-y-6">
                               <div className="h-16 w-16 rounded-3xl bg-white border border-slate-200 flex items-center justify-center mx-auto shadow-sm">
                                 <Star className="h-8 w-8 text-slate-300" />
                               </div>
@@ -595,7 +576,7 @@ export default function ProductPage() {
                                 <div className="flex items-center gap-4">
                                   {!isEditingUserReview && (
                                     <div className="flex items-center gap-1">
-                                      <button 
+                                      <button
                                         onClick={() => {
                                           setIsEditingUserReview(true);
                                           setEditUserRating(userReview.rating);
@@ -605,7 +586,7 @@ export default function ProductPage() {
                                       >
                                         <Pencil className="h-4 w-4" />
                                       </button>
-                                      <button 
+                                      <button
                                         onClick={() => handleDeleteReview()}
                                         className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
                                       >
@@ -615,13 +596,13 @@ export default function ProductPage() {
                                   )}
                                   <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-100">
                                     {Array.from({ length: 5 }).map((_, i) => (
-                                      <Star 
-                                        key={i} 
+                                      <Star
+                                        key={i}
                                         className={cn(
-                                          "h-3 w-3", 
+                                          "h-3 w-3",
                                           i < (isEditingUserReview ? editUserRating : userReview.rating) ? "fill-yellow-400 text-yellow-400" : "text-slate-200",
                                           isEditingUserReview && "cursor-pointer hover:scale-110 transition-transform"
-                                        )} 
+                                        )}
                                         onClick={() => isEditingUserReview && setEditUserRating(i + 1)}
                                       />
                                     ))}
@@ -636,16 +617,16 @@ export default function ProductPage() {
                                     className="min-h-[100px] p-4 rounded-xl border-slate-200 focus-visible:ring-primary/10 resize-none font-medium text-slate-600 text-sm bg-white"
                                   />
                                   <div className="flex justify-end gap-2">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm" 
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
                                       onClick={() => setIsEditingUserReview(false)}
                                       className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg"
                                     >
                                       Cancel
                                     </Button>
-                                    <Button 
-                                      size="sm" 
+                                    <Button
+                                      size="sm"
                                       onClick={() => handleUpdateReview(userReview.id, editUserRating, editUserComment)}
                                       className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg"
                                       disabled={reviewUpdating}
@@ -663,9 +644,28 @@ export default function ProductPage() {
                           </Card>
                         </div>
                       )}
-
+                      <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl w-fit">
+                        {[
+                          { id: 'all', label: 'All' },
+                          { id: 'positive', label: 'Positive' },
+                          { id: 'negative', label: 'Critical' }
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => { setActiveTab(tab.id as any); setCurrentPage(1); }}
+                            className={cn(
+                              "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
+                              activeTab === tab.id
+                                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                            )}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
                       {/* Review List */}
-                      <div className={`${reviewsLoading ? "flex items-center justify-center" : "grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
+                      <div className={`${reviewsLoading ? "flex items-center justify-center" : paginatedReviews.length === 0 ? "flex items-center justify-center" : "grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
                         {reviewsLoading ? (
                           <div className="py-24 text-center space-y-6 animate-in fade-in duration-500">
                             <div className="h-20 w-20 rounded-[2rem] bg-slate-50 flex items-center justify-center mx-auto">
@@ -675,11 +675,11 @@ export default function ProductPage() {
                           </div>
                         ) : paginatedReviews.length > 0 ? (
                           paginatedReviews.map((review, i) => (
-                            <ReviewCard 
-                              key={review.id} 
-                              review={review} 
-                              index={i} 
-                              currentUserId={user?.userId}
+                            <ReviewCard
+                              key={review.id}
+                              review={review}
+                              index={i}
+                              currentUserId={user?.id}
                               onUpdate={handleUpdateReview}
                               onDelete={handleDeleteReview}
                             />
@@ -747,21 +747,61 @@ export default function ProductPage() {
     </div>
   );
 }
-function ReviewCard({ 
-  review, 
-  index 
-}: { 
-  review: Review; 
+function ReviewCard({
+  review,
+  index,
+  currentUserId,
+  onUpdate,
+  onDelete
+}: {
+  review: Review;
   index: number;
+  currentUserId?: string;
+  onUpdate?: (reviewId: string, rating: number, comment: string) => Promise<any>;
+  onDelete?: (reviewId: string) => Promise<any>;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editRating, setEditRating] = useState(review.rating);
+  const [editComment, setEditComment] = useState(review.comment || "");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const isOwner = currentUserId === review.customer.id;
   const comment = review.comment || "";
   const isLong = comment.length > 150;
   const displayComment = isLong && !isExpanded ? `${comment.substring(0, 150)}...` : comment;
 
+  const handleUpdate = async () => {
+    if (!onUpdate) return;
+    setIsUpdating(true);
+    try {
+      await onUpdate(review.id, editRating, editComment);
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete || !window.confirm("Are you sure you want to delete this review?")) return;
+    setIsDeleting(true);
+    try {
+      await onDelete(review.id);
+    } catch (err) {
+      console.error(err);
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <div 
-      className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/40 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 group flex flex-col h-full" 
+    <div
+      className={cn(
+        "p-5 rounded-2xl border bg-white transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 group flex flex-col h-full",
+        isEditing ? "border-primary/30 ring-1 ring-primary/10 shadow-xl" : "border-slate-200 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/40"
+      )}
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <div className="flex items-start justify-between mb-4">
@@ -774,37 +814,79 @@ function ReviewCard({
             )}
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-slate-900 text-xs leading-none truncate max-w-[100px]">{review.customer.fullName}</h4>
-            <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest mt-1">
-              {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-            </p>
+            <div className="flex items-center gap-2">
+              <h4 className="font-bold text-slate-900 text-xs leading-none truncate max-w-[100px]">{review.customer.fullName}</h4>
+              {/* {isOwner && (
+                <Badge variant="outline" className="h-4 px-1.5 text-[7px] font-black uppercase tracking-tighter bg-primary/5 text-primary border-primary/20">You</Badge>
+              )} */}
+            </div>
+            <div className="flex items-center gap-0.5 mt-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={cn(
+                    "h-2.5 w-2.5",
+                    i < (isEditing ? editRating : review.rating) ? "fill-yellow-400 text-yellow-400" : "text-slate-200"
+                  )}
+                  onClick={() => isEditing && setEditRating(i + 1)}
+                  style={{ cursor: isEditing ? 'pointer' : 'default' }}
+                />
+              ))}
+            </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-0.5 bg-slate-50 px-1.5 py-0.5 rounded-md border border-slate-100 h-fit">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star 
-              key={i} 
-              className={cn(
-                "h-2.5 w-2.5", 
-                i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-slate-200"
-              )}
-            />
-          ))}
-        </div>
+
+        <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest">
+          {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+        </p>
       </div>
 
       <div className="flex-1 flex flex-col">
-        <p className="text-slate-600 font-medium leading-relaxed text-[13px]">
-          {displayComment}
-        </p>
-        {isLong && (
-          <button 
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-primary text-[11px] font-bold mt-2 hover:underline focus:outline-none w-fit"
-          >
-            {isExpanded ? "Show Less" : "Show More"}
-          </button>
+        {isEditing ? (
+          <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
+            <Textarea
+              value={editComment}
+              onChange={(e) => setEditComment(e.target.value)}
+              className="min-h-[80px] p-3 text-[13px] rounded-xl border-slate-200 focus-visible:ring-primary/10 resize-none font-medium"
+              placeholder="Update your review..."
+            />
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleUpdate}
+                disabled={isUpdating || !editComment.trim() || editRating === 0}
+                className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg"
+              >
+                {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditRating(review.rating);
+                  setEditComment(review.comment || "");
+                }}
+                className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg text-slate-500"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-slate-600 font-medium leading-relaxed text-[13px]">
+              {displayComment}
+            </p>
+            {isLong && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-primary text-[11px] font-bold mt-2 hover:underline focus:outline-none w-fit"
+              >
+                {isExpanded ? "Show Less" : "Show More"}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

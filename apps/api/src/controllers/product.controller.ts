@@ -6,7 +6,30 @@ import { supabase } from "../config/supabase.js";
 import { logger } from "../config/logger.js";
 import { AppError } from "../middleware/error-handler.js";
 import { query } from "../config/database.js";
-// --- Developer Product CRUD ---
+
+async function uploadProductAsset(file: any, path: string): Promise<string> {
+  const { error } = await supabase.storage
+    .from("product-assets")
+    .upload(path, file.buffer, {
+      contentType: file.mimetype,
+      upsert: true,
+    });
+
+  if (error) {
+    logger.error({ err: error }, "Failed to upload product asset to Supabase");
+    throw new AppError(500, "Failed to upload asset", "UPLOAD_FAILED");
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("product-assets")
+    .getPublicUrl(path);
+
+  if (!publicUrlData?.publicUrl) {
+    throw new AppError(500, "Failed to get public URL for asset", "URL_FAILED");
+  }
+
+  return publicUrlData.publicUrl;
+}
 
 
 export async function createProduct(
@@ -69,6 +92,33 @@ export async function createProduct(
       }
     }
 
+    // Handle file uploads
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const logoFile = files?.["logo"]?.[0];
+    const screenshotFiles = files?.["screenshots"] || [];
+
+    if (!logoFile) {
+      throw new AppError(400, "Logo is required", "VALIDATION_FAILED");
+    }
+
+    // Upload Logo
+    const logoPath = `logos/${developerId}_${Date.now()}_${logoFile.originalname}`;
+    const logoUrl = await uploadProductAsset(logoFile, logoPath);
+
+    // Upload Screenshots
+    const screenshots: string[] = [];
+    if (screenshotFiles.length > 0) {
+      if (screenshotFiles.length < 5 || screenshotFiles.length > 8) {
+        throw new AppError(400, "Please provide between 5 and 8 screenshots", "VALIDATION_FAILED");
+      }
+
+      for (const file of screenshotFiles) {
+        const screenshotPath = `screenshots/${developerId}_${Date.now()}_${file.originalname}`;
+        const url = await uploadProductAsset(file, screenshotPath);
+        screenshots.push(url);
+      }
+    }
+
     // Create product
     const { data: createdProduct, error: createError } = await supabase
       .from("products")
@@ -76,12 +126,11 @@ export async function createProduct(
         {
           developer_id: developerId,
           name: data.name,
-          // slug,
           description: data.description,
-          // shortDescription: data.shortDescription,
           category: data.category,
-          // tags: data.tags ?? [],
           site_id: data.siteId ?? null,
+          logo_url: logoUrl,
+          screenshots: screenshots,
           status: "DRAFT",
         },
       ])
@@ -181,9 +230,36 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
       throw new AppError(403, "Forbidden", "FORBIDDEN");
     }
 
-    if (product.isdeleted) {
-      logger.error({ err: fetchError }, "Product already deleted");
-      throw new AppError(400, "Product already deleted", "ALREADY_DELETED");
+    // Handle file uploads for update
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const logoFile = files?.["logo"]?.[0];
+    const screenshotFiles = files?.["screenshots"] || [];
+    const existingScreenshots = Array.isArray(req.body.existingScreenshots)
+      ? req.body.existingScreenshots
+      : req.body.existingScreenshots
+        ? [req.body.existingScreenshots]
+        : [];
+
+    let logoUrl = req.body.logoUrl || product.logo_url;
+
+    if (logoFile) {
+      const logoPath = `logos/${userId}_${Date.now()}_${logoFile.originalname}`;
+      logoUrl = await uploadProductAsset(logoFile, logoPath);
+    }
+
+    let finalScreenshots = [...existingScreenshots];
+
+    if (screenshotFiles.length > 0) {
+      for (const file of screenshotFiles) {
+        const screenshotPath = `screenshots/${userId}_${Date.now()}_${file.originalname}`;
+        const url = await uploadProductAsset(file, screenshotPath);
+        finalScreenshots.push(url);
+      }
+    }
+
+    // Validation after combining
+    if (finalScreenshots.length > 0 && (finalScreenshots.length < 5 || finalScreenshots.length > 8)) {
+      throw new AppError(400, "Please provide between 5 and 8 screenshots", "VALIDATION_FAILED");
     }
 
     const { data: updatedProduct, error: updateError } = await supabase
@@ -191,6 +267,8 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
       .update({
         name: data.name,
         description: data.description,
+        logo_url: logoUrl,
+        screenshots: finalScreenshots,
       })
       .eq("id", id)
       .select("*")
@@ -564,7 +642,7 @@ export async function getProductById(
         .eq("product_id", productId)
         .eq("customer_id", req.user.userId)
         .eq("status", "ACTIVE");
-      
+
       isSubscribed = (count ?? 0) > 0;
     }
 
@@ -668,6 +746,7 @@ export async function listMarketplaceProducts(req: Request, res: Response, next:
       SELECT 
         p.*,
         p.avg_rating as "avgRating",
+        p.logo_url as "logoUrl",
         jsonb_build_object(
           'id', dp.id,
           'businessName', dp.business_name,
@@ -738,12 +817,87 @@ export async function listPendingProducts(req: AuthRequest, res: Response, next:
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
-    const { products, total } = await productService.listPendingProducts(page, limit);
+    const offset = (page - 1) * limit;
+    const status = "PENDING_REVIEW";
+
+    const conditions: string[] = ["p.isdeleted = false"];
+    const values: any[] = [];
+
+    if (status) {
+      values.push(status);
+      conditions.push(`p.status = $${values.length}`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countQuery = `SELECT COUNT(*) FROM products p ${whereClause}`;
+    const dataQuery = `
+      SELECT 
+        p.*,
+        p.avg_rating as "avgRating",
+        p.is_featured as "isFeatured",
+        p.total_reviews as "totalReviews",
+        p.total_subscribers as "totalSubscribers",
+        p.published_at as "publishedAt",
+        p.created_at as "createdAt",
+        jsonb_build_object(
+          'user', jsonb_build_object(
+            'fullName', u.full_name,
+            'email', u.email
+          )
+        ) as "developer",
+        CASE WHEN s.id IS NOT NULL THEN
+          jsonb_build_object(
+            'siteUrl', s.site_url,
+            'subdomain', s.subdomain
+          )
+        ELSE NULL END as "site",
+        COALESCE(
+          (
+            SELECT jsonb_agg(jsonb_build_object(
+              'name', pp.name,
+              'priceMonthly', pp.price_monthly
+            ))
+            FROM pricing_plans pp
+            WHERE pp.product_id = p.id
+          ),
+          '[]'::jsonb
+        ) as "pricingPlans",
+        jsonb_build_object(
+          'subscriptions', p.total_subscribers,
+          'reviews', p.total_reviews
+        ) as "_count"
+      FROM products p
+      LEFT JOIN users u ON p.developer_id = u.id
+      LEFT JOIN developer_sites s ON p.site_id = s.id
+      ${whereClause}
+      ORDER BY p.created_at DESC
+      LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+    `;
+
+    const [countResult, dataResult] = await Promise.all([
+      query(countQuery, values),
+      query(dataQuery, [...values, limit, offset]),
+    ]);
+
+    const total = parseInt(countResult.rows[0].count);
+    const products = dataResult.rows.map(row => ({
+      ...row,
+      tags: row.tags ?? [],
+      shortDescription: row.short_description ?? row.shortDescription ?? ""
+    }));
+
     res.json({
       data: products,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
+    logger.error({ err }, "Error listing pending products for moderation");
     next(err);
   }
 }
@@ -766,13 +920,69 @@ export async function listAllProducts(req: AuthRequest, res: Response, next: Nex
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const offset = (page - 1) * limit;
     const status = req.query.status as string | undefined;
-    const { products, total } = await productService.listAllProducts(page, limit, status);
+
+    const conditions: string[] = ["p.isdeleted = false"];
+    const values: any[] = [];
+
+    if (status && status !== "all") {
+      values.push(status);
+      conditions.push(`p.status = $${values.length}`);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countQuery = `SELECT COUNT(*) FROM products p ${whereClause}`;
+    const dataQuery = `
+      SELECT 
+        p.*,
+        p.avg_rating as "avgRating",
+        p.is_featured as "isFeatured",
+        p.total_reviews as "totalReviews",
+        p.total_subscribers as "totalSubscribers",
+        p.published_at as "publishedAt",
+        p.created_at as "createdAt",
+        jsonb_build_object(
+          'user', jsonb_build_object(
+            'fullName', u.full_name,
+            'email', u.email
+          )
+        ) as "developer",
+        jsonb_build_object(
+          'subscriptions', p.total_subscribers,
+          'reviews', p.total_reviews
+        ) as "_count"
+      FROM products p
+      LEFT JOIN users u ON p.developer_id = u.id
+      ${whereClause}
+      ORDER BY p.created_at DESC
+      LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+    `;
+
+    const [countResult, dataResult] = await Promise.all([
+      query(countQuery, values),
+      query(dataQuery, [...values, limit, offset]),
+    ]);
+
+    const total = parseInt(countResult.rows[0].count);
+    const products = dataResult.rows.map(row => ({
+      ...row,
+      tags: row.tags ?? [],
+      shortDescription: row.short_description ?? row.shortDescription ?? ""
+    }));
+
     res.json({
       data: products,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     });
   } catch (err) {
+    logger.error({ err }, "Error listing all products for admin");
     next(err);
   }
 }
@@ -780,8 +990,33 @@ export async function listAllProducts(req: AuthRequest, res: Response, next: Nex
 export async function toggleFeatured(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const result = await productService.toggleFeatured(id as string);
-    res.json({ data: result });
+
+    // Fetch the current is_featured status
+    const { data: product, error: fetchError } = await supabase
+      .from("products")
+      .select("id, is_featured")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !product) {
+      logger.error({ err: fetchError }, "Failed to fetch product for toggling featured status");
+      throw new AppError(404, "Product not found", "NOT_FOUND");
+    }
+
+    // Toggle the status
+    const { data, error } = await supabase
+      .from("products")
+      .update({ is_featured: !product.is_featured })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error({ err: error }, "Failed to update featured status");
+      throw new AppError(500, "Failed to update featured status", "UPDATE_FAILED");
+    }
+
+    res.json({ data });
   } catch (err) {
     next(err);
   }

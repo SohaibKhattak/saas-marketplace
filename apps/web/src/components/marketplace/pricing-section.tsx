@@ -34,7 +34,7 @@ export function PricingSection({
   if (!plans || plans.length === 0) return null;
 
   return (
-    <div className="w-full py-16 space-y-12">
+    <div className="w-full pb-14 space-y-12">
       <div className="flex flex-col items-center text-center space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-xs font-bold text-primary uppercase tracking-widest">
           Pricing Plans

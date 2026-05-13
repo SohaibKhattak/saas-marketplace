@@ -228,6 +228,17 @@ export async function deleteUser(req: AuthRequest, res: Response, next: NextFunc
       logDebug('Attempt to delete admin account', { id });
       throw new AppError(403, "Cannot delete an admin account", "FORBIDDEN");
     }
+
+    // can be soft delete too using isdeleted column in users table
+    // await pool.query('UPDATE users SET is_deleted = true, updated_at = NOW() WHERE id = $1', [id]);
+
+    // delete user from auth 
+    const { error } = await supabase.auth.admin.deleteUser(id);
+    if (error) {
+      logDebug('Failed to delete user from auth', { id, error });
+      throw new AppError(500, "Failed to delete user from auth", "DELETE_FAILED");
+    }
+
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
     logDebug('User deleted successfully', { id });
     res.json({ data: { message: "User deleted successfully" } });

@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS public.products (
     category TEXT NOT NULL,
 
     -- tags TEXT[] DEFAULT '{}',
-    logo_url TEXT,
-    -- screenshots TEXT[] DEFAULT '{}',
+    logo_url TEXT NOT NULL,
+    screenshots TEXT[] DEFAULT '{}',
 
     version TEXT NOT NULL DEFAULT '1.0.0',
 

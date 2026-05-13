@@ -26,6 +26,7 @@ import { Plus } from "lucide-react";
 interface Product {
   id: string;
   name: string;
+  logoUrl: string | null;
   slug: string;
   category: string;
   status: string;
@@ -130,8 +131,16 @@ export default function ProductsPage() {
                   {products.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>
-                        <p className="font-semibold tracking-tight">{product.name}</p>
-                        {/* <p className="text-xs text-gray-500">/{product.slug}</p> */}
+                        <div className="flex items-center gap-3">
+                          {product.logoUrl ? (
+                            <div className="h-8 w-8 overflow-hidden rounded-md border">
+                              <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain" />
+                            </div>
+                          ) : (
+                             <div className="h-8 w-8 rounded-md bg-gray-100" />
+                          )}
+                          <p className="font-semibold tracking-tight">{product.name}</p>
+                        </div>
                       </TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell>
