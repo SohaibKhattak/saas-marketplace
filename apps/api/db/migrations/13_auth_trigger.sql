@@ -1,7 +1,13 @@
 -- 13_auth_trigger.sql
 
+-- Drop triggers first to remove dependencies
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
+
 -- Remove legacy single-purpose trigger function if it exists
-DROP FUNCTION IF EXISTS public.handle_new_auth_user();
+DROP FUNCTION IF EXISTS public.handle_new_auth_user() CASCADE;
+DROP FUNCTION IF EXISTS public.handle_user_sync() CASCADE;
 
 -- Create the trigger function
 CREATE OR REPLACE FUNCTION public.handle_user_sync() 
@@ -9,7 +15,7 @@ RETURNS TRIGGER AS $$
 DECLARE
   provider TEXT;
   metadata_role TEXT;
-  parsed_role "UserRole";
+  parsed_role public."UserRole";
 BEGIN
   IF TG_OP = 'INSERT' THEN
     provider := CASE
@@ -18,9 +24,9 @@ BEGIN
     END;
     metadata_role := NEW.raw_user_meta_data->>'role';
     parsed_role := CASE
-      WHEN metadata_role IN ('CUSTOMER', 'DEVELOPER', 'ADMIN') THEN metadata_role::"UserRole"
+      WHEN metadata_role IN ('CUSTOMER', 'DEVELOPER', 'ADMIN') THEN metadata_role::public."UserRole"
       WHEN provider = 'GOOGLE' THEN NULL
-      ELSE 'CUSTOMER'::"UserRole"
+      ELSE 'CUSTOMER'::public."UserRole"
     END;
 
     INSERT INTO public.users (
@@ -43,9 +49,9 @@ BEGIN
       parsed_role,
       provider,
       NEW.raw_user_meta_data->>'avatar_url',
-      NEW.email_confirmed_at IS NOT NULL,
+      CASE WHEN provider = 'GOOGLE' THEN true ELSE NEW.email_confirmed_at IS NOT NULL END,
       false,
-      CASE WHEN provider = 'GOOGLE' THEN false ELSE true END,
+      parsed_role IS NOT NULL,
       COALESCE(NEW.created_at, NOW()),
       NOW()
     )
@@ -56,10 +62,7 @@ BEGIN
       email_verified = EXCLUDED.email_verified,
       auth_provider = COALESCE(public.users.auth_provider, EXCLUDED.auth_provider),
       role = COALESCE(public.users.role, EXCLUDED.role),
-      profile_complete = CASE
-        WHEN public.users.profile_complete THEN true
-        ELSE EXCLUDED.profile_complete
-      END,
+      profile_complete = COALESCE(public.users.profile_complete, false) OR EXCLUDED.profile_complete,
       updated_at = NOW();
   ELSIF TG_OP = 'UPDATE' THEN
     provider := CASE
@@ -72,12 +75,13 @@ BEGIN
       email = NEW.email,
       full_name = COALESCE(NEW.raw_user_meta_data->>'full_name', public.users.full_name),
       avatar_url = COALESCE(NEW.raw_user_meta_data->>'avatar_url', public.users.avatar_url),
-      email_verified = NEW.email_confirmed_at IS NOT NULL,
+      email_verified = CASE WHEN provider = 'GOOGLE' THEN true ELSE NEW.email_confirmed_at IS NOT NULL END,
       auth_provider = COALESCE(public.users.auth_provider, provider),
+      profile_complete = COALESCE(public.users.profile_complete, false) OR (metadata_role IS NOT NULL AND metadata_role IN ('CUSTOMER', 'DEVELOPER', 'ADMIN')),
       role = CASE
         WHEN public.users.role IS NOT NULL THEN public.users.role
-        WHEN metadata_role IN ('CUSTOMER', 'DEVELOPER', 'ADMIN') THEN metadata_role::"UserRole"
-        WHEN provider = 'PASSWORD' THEN 'CUSTOMER'::"UserRole"
+        WHEN metadata_role IN ('CUSTOMER', 'DEVELOPER', 'ADMIN') THEN metadata_role::public."UserRole"
+        WHEN provider = 'PASSWORD' THEN 'CUSTOMER'::public."UserRole"
         ELSE NULL
       END,
       updated_at = NOW()
@@ -88,11 +92,6 @@ BEGIN
   RETURN COALESCE(NEW, OLD);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Drop trigger if exists to prevent duplicates
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
-DROP TRIGGER IF EXISTS on_auth_user_deleted ON auth.users;
 
 -- Create triggers
 CREATE TRIGGER on_auth_user_created

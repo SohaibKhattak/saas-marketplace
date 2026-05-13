@@ -18,6 +18,7 @@ const userSelectFields = `
   role,
   avatar_url as "avatarUrl",
   email_verified as "emailVerified",
+  profile_complete as "profileComplete",
   is_suspended as "isSuspended",
   created_at as "createdAt",
   updated_at as "updatedAt"

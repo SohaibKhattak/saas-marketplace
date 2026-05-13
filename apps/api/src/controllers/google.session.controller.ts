@@ -50,7 +50,7 @@ export async function googleSession(req: Request, res: Response) {
           user.user_metadata?.full_name || "",
           null,
           "GOOGLE",
-          user.email_confirmed_at ? true : false,
+          true,
           false,
         ]
       );
@@ -79,6 +79,7 @@ export async function googleSession(req: Request, res: Response) {
            SET auth_provider = 'GOOGLE',
                role = NULL,
                profile_complete = false,
+               email_verified = true,
                updated_at = NOW()
            WHERE id = $1
            RETURNING

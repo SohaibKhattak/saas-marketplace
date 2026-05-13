@@ -18,8 +18,7 @@ const transporter = nodemailer.createTransport({
 
 const FROM_EMAIL = env.SMTP_FROM || `Saasifyy <noreply@${new URL(env.FRONTEND_URL).hostname}>`;
 
-export async function sendVerificationEmail(to: string, token: string) {
-  const verifyUrl = `${env.FRONTEND_URL}/verify-email?token=${token}`;
+export async function sendVerificationEmail(to: string, verifyUrl: string) {
 
   const htmlContent = `
     <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;padding:32px;background-color:#fafafa;">

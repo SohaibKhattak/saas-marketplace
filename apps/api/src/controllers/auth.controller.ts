@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { pool } from "../config/database.js";
 import { supabase, createAuthClient } from "../config/supabase.js";
 import { env } from "../config/env.js";
-import { sendPasswordResetEmail } from "../services/email.service.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../services/email.service.js";
 import type { AuthRequest } from "../middleware/auth.js";
 import { ensureUsersAuthColumns } from "../utils/db-upgrades.js";
 
@@ -19,7 +19,8 @@ export async function forgotPassword(req: Request, res: Response) {
     }
 
     // Generate link with Supabase Admin API
-    const { data, error } = await supabase.auth.admin.generateLink({
+    const authClient = createAuthClient();
+    const { data, error } = await authClient.auth.admin.generateLink({
       type: "recovery",
       email,
       options: {
@@ -53,14 +54,15 @@ export async function resetPassword(req: Request, res: Response) {
 
     // Since we receive an access_token from the recovery link, verify it by getting the user
     // The recovery link gives us an authenticated session token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const authClient = createAuthClient();
+    const { data: { user }, error: userError } = await authClient.auth.getUser(token);
 
     if (userError || !user) {
       return res.status(401).json({ error: { message: "Invalid or expired reset token", code: "INVALID_TOKEN" } });
     }
 
     // Now that we verified the token belongs to a user, update their password via admin API
-    const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
+    const { error: updateError } = await authClient.auth.admin.updateUserById(user.id, {
       password: password
     });
 
@@ -176,10 +178,10 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    // 1. Create user in Supabase Auth (triggers verification email via signUp)
-    // Use an ephemeral client to avoid contaminating the shared service-role client's session.
+    // 1. Create user in Supabase Auth and generate verification link
     const authClient = createAuthClient();
-    const { error } = await authClient.auth.signUp({
+    const { data: linkData, error: linkError } = await authClient.auth.admin.generateLink({
+      type: "signup",
       email,
       password,
       options: {
@@ -190,15 +192,23 @@ export async function register(req: Request, res: Response, next: NextFunction) 
           business_email: businessEmail,
           auth_provider: "PASSWORD",
         },
+        redirectTo: `${env.FRONTEND_URL}/auth/callback`,
       },
     });
-    if (error) {
-      if (error.message.includes("already registered")) {
+
+    if (linkError) {
+      if (linkError.message.includes("already registered")) {
         return res.status(409).json({ error: { message: "Email already exists", code: "EMAIL_EXISTS" } });
       }
-      console.log("Supabase error during registration:", error);
-      return res.status(400).json({ error: { message: error.message, code: "SUPABASE_ERROR" } });
+      console.log("Supabase error during registration:", linkError);
+      return res.status(400).json({ error: { message: linkError.message, code: "SUPABASE_ERROR" } });
     }
+
+    // 2. Send custom verification email
+    if (linkData?.properties?.action_link) {
+      await sendVerificationEmail(email, linkData.properties.action_link);
+    }
+
     // 2. Wait for user to verify email and be inserted into local users table by trigger
     // 3. Optionally, if developer, try to create developer profile if user exists
     let developerProfileCreated = false;
