@@ -418,7 +418,7 @@ export async function reviewProduct(
       title: "Product approved!",
       message: `Your product "${product.name}" has been approved and is now live on the marketplace.`,
       link: `/marketplace/${product.slug}`,
-    }).catch(() => {});
+    }).catch(() => { });
   } else {
     createNotification({
       userId: devUserId,
@@ -426,7 +426,7 @@ export async function reviewProduct(
       title: "Product needs changes",
       message: `Your product "${product.name}" was not approved. Reason: ${decision.rejectionReason ?? "No reason provided"}`,
       link: `/developer/products`,
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   return updated;

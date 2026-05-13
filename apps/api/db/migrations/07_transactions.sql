@@ -15,10 +15,10 @@ CREATE TABLE transactions (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_transactions_customer_id ON transactions(customer_id);
-CREATE INDEX idx_transactions_developer_id ON transactions(developer_id);
-CREATE INDEX idx_transactions_created_at ON transactions(created_at);
-CREATE INDEX idx_transactions_stripe_payment_intent_id ON transactions(stripe_payment_intent_id);
+-- CREATE INDEX idx_transactions_customer_id ON transactions(customer_id);
+-- CREATE INDEX idx_transactions_developer_id ON transactions(developer_id);
+-- CREATE INDEX idx_transactions_created_at ON transactions(created_at);
+-- CREATE INDEX idx_transactions_stripe_payment_intent_id ON transactions(stripe_payment_intent_id);
 
 -- --- RLS and Permissions Setup ---
 -- Grant schema usage

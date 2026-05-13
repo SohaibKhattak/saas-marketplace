@@ -906,16 +906,69 @@ export async function reviewProduct(req: AuthRequest, res: Response, next: NextF
   try {
     const { id } = req.params;
     const { status, rejectionReason } = req.body;
-    const result = await productService.reviewProduct(id as string, req.user!.userId, {
+
+    // 1. Validate Input Status
+    const validStatuses = ['PUBLISHED', 'REJECTED'];
+    if (!validStatuses.includes(status)) {
+      throw new AppError(400, "Invalid status. Must be PUBLISHED or REJECTED", "INVALID_STATUS");
+    }
+
+    // 2. Conditional Validation: If REJECTED, reason is mandatory
+    if (status === 'REJECTED' && (!rejectionReason || rejectionReason.trim().length < 5)) {
+      throw new AppError(
+        400,
+        "A rejection reason (minimum 5 characters) is required when rejecting a product",
+        "REJECTION_REASON_REQUIRED"
+      );
+    }
+
+    // 3. Check if product exists and is currently in PENDING_REVIEW
+    const { data: product, error: fetchError } = await supabase
+      .from('products')
+      .select('id, status')
+      .eq('id', id)
+      .eq('isdeleted', false)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    if (!product) {
+      throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+    }
+
+    if (product.status !== 'PENDING_REVIEW') {
+      throw new AppError(400, `Product is already ${product.status}`, "INVALID_PRODUCT_STATE");
+    }
+
+    // 4. Perform Update
+    // If status is PUBLISHED, we should explicitly clear any old rejection reasons
+    const updateData = {
       status,
-      rejectionReason,
+      rejection_reason: status === 'REJECTED' ? rejectionReason : null,
+      published_at: status === 'PUBLISHED' ? new Date().toISOString() : null, // Optional: track publish date
+    };
+
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      throw new AppError(500, "Failed to update product review status", "PRODUCT_UPDATE_FAILED");
+    }
+
+    // 5. Return the newly updated product
+    res.json({
+      message: `Product successfully ${status.toLowerCase()}`,
+      data: updatedProduct
     });
-    res.json({ data: result });
+
   } catch (err) {
     next(err);
   }
 }
-
 export async function listAllProducts(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const page = parseInt(req.query.page as string) || 1;
@@ -1016,7 +1069,7 @@ export async function toggleFeatured(req: AuthRequest, res: Response, next: Next
       throw new AppError(500, "Failed to update featured status", "UPDATE_FAILED");
     }
 
-    res.json({ data });
+    res.json({ data: true });
   } catch (err) {
     next(err);
   }

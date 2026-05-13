@@ -71,6 +71,8 @@ export default function AdminProductsPage() {
   const [error, setError] = useState("");
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [featuringId, setFeaturingId] = useState<string | null>(null);
+  const [successFeaturedIds, setSuccessFeaturedIds] = useState<Set<string>>(new Set());
   const limit = 20;
 
   const fetchProducts = useCallback(async () => {
@@ -97,17 +99,26 @@ export default function AdminProductsPage() {
   }, [fetchProducts]);
 
   async function handleToggleFeatured(productId: string) {
+    setFeaturingId(productId);
     try {
-      const res = await api.post<{ data: { id: string; isFeatured: boolean } }>(
+      const res = await api.post<{ data: boolean }>(
         `/admin/products/${productId}/feature`,
         {},
         { token: accessToken! }
       );
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, isFeatured: res.data.isFeatured } : p))
-      );
+      
+      if (res.data === true) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === productId ? { ...p, isFeatured: !p.isFeatured } : p))
+        );
+        setSuccessFeaturedIds(prev => new Set(prev).add(productId));
+      } else {
+        alert("Failed to update featured status: Operation returned false");
+      }
     } catch {
       setError("Failed to toggle featured status");
+    } finally {
+      setFeaturingId(null);
     }
   }
 
@@ -209,9 +220,16 @@ export default function AdminProductsPage() {
                           size="sm"
                           variant={product.isFeatured ? "default" : "ghost"}
                           onClick={() => handleToggleFeatured(product.id)}
-                          disabled={product.status !== "PUBLISHED"}
+                          disabled={product.status !== "PUBLISHED" || featuringId === product.id}
+                          className={`cursor-pointer transition-all duration-200 ${
+                            successFeaturedIds.has(product.id) ? "!bg-black !text-white" : ""
+                          }`}
                         >
-                          <Sparkles className={`h-4 w-4 ${product.isFeatured ? "text-yellow-300" : ""}`} />
+                          {featuringId === product.id ? (
+                            <Sparkles className="h-4 w-4 animate-spin opacity-50" />
+                          ) : (
+                            <Sparkles className={`h-4 w-4 ${product.isFeatured ? "text-yellow-300" : ""}`} />
+                          )}
                         </Button>
                       </TableCell>
                       <TableCell className="text-right">

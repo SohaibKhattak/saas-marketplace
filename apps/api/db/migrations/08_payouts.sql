@@ -13,8 +13,8 @@ CREATE TABLE payouts (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_payouts_developer_id ON payouts(developer_id);
-CREATE INDEX idx_payouts_status ON payouts(status);
+-- CREATE INDEX idx_payouts_developer_id ON payouts(developer_id);
+-- CREATE INDEX idx_payouts_status ON payouts(status);
 
 -- --- RLS and Permissions Setup ---
 -- Grant schema usage
