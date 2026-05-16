@@ -61,6 +61,8 @@ interface ProductDetail {
   pricingPlans: PricingPlan[];
   reviews: Review[];
   isSubscribed: boolean;
+  isOwner: boolean;
+  activePlanId: string | null;
   _count: { subscriptions: number; reviews: number };
 }
 
@@ -437,11 +439,14 @@ export default function ProductPage() {
                       <h2 className="text-4xl font-black tracking-tight text-slate-900">Choose your plan</h2>
                       <p className="text-slate-500 font-medium">Simple, transparent pricing that grows with you.</p>
                     </div>
-                    <PricingSection
+                     <PricingSection
                       plans={product.pricingPlans}
                       onSubscribe={handleSubscribe}
                       subscribingPlanId={subscribing}
                       isLoggedIn={!!user}
+                      isOwner={product.isOwner}
+                      activePlanId={product.activePlanId}
+                      userRole={user?.role}
                     />
                   </div>
                 </div>

@@ -83,7 +83,7 @@ function SubscriptionsContent() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const limit = 10;
-
+  console.log("subscriptions", subscriptions)
   const [cancelingSub, setCancelingSub] = useState<Subscription | null>(null);
   const [canceling, setCanceling] = useState(false);
   const [error, setError] = useState("");
@@ -144,8 +144,9 @@ function SubscriptionsContent() {
       const plans = res.data.filter((p) => p.isActive);
       setAvailablePlans(plans);
       // Pre-select a different plan if possible
-      const other = plans.find((p) => p.id !== sub.pricingPlan.name);
-      setSelectedPlanId(other?.id ?? plans[0]?.id ?? "");
+      console.log("plans", plans);
+      // const other = plans.find((p) => p.id !== sub.pricingPlan.name);
+      // setSelectedPlanId(other?.id ?? plans[0]?.id ?? "");
     } catch {
       setSwitchError("Failed to load plans");
     }

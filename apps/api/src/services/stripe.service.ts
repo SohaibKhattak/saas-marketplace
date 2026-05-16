@@ -1,9 +1,11 @@
 import { stripe } from "../config/stripe.js";
-import { prisma } from "../config/database.js";
+// import { prisma } from "../config/database.js";
+import { supabase } from "../config/supabase.js";
 import { AppError } from "../middleware/error-handler.js";
 import { env } from "../config/env.js";
 import { sendNewSubscriptionEmail, sendSubscriptionConfirmationEmail } from "./email.service.js";
 import { createNotification } from "./notification.service.js";
+import Stripe from 'stripe'
 
 const FRONTEND_URL = env.FRONTEND_URL;
 const PLATFORM_FEE_PERCENT = env.PLATFORM_FEE_PERCENT;
@@ -16,47 +18,68 @@ export async function createCheckoutSession(
   pricingPlanId: string,
   billingCycle: "MONTHLY" | "YEARLY"
 ) {
-  const plan = await prisma.pricingPlan.findUnique({
-    where: { id: pricingPlanId },
-    include: {
-      product: {
-        include: { developer: true },
-      },
-    },
-  });
+  // Fetch pricing plan with its associated product
+  const { data: plan, error: planError } = await supabase
+    .from("pricing_plans")
+    .select("*, product:products(*)")
+    .eq("id", pricingPlanId)
+    .single();
 
-  if (!plan || !plan.isActive) {
-    throw new AppError(404, "Pricing plan not found or inactive", "PLAN_NOT_FOUND");
+  if (planError || !plan) {
+    throw new AppError(404, "Pricing plan not found", "PLAN_NOT_FOUND");
+  }
+
+  if (!plan.is_active) {
+    throw new AppError(400, "Pricing plan is inactive", "PLAN_INACTIVE");
   }
 
   if (plan.product.status !== "PUBLISHED") {
     throw new AppError(400, "Product is not published", "NOT_PUBLISHED");
   }
 
-  // Check if customer already has active subscription to this product
-  const existingSub = await prisma.subscription.findFirst({
-    where: {
-      customerId,
-      productId: plan.productId,
-      status: { in: ["ACTIVE", "TRIALING"] },
-    },
-  });
+  // Check if customer has any history with this product
+  const { data: existingRecords } = await supabase
+    .from("subscriptions")
+    .select("id, status, current_period_end")
+    .eq("customer_id", customerId)
+    .eq("product_id", plan.product_id);
 
-  if (existingSub) {
-    throw new AppError(409, "You already have an active subscription to this product", "ALREADY_SUBSCRIBED");
+  let trialDays = plan.trial_days > 0 ? plan.trial_days : undefined;
+
+  if (existingRecords && existingRecords.length > 0) {
+    // 1. Block if they have an ACTIVE or TRIALING subscription
+    const activeSub = existingRecords.find(s => ["ACTIVE", "TRIALING"].includes(s.status));
+    if (activeSub) {
+      throw new AppError(409, "You already have an active subscription to this product", "ALREADY_SUBSCRIBED");
+    }
+
+    // 2. Block if they have a CANCELED subscription that is still in its valid period
+    const now = new Date();
+    const stillValidSub = existingRecords.find(s => 
+      s.status === "CANCELED" && 
+      s.current_period_end && 
+      new Date(s.current_period_end) > now
+    );
+
+    if (stillValidSub) {
+      throw new AppError(400, "Your previous subscription is still active until the end of the current period. Please wait for it to expire before resubscribing.", "SUBSCRIPTION_STILL_VALID");
+    }
+
+    // 3. If any record exists (even if expired/canceled), they are NOT eligible for a new trial
+    trialDays = undefined;
   }
 
   // Determine price
-  const price = billingCycle === "YEARLY" && plan.priceYearly
-    ? plan.priceYearly
-    : plan.priceMonthly;
+  const price = billingCycle === "YEARLY" && plan.price_yearly
+    ? plan.price_yearly
+    : plan.price_monthly;
 
   const interval = billingCycle === "YEARLY" ? "year" : "month";
 
   // Create or get Stripe Price
   let stripePriceId: string;
 
-  const priceField = billingCycle === "YEARLY" ? "stripePriceIdYearly" : "stripePriceIdMonthly";
+  const priceField = billingCycle === "YEARLY" ? "stripe_price_id_yearly" : "stripe_price_id_monthly";
   if (plan[priceField]) {
     stripePriceId = plan[priceField]!;
   } else {
@@ -64,7 +87,7 @@ export async function createCheckoutSession(
     const stripeProduct = await stripe.products.create({
       name: `${plan.product.name} - ${plan.name}`,
       metadata: {
-        productId: plan.productId,
+        productId: plan.product_id,
         pricingPlanId: plan.id,
       },
     });
@@ -83,10 +106,14 @@ export async function createCheckoutSession(
     stripePriceId = stripePrice.id;
 
     // Save Stripe price ID for reuse
-    await prisma.pricingPlan.update({
-      where: { id: plan.id },
-      data: { [priceField]: stripePriceId },
-    });
+    const { error: updateError } = await supabase
+      .from("pricing_plans")
+      .update({ [priceField]: stripePriceId })
+      .eq("id", plan.id);
+
+    if (updateError) {
+      throw new AppError(500, "Failed to update pricing plan", "PLAN_UPDATE_FAILED");
+    }
   }
 
   // Create Checkout Session
@@ -97,20 +124,20 @@ export async function createCheckoutSession(
     subscription_data: {
       metadata: {
         customerId,
-        productId: plan.productId,
+        productId: plan.product_id,
         pricingPlanId: plan.id,
-        developerId: plan.product.developerId,
+        developerId: plan.product.developer_id,
         billingCycle,
       },
-      trial_period_days: plan.trialDays > 0 ? plan.trialDays : undefined,
+      trial_period_days: trialDays,
     },
     metadata: {
       customerId,
-      productId: plan.productId,
+      productId: plan.product_id,
       pricingPlanId: plan.id,
     },
     success_url: `${FRONTEND_URL}/customer/subscriptions?success=true`,
-    cancel_url: `${FRONTEND_URL}/marketplace/${plan.product.slug}?canceled=true`,
+    cancel_url: `${FRONTEND_URL}/marketplace/${plan.product.slug || plan.product.id}?canceled=true`,
   });
 
   return { sessionId: session.id, url: session.url };
@@ -121,7 +148,12 @@ export async function createCheckoutSession(
  */
 export async function handleWebhookEvent(event: { id: string; type: string; data: { object: any } }) {
   // Idempotency: skip if already processed
-  const existing = await prisma.webhookEvent.findUnique({ where: { id: event.id } });
+  const { data: existing } = await supabase
+    .from("webhook_events")
+    .select("id")
+    .eq("id", event.id)
+    .maybeSingle();
+
   if (existing) return;
 
   switch (event.type) {
@@ -146,9 +178,7 @@ export async function handleWebhookEvent(event: { id: string; type: string; data
   }
 
   // Record processed event
-  await prisma.webhookEvent.create({
-    data: { id: event.id, type: event.type },
-  });
+  await supabase.from("webhook_events").insert({ id: event.id, type: event.type });
 }
 
 async function handleCheckoutCompleted(session: any) {
@@ -169,116 +199,171 @@ async function handleCheckoutCompleted(session: any) {
   const periodEnd = firstItem?.current_period_end;
 
   // Fetch product, plan, customer, and developer info for emails
-  const [plan, customer, product] = await Promise.all([
-    prisma.pricingPlan.findUnique({ where: { id: pricingPlanId } }),
-    prisma.user.findUnique({ where: { id: customerId }, select: { fullName: true, email: true } }),
-    prisma.product.findUnique({
-      where: { id: productId },
-      include: { developer: { include: { user: { select: { email: true } } } } },
-    }),
+  const [
+    { data: plan },
+    { data: customer },
+    { data: product }
+  ] = await Promise.all([
+    supabase.from("pricing_plans").select("*").eq("id", pricingPlanId).single(),
+    supabase.from("users").select("full_name, email").eq("id", customerId).single(),
+    supabase.from("products").select("*, developer:users!developer_id(email)").eq("id", productId).single(),
   ]);
 
-  // Atomic: create subscription + increment subscriber count
-  await prisma.$transaction([
-    prisma.subscription.create({
-      data: {
-        customerId,
-        productId,
-        pricingPlanId,
-        stripeSubscriptionId,
-        status: stripeSub.status === "trialing" ? "TRIALING" : "ACTIVE",
-        billingCycle: billingCycle as any,
-        currentPeriodStart: periodStart ? new Date(periodStart * 1000) : new Date(),
-        currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
-        trialEnd: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
-      },
-    }),
-    prisma.product.update({
-      where: { id: productId },
-      data: { totalSubscribers: { increment: 1 } },
-    }),
-  ]);
+  if (!plan || !customer || !product) return;
 
-  // Send notification emails (non-blocking)
-  if (plan && customer && product) {
-    const emailData = {
-      customerName: customer.fullName,
-      productName: product.name,
-      planName: plan.name,
-      amount: billingCycle === "YEARLY" && plan.priceYearly ? plan.priceYearly : plan.priceMonthly,
-      billingCycle,
-    };
+  // Create subscription
+  await supabase.from("subscriptions").insert({
+    customer_id: customerId,
+    product_id: productId,
+    pricing_plan_id: pricingPlanId,
+    stripe_subscription_id: stripeSubscriptionId,
+    status: stripeSub.status === "trialing" ? "TRIALING" : "ACTIVE",
+    billing_cycle: billingCycle,
+    current_period_start: periodStart ? new Date(periodStart * 1000) : new Date(),
+    current_period_end: periodEnd ? new Date(periodEnd * 1000) : null,
+    trial_end: stripeSub.trial_end ? new Date(stripeSub.trial_end * 1000) : null,
+  });
 
-    // Developer notification (email + in-app)
-    sendNewSubscriptionEmail(product.developer.user.email, emailData).catch(() => {});
-    createNotification({
-      userId: product.developer.userId,
-      type: "NEW_SUBSCRIBER",
-      title: "New subscriber!",
-      message: `${customer.fullName} subscribed to ${product.name} (${plan.name})`,
-      link: `/developer/products`,
-    }).catch(() => {});
+  // Increment subscriber count
+  await supabase.from("products").update({
+    total_subscribers: (product.total_subscribers || 0) + 1
+  }).eq("id", productId);
 
-    // Customer confirmation
-    sendSubscriptionConfirmationEmail(customer.email, emailData).catch(() => {});
-  }
+  // Send notification emails
+  const emailData = {
+    customerName: customer.full_name,
+    productName: product.name,
+    planName: plan.name,
+    amount: billingCycle === "YEARLY" && plan.price_yearly ? plan.price_yearly : plan.price_monthly,
+    billingCycle,
+  };
+
+  // Developer notification (email + in-app)
+  sendNewSubscriptionEmail(product.developer.email, emailData).catch(() => { });
+  //todo for next version
+  // createNotification({
+  //   userId: product.developer_id,
+  //   type: "NEW_SUBSCRIBER",
+  //   title: "New subscriber!",
+  //   message: `${customer.full_name} subscribed to ${product.name} (${plan.name})`,
+  //   link: `/developer/products`,
+  // }).catch(() => { });
+
+  // Customer confirmation
+  sendSubscriptionConfirmationEmail(customer.email, emailData).catch(() => { });
 }
 
 async function handleInvoicePaid(invoice: any) {
-  const stripeSubscriptionId = invoice.subscription as string;
-  if (!stripeSubscriptionId) return;
+  console.log(`[Stripe Webhook] handleInvoicePaid triggered for invoice: ${invoice.id}`);
 
-  const subscription = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId },
-    include: {
-      product: { include: { developer: true } },
-    },
-  });
+  // Try to find subscription ID in multiple common locations
+  let stripeSubscriptionId = invoice.subscription as string;
 
-  if (!subscription) return;
+  if (!stripeSubscriptionId) {
+    // Check parent subscription details (found in some trial/quote flows)
+    stripeSubscriptionId = invoice.parent?.subscription_details?.subscription;
+
+    // Check lines fallback
+    if (!stripeSubscriptionId && invoice.lines?.data?.[0]) {
+      stripeSubscriptionId = invoice.lines.data[0].subscription;
+    }
+
+    if (stripeSubscriptionId) {
+      console.log(`[Stripe Webhook] Found subscription ID in nested path: ${stripeSubscriptionId}`);
+    }
+  }
+
+  if (!stripeSubscriptionId) {
+    console.log("[Stripe Webhook] No subscription ID found on invoice. Object keys:", Object.keys(invoice));
+    return;
+  }
+
+  // Handle potential race condition: wait a moment for checkout.session.completed to insert the sub
+  let subscription = null;
+  for (let i = 0; i < 3; i++) {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("*, product:products!product_id(*)")
+      .eq("stripe_subscription_id", stripeSubscriptionId)
+      .maybeSingle();
+
+    if (data) {
+      subscription = data;
+      break;
+    }
+    console.log(`[Stripe Webhook] Subscription ${stripeSubscriptionId} not found in DB yet, retrying in 2s... (attempt ${i + 1})`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+
+  if (!subscription) {
+    console.error(`[Stripe Webhook] Subscription ${stripeSubscriptionId} not found after retries. Cannot record transaction.`);
+    return;
+  }
+
+  const { data: devProfile, error: devError } = await supabase
+    .from("developer_profiles")
+    .select("id")
+    .eq("user_id", subscription.product.developer_id)
+    .single();
+
+  if (devError || !devProfile) {
+    console.error(`[Stripe Webhook] Developer profile not found for user ${subscription.product.developer_id}`, devError);
+    return;
+  }
 
   const amount = (invoice.amount_paid ?? 0) / 100;
-  if (amount <= 0) return;
+  if (amount <= 0) {
+    console.log(`[Stripe Webhook] Invoice ${invoice.id} amount is 0 (trial?), skipping transaction record.`);
+    return;
+  }
 
   const platformFee = amount * (PLATFORM_FEE_PERCENT / 100);
   const developerAmount = amount - platformFee;
 
+  console.log(`[Stripe Webhook] Recording transaction: $${amount} (Fee: $${platformFee})`);
+
   // Record transaction
-  await prisma.transaction.create({
-    data: {
-      subscriptionId: subscription.id,
-      customerId: subscription.customerId,
-      developerId: subscription.product.developerId,
-      stripePaymentIntentId: invoice.payment_intent as string,
-      amount,
-      platformFee,
-      developerAmount,
-      status: "SUCCEEDED",
-      type: "PAYMENT",
-    },
+  const { error: transError } = await supabase.from("transactions").insert({
+    subscription_id: subscription.id,
+    customer_id: subscription.customer_id,
+    developer_id: devProfile.id,
+    stripe_payment_intent_id: invoice.payment_intent as string,
+    amount,
+    platform_fee: platformFee,
+    developer_amount: developerAmount,
+    status: "SUCCEEDED",
+    type: "PAYMENT",
   });
+
+  if (transError) {
+    console.error("[Stripe Webhook] Failed to insert transaction record:", transError);
+  } else {
+    console.log(`[Stripe Webhook] Transaction recorded successfully for subscription ${subscription.id}`);
+  }
 }
 
 async function handleInvoicePaymentFailed(invoice: any) {
   const stripeSubscriptionId = invoice.subscription as string;
   if (!stripeSubscriptionId) return;
 
-  const subscription = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId },
-  });
-
-  if (!subscription) return;
-
-  await prisma.subscription.update({
-    where: { id: subscription.id },
-    data: { status: "PAST_DUE" },
-  });
+  await supabase
+    .from("subscriptions")
+    .update({ status: "PAST_DUE" })
+    .eq("stripe_subscription_id", stripeSubscriptionId);
 }
 
 async function handleSubscriptionUpdated(stripeSub: any) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId: stripeSub.id },
+  console.log("period fields:", {
+    top_start: stripeSub.current_period_start,
+    top_end: stripeSub.current_period_end,
+    item_start: stripeSub.items?.data?.[0]?.current_period_start,
+    item_end: stripeSub.items?.data?.[0]?.current_period_end,
   });
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("stripe_subscription_id", stripeSub.id)
+    .single();
 
   if (!subscription) return;
 
@@ -291,40 +376,65 @@ async function handleSubscriptionUpdated(stripeSub: any) {
     default: status = subscription.status; break;
   }
 
-  await prisma.subscription.update({
-    where: { id: subscription.id },
-    data: {
-      status,
-      currentPeriodStart: new Date(stripeSub.current_period_start * 1000),
-      currentPeriodEnd: new Date(stripeSub.current_period_end * 1000),
-      canceledAt: stripeSub.canceled_at ? new Date(stripeSub.canceled_at * 1000) : null,
-    },
-  });
+  // ✅ Read period dates from the item level, with top-level as fallback
+  const firstItem = stripeSub.items?.data?.[0];
+
+  const rawPeriodStart =
+    firstItem?.current_period_start ??
+    stripeSub.current_period_start ??
+    null;
+
+  const rawPeriodEnd =
+    firstItem?.current_period_end ??
+    stripeSub.current_period_end ??
+    null;
+
+  const updatedSub = {
+    status,
+    current_period_start: rawPeriodStart
+      ? new Date(rawPeriodStart * 1000).toISOString()
+      : null,
+    current_period_end: rawPeriodEnd
+      ? new Date(rawPeriodEnd * 1000).toISOString()
+      : null,
+    canceled_at: stripeSub.canceled_at
+      ? new Date(stripeSub.canceled_at * 1000).toISOString()
+      : null,
+  };
+
+  await supabase
+    .from("subscriptions")
+    .update(updatedSub)
+    .eq("id", subscription.id);
 }
 
 async function handleSubscriptionDeleted(stripeSub: any) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { stripeSubscriptionId: stripeSub.id },
-    include: { product: true },
-  });
-
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("stripe_subscription_id", stripeSub.id)
+    .single();
   if (!subscription) return;
-
-  await prisma.subscription.update({
-    where: { id: subscription.id },
-    data: {
+  await supabase
+    .from("subscriptions")
+    .update({
       status: "CANCELED",
-      canceledAt: new Date(),
-    },
-  });
+      canceled_at: new Date(),
+    })
+    .eq("id", subscription.id);
 
   // Decrement subscriber count
-  await prisma.product.update({
-    where: { id: subscription.productId },
-    data: {
-      totalSubscribers: { decrement: 1 },
-    },
-  });
+  const { data: product } = await supabase
+    .from("products")
+    .select("total_subscribers")
+    .eq("id", subscription.product_id)
+    .single();
+
+  if (product) {
+    await supabase.from("products").update({
+      total_subscribers: Math.max(0, (product.total_subscribers || 0) - 1)
+    }).eq("id", subscription.product_id);
+  }
 }
 
 /**
@@ -336,16 +446,17 @@ export async function switchPlan(
   newPricingPlanId: string,
   billingCycle: "MONTHLY" | "YEARLY"
 ) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
-    include: { pricingPlan: true },
-  });
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("*, pricing_plan:pricing_plans(*)")
+    .eq("id", subscriptionId)
+    .single();
 
   if (!subscription) {
     throw new AppError(404, "Subscription not found", "SUB_NOT_FOUND");
   }
 
-  if (subscription.customerId !== customerId) {
+  if (subscription.customer_id !== customerId) {
     throw new AppError(403, "Not your subscription", "FORBIDDEN");
   }
 
@@ -354,33 +465,33 @@ export async function switchPlan(
   }
 
   // Verify new plan belongs to same product
-  const newPlan = await prisma.pricingPlan.findUnique({ where: { id: newPricingPlanId } });
-  if (!newPlan || !newPlan.isActive) {
+  const { data: newPlan } = await supabase.from("pricing_plans").select("*").eq("id", newPricingPlanId).single();
+  if (!newPlan || !newPlan.is_active) {
     throw new AppError(404, "Pricing plan not found", "PLAN_NOT_FOUND");
   }
 
-  if (newPlan.productId !== subscription.productId) {
+  if (newPlan.product_id !== subscription.product_id) {
     throw new AppError(400, "Can only switch to plans within the same product", "WRONG_PRODUCT");
   }
 
-  if (newPlan.id === subscription.pricingPlanId && billingCycle === subscription.billingCycle) {
+  if (newPlan.id === subscription.pricing_plan_id && billingCycle === subscription.billing_cycle) {
     throw new AppError(400, "Already on this plan", "SAME_PLAN");
   }
 
   // Determine new Stripe price
-  const price = billingCycle === "YEARLY" && newPlan.priceYearly
-    ? newPlan.priceYearly
-    : newPlan.priceMonthly;
+  const price = billingCycle === "YEARLY" && newPlan.price_yearly
+    ? newPlan.price_yearly
+    : newPlan.price_monthly;
   const interval = billingCycle === "YEARLY" ? "year" : "month";
-  const priceField = billingCycle === "YEARLY" ? "stripePriceIdYearly" : "stripePriceIdMonthly";
+  const priceField = billingCycle === "YEARLY" ? "stripe_price_id_yearly" : "stripe_price_id_monthly";
 
   let stripePriceId = newPlan[priceField];
 
   if (!stripePriceId) {
-    const product = await prisma.product.findUnique({ where: { id: newPlan.productId } });
+    const { data: product } = await supabase.from("products").select("name").eq("id", newPlan.product_id).single();
     const stripeProduct = await stripe.products.create({
       name: `${product!.name} - ${newPlan.name}`,
-      metadata: { productId: newPlan.productId, pricingPlanId: newPlan.id },
+      metadata: { productId: newPlan.product_id, pricingPlanId: newPlan.id },
     });
     const stripePrice = await stripe.prices.create({
       product: stripeProduct.id,
@@ -390,16 +501,13 @@ export async function switchPlan(
       metadata: { pricingPlanId: newPlan.id, billingCycle },
     });
     stripePriceId = stripePrice.id;
-    await prisma.pricingPlan.update({
-      where: { id: newPlan.id },
-      data: { [priceField]: stripePriceId },
-    });
+    await supabase.from("pricing_plans").update({ [priceField]: stripePriceId }).eq("id", newPlan.id);
   }
 
   // Update Stripe subscription
-  if (subscription.stripeSubscriptionId) {
-    const stripeSub = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
-    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+  if (subscription.stripe_subscription_id) {
+    const stripeSub = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+    await stripe.subscriptions.update(subscription.stripe_subscription_id, {
       items: [{
         id: stripeSub.items.data[0].id,
         price: stripePriceId,
@@ -409,32 +517,38 @@ export async function switchPlan(
   }
 
   // Update local subscription
-  return prisma.subscription.update({
-    where: { id: subscriptionId },
-    data: {
-      pricingPlanId: newPlan.id,
-      billingCycle: billingCycle as any,
-    },
-    include: {
-      product: { select: { name: true, slug: true } },
-      pricingPlan: { select: { name: true, priceMonthly: true, priceYearly: true } },
-    },
-  });
+  const { data: updatedSub, error: updateError } = await supabase
+    .from("subscriptions")
+    .update({
+      pricing_plan_id: newPlan.id,
+      billing_cycle: billingCycle as any,
+    })
+    .eq("id", subscriptionId)
+    .select("*, product:products(name, slug), pricing_plan:pricing_plans(name, price_monthly, price_yearly)")
+    .single();
+
+  if (updateError) {
+    throw new AppError(500, "Failed to update local subscription", "SUB_UPDATE_FAILED");
+  }
+
+  return updatedSub;
 }
 
 /**
  * Cancel a subscription at period end.
  */
 export async function cancelSubscription(subscriptionId: string, customerId: string) {
-  const subscription = await prisma.subscription.findUnique({
-    where: { id: subscriptionId },
-  });
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("id", subscriptionId)
+    .single();
 
   if (!subscription) {
     throw new AppError(404, "Subscription not found", "SUB_NOT_FOUND");
   }
 
-  if (subscription.customerId !== customerId) {
+  if (subscription.customer_id !== customerId) {
     throw new AppError(403, "Not your subscription", "FORBIDDEN");
   }
 
@@ -443,18 +557,22 @@ export async function cancelSubscription(subscriptionId: string, customerId: str
   }
 
   // Cancel at period end in Stripe
-  if (subscription.stripeSubscriptionId) {
-    await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+  if (subscription.stripe_subscription_id) {
+    await stripe.subscriptions.update(subscription.stripe_subscription_id, {
       cancel_at_period_end: true,
     });
   }
 
-  return prisma.subscription.update({
-    where: { id: subscriptionId },
-    data: { canceledAt: new Date() },
-    include: {
-      product: { select: { name: true, slug: true } },
-      pricingPlan: { select: { name: true } },
-    },
-  });
+  const { data: updatedSub, error: updateError } = await supabase
+    .from("subscriptions")
+    .update({ canceled_at: new Date() })
+    .eq("id", subscriptionId)
+    .select("*, product:products(name, slug), pricing_plan:pricing_plans(name)")
+    .single();
+
+  if (updateError) {
+    throw new AppError(500, "Failed to cancel subscription locally", "SUB_CANCEL_FAILED");
+  }
+
+  return updatedSub;
 }

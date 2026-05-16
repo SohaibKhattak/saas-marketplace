@@ -21,6 +21,9 @@ interface PricingSectionProps {
   onSubscribe: (planId: string, billingCycle: "MONTHLY" | "YEARLY") => void;
   subscribingPlanId: string | null;
   isLoggedIn: boolean;
+  isOwner?: boolean;
+  activePlanId?: string | null;
+  userRole?: string | null;
 }
 
 export function PricingSection({
@@ -28,6 +31,9 @@ export function PricingSection({
   onSubscribe,
   subscribingPlanId,
   isLoggedIn,
+  isOwner,
+  activePlanId,
+  userRole,
 }: PricingSectionProps) {
   const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
 
@@ -147,15 +153,29 @@ export function PricingSection({
                 <Button
                   className={cn(
                     "w-full h-11 text-sm font-semibold transition-all duration-300 rounded-xl",
-                    isRecommended
-                      ? "bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/10 hover:shadow-primary/20"
-                      : "bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/5 hover:shadow-slate-900/10"
+                    plan.id === activePlanId 
+                      ? "bg-emerald-500 text-white cursor-default hover:bg-emerald-500" 
+                      : isRecommended
+                        ? "bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/10 hover:shadow-primary/20"
+                        : "bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/5 hover:shadow-slate-900/10"
                   )}
-                  onClick={() => onSubscribe(plan.id, billingCycle)}
-                  disabled={subscribingPlanId === plan.id || (billingCycle === "YEARLY" && !isYearlyPossible)}
+                  onClick={() => !isOwner && plan.id !== activePlanId && onSubscribe(plan.id, billingCycle)}
+                  disabled={
+                    subscribingPlanId === plan.id || 
+                    (billingCycle === "YEARLY" && !isYearlyPossible) ||
+                    isOwner || 
+                    plan.id === activePlanId ||
+                    (isLoggedIn && userRole === 'DEVELOPER' && !isOwner)
+                  }
                 >
                   {subscribingPlanId === plan.id ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                  ) : plan.id === activePlanId ? (
+                    "Active Subscription"
+                  ) : isOwner ? (
+                    "Manage Product"
+                  ) : isLoggedIn && userRole === 'DEVELOPER' ? (
+                    "Customer Account Required"
                   ) : isLoggedIn ? (
                     `Select ${plan.name}`
                   ) : (

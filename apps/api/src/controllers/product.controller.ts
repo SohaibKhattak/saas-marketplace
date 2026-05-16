@@ -564,9 +564,41 @@ export async function getProductById(
 ) {
   try {
     const { id: productId } = req.params;
+    // const userId = req.user?.userId;
+    // // check if authenticated means either dev or customer if not then a visitor
+    // const isDeveloper = req.user?.role === "DEVELOPER";
+    // const isCustomer = req.user?.role === "CUSTOMER";
+    // const isVisitor = !isDeveloper && !isCustomer;
+    // let returnSiteUrl = false;
+    // // if developer check ownership
+    // if (isDeveloper) {
+    //   const { data: product, error: productError } = await supabase
+    //     .from("products")
+    //     .select("*")
+    //     .eq("id", productId)
+    //     .eq("developer_id", userId)
+    //     .single();
 
-    console.log("Fetching product with ID:", productId);
-    // Get product
+    //     if(productError || !product) returnSiteUrl = false;
+    //     else returnSiteUrl = true;
+    // }
+    // if(isCustomer){
+    //   // check if subscibed to this product
+    //   const { data: subscription, error: subscriptionError } = await supabase
+    //     .from("subscriptions")
+    //     .select("*")
+    //     .eq("product_id", productId)
+    //     .eq("user_id", userId)
+    //     .single();
+
+    //     if(subscriptionError || !subscription) returnSiteUrl = false;
+    //     else returnSiteUrl = true;
+    // }
+    // if (isVisitor) {
+    //   returnSiteUrl = false;
+    // }
+    // console.log("Fetching product with ID:", productId);
+    // Get product based
     const { data: product, error: productError } = await supabase
       .from("products")
       .select("*")
@@ -633,17 +665,41 @@ export async function getProductById(
         .eq("product_id", productId),
     ]);
 
-    // Check if current user is subscribed
+    // --- Access Control Logic ---
     let isSubscribed = false;
-    if (req.user) {
-      const { count } = await supabase
-        .from("subscriptions")
-        .select("*", { count: "exact", head: true })
-        .eq("product_id", productId)
-        .eq("customer_id", req.user.userId)
-        .eq("status", "ACTIVE");
+    let activePlanId = null;
+    let isOwner = false;
+    let showSite = false;
 
-      isSubscribed = (count ?? 0) > 0;
+    if (req.user) {
+      // 1. Check if user is the Owner or Admin
+      isOwner = product.developer_id === req.user.userId;
+      const isAdmin = (req.user as any).role === "ADMIN";
+
+      if (isOwner || isAdmin) {
+        showSite = true;
+      } else if (req.user.role === "CUSTOMER") {
+        // 2. Check for active/trialing subscription for Customers
+        const { data: subscription } = await supabase
+          .from("subscriptions")
+          .select("id, pricing_plan_id, current_period_end, status")
+          .eq("product_id", product.id)
+          .eq("customer_id", req.user.userId)
+          .in("status", ["ACTIVE", "TRIALING"])
+          .maybeSingle();
+
+        if (subscription) {
+          const now = new Date();
+          const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end) : null;
+
+          // Subscription is valid if no period end is set (infinite) or it's in the future
+          if (!periodEnd || periodEnd > now) {
+            isSubscribed = true;
+            activePlanId = subscription.pricing_plan_id;
+            showSite = true;
+          }
+        }
+      }
     }
 
     const finalProduct = {
@@ -676,8 +732,10 @@ export async function getProductById(
         isActive: p.is_active,
         sortOrder: p.sort_order,
       })),
-      site,
+      site: showSite ? site : null,
       isSubscribed,
+      isOwner,
+      activePlanId,
       _count: {
         subscriptions: subscriptions ?? 0,
         reviews: reviews ?? 0,
