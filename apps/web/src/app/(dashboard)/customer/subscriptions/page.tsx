@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Suspense } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Check } from "lucide-react";
 
 interface PlanOption {
   id: string;
@@ -49,21 +49,34 @@ interface Subscription {
   currentPeriodEnd: string | null;
   canceledAt: string | null;
   createdAt: string;
+  flags: {
+    isCanceled: boolean;
+    isPastDue: boolean;
+    isTrialing: boolean;
+    isActive: boolean;
+  };
+  allowedActions: {
+    canCancel: boolean;
+    canChangePlan: boolean;
+    canReactivate: boolean;
+  };
   product: {
     id: string;
     name: string;
     slug: string;
     logoUrl: string | null;
-    category: string;
+    developer: {
+      user: { fullName: string };
+    };
     site: { siteUrl: string; subdomain: string } | null;
-    developer: { user: { fullName: string } };
   };
-  pricingPlan: {
+  currentPricingPlan: {
+    id: string;
     name: string;
     priceMonthly: number;
     priceYearly: number | null;
-    features: string[];
   };
+  availablePlans: PlanOption[];
 }
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -133,22 +146,18 @@ function SubscriptionsContent() {
     }
   }
 
-  async function openSwitchDialog(sub: Subscription) {
+  function openSwitchDialog(sub: Subscription) {
     setSwitchingSub(sub);
     setSwitchError("");
     setSelectedBilling(sub.billingCycle as "MONTHLY" | "YEARLY");
-    try {
-      const res = await api.get<{ data: PlanOption[] }>(
-        `/products/${sub.product.id}/plans`, { token: accessToken! }
-      );
-      const plans = res.data.filter((p) => p.isActive);
-      setAvailablePlans(plans);
+    
+    // We already have available plans from the API!
+    setAvailablePlans(sub.availablePlans);
+    
+    if (sub.availablePlans.length > 0) {
       // Pre-select a different plan if possible
-      console.log("plans", plans);
-      // const other = plans.find((p) => p.id !== sub.pricingPlan.name);
-      // setSelectedPlanId(other?.id ?? plans[0]?.id ?? "");
-    } catch {
-      setSwitchError("Failed to load plans");
+      const otherPlan = sub.availablePlans.find(p => p.id !== sub.currentPricingPlan.id);
+      setSelectedPlanId(otherPlan?.id || sub.currentPricingPlan.id);
     }
   }
 
@@ -222,9 +231,11 @@ function SubscriptionsContent() {
         </div>
       ) : (
         <div className="mt-6 grid gap-4">
-          {subscriptions.map((sub) => (
-            <Card key={sub.id}>
-              <CardHeader>
+          {subscriptions.map((sub) => {
+            if (!sub.product || !sub.currentPricingPlan) return null;
+            return (
+              <Card key={sub.id}>
+                <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     {sub.product.logoUrl && (
@@ -237,7 +248,7 @@ function SubscriptionsContent() {
                         </Link>
                       </CardTitle>
                       <CardDescription>
-                        {sub.pricingPlan.name} plan &middot; by {sub.product.developer.user.fullName}
+                        {sub.currentPricingPlan.name} plan &middot; by {sub.product.developer.user.fullName}
                       </CardDescription>
                     </div>
                   </div>
@@ -251,16 +262,16 @@ function SubscriptionsContent() {
                   <div>
                     <span className="text-gray-500">Billing: </span>
                     <span className="font-semibold tracking-tight">
-                      ${sub.billingCycle === "YEARLY" && sub.pricingPlan.priceYearly
-                        ? sub.pricingPlan.priceYearly
-                        : sub.pricingPlan.priceMonthly}
+                      ${sub.billingCycle === "YEARLY" && sub.currentPricingPlan.priceYearly
+                        ? sub.currentPricingPlan.priceYearly
+                        : sub.currentPricingPlan.priceMonthly}
                       /{sub.billingCycle === "YEARLY" ? "year" : "month"}
                     </span>
                   </div>
                   {sub.currentPeriodEnd && (
                     <div>
                       <span className="text-gray-500">
-                        {sub.canceledAt ? "Access until: " : "Renews: "}
+                        {sub.flags.isCanceled ? "Access until: " : "Renews: "}
                       </span>
                       <span>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</span>
                     </div>
@@ -272,7 +283,7 @@ function SubscriptionsContent() {
                 </div>
               </CardContent>
               <CardFooter className="flex gap-2 flex-wrap">
-                {sub.product.site && (sub.status === "ACTIVE" || sub.status === "TRIALING") && (
+                {sub.product.site && (sub.flags.isActive || sub.flags.isTrialing) && (
                   <Button
                     size="sm"
                     onClick={() => handleLaunchApp(sub.product.site!.siteUrl, sub.product.site!.subdomain)}
@@ -285,19 +296,15 @@ function SubscriptionsContent() {
                 <Link href={`/marketplace/${sub.product.slug}`}>
                   <Button size="sm" variant="outline">View Product</Button>
                 </Link>
-                {(sub.status === "ACTIVE" || sub.status === "TRIALING") && !sub.canceledAt && (
-                  <>
-                    <Button size="sm" variant="outline" onClick={() => openSwitchDialog(sub)}>
-                      Change Plan
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => setCancelingSub(sub)}>
-                      Cancel
-                    </Button>
-                  </>
+                {sub.allowedActions.canChangePlan && (
+                  <Button size="sm" variant="outline" onClick={() => openSwitchDialog(sub)}>
+                    Manage Subscription
+                  </Button>
                 )}
               </CardFooter>
-            </Card>
-          ))}
+                </Card>
+            );
+          })}
 
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-4">
@@ -339,59 +346,128 @@ function SubscriptionsContent() {
         open={!!switchingSub}
         onOpenChange={(open) => { if (!open) { setSwitchingSub(null); setSwitchError(""); } }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Plan</DialogTitle>
-            <DialogDescription>
-              Switch your plan for {switchingSub?.product.name}. Changes take effect immediately with prorated billing.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-semibold tracking-tight">Current Plan</label>
-              <p className="text-sm text-gray-500">
-                {switchingSub?.pricingPlan.name} — ${switchingSub?.billingCycle === "YEARLY" && switchingSub?.pricingPlan.priceYearly
-                  ? switchingSub.pricingPlan.priceYearly
-                  : switchingSub?.pricingPlan.priceMonthly}/{switchingSub?.billingCycle === "YEARLY" ? "year" : "month"}
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-semibold tracking-tight">New Plan</label>
-              <Select value={selectedPlanId} onValueChange={(v) => setSelectedPlanId(v ?? "")}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availablePlans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} — ${plan.priceMonthly}/mo
-                      {plan.priceYearly ? ` or $${plan.priceYearly}/yr` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-semibold tracking-tight">Billing Cycle</label>
-              <Select value={selectedBilling} onValueChange={(v) => { if (v) setSelectedBilling(v as "MONTHLY" | "YEARLY"); }}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MONTHLY">Monthly</SelectItem>
-                  <SelectItem value="YEARLY">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
+        <DialogContent className="sm:max-w-[750px] p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-gradient-to-br from-primary/10 via-background to-background p-6 border-b border-border/50">
+            <div className="flex items-center gap-4">
+              {switchingSub?.product.logoUrl && (
+                <div className="h-16 w-16 rounded-2xl border-2 border-background shadow-lg overflow-hidden bg-background">
+                  <img src={switchingSub.product.logoUrl} alt="" className="h-full w-full object-cover" />
+                </div>
+              )}
+              <div className="flex-grow">
+                <DialogTitle className="text-2xl font-bold tracking-tight">
+                  {switchingSub?.product.name}
+                </DialogTitle>
+                <DialogDescription className="text-base">
+                  Manage your subscription & explore available plans
+                </DialogDescription>
+              </div>
+              <div className="text-right hidden sm:block">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Member Since</p>
+                <p className="text-sm font-medium">{switchingSub && new Date(switchingSub.createdAt).toLocaleDateString()}</p>
+              </div>
             </div>
           </div>
-          {switchError && (
-            <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{switchError}</div>
-          )}
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setSwitchingSub(null)}>Cancel</Button>
-            <Button onClick={handleSwitch} disabled={switching || !selectedPlanId}>
-              {switching ? "Switching..." : "Switch Plan"}
+
+          <div className="p-6">
+            {switchError && (
+              <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20 flex items-center gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+                {switchError}
+              </div>
+            )}
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              {availablePlans.map((plan) => {
+                const isCurrent = plan.id === switchingSub?.currentPricingPlan.id;
+                const price = switchingSub?.billingCycle === "YEARLY" && plan.priceYearly
+                  ? plan.priceYearly
+                  : plan.priceMonthly;
+
+                return (
+                  <Card 
+                    key={plan.id} 
+                    className={`group relative flex flex-col transition-all duration-300 border-2 overflow-hidden ${
+                      isCurrent 
+                        ? "border-primary shadow-xl shadow-primary/10 bg-primary/5" 
+                        : "border-border/50 hover:border-primary/30 hover:shadow-lg bg-card/50"
+                    }`}
+                  >
+                    {isCurrent && (
+                      <div className="absolute top-0 right-0">
+                        <div className="bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
+                          Active Plan
+                        </div>
+                      </div>
+                    )}
+                    
+                    <CardHeader className="pb-4">
+                      <div className="flex justify-between items-start mb-1">
+                        <CardTitle className="text-lg font-bold">{plan.name}</CardTitle>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black tracking-tight">${price}</span>
+                        <span className="text-sm text-gray-500 font-medium lowercase">
+                          /{switchingSub?.billingCycle === "YEARLY" ? "Year" : "Month"}
+                        </span>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="flex-grow pb-6">
+                      <div className="space-y-3">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">What's included</p>
+                        <ul className="space-y-2.5 text-sm text-gray-600 dark:text-gray-400">
+                          {plan.features?.slice(0, 4).map((f, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <div className="mt-1 flex-shrink-0 h-4 w-4 rounded-full bg-green-500/10 flex items-center justify-center">
+                                <Check className="h-2.5 w-2.5 text-green-600" />
+                              </div>
+                              <span className="leading-tight">{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </CardContent>
+
+                    <CardFooter className="pt-0 pb-6 px-6">
+                      <Button 
+                        className={`w-full font-bold transition-all ${
+                          isCurrent 
+                            ? "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20" 
+                            : "bg-background hover:bg-accent"
+                        }`} 
+                        variant={isCurrent ? "outline" : "secondary"}
+                        disabled={!isCurrent}
+                      >
+                        {isCurrent ? "Currently Subscribed" : "Upgrade Plan"}
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+
+          <DialogFooter className="bg-gray-50 dark:bg-white/5 p-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between items-center">
+            <Button
+              variant="ghost"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 font-semibold text-xs transition-colors"
+              onClick={() => {
+                setCancelingSub(switchingSub);
+                setSwitchingSub(null);
+              }}
+            >
+              Cancel Subscription
             </Button>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                className="w-full sm:w-auto px-8 font-semibold"
+                onClick={() => setSwitchingSub(null)}
+              >
+                Close
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
