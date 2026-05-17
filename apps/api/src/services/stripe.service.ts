@@ -419,7 +419,7 @@ async function handleSubscriptionDeleted(stripeSub: any) {
     .from("subscriptions")
     .update({
       status: "CANCELED",
-      canceled_at: new Date(),
+      canceled_at: new Date().toISOString(),
     })
     .eq("id", subscription.id);
 
@@ -524,10 +524,11 @@ export async function switchPlan(
       billing_cycle: billingCycle as any,
     })
     .eq("id", subscriptionId)
-    .select("*, product:products(name, slug), pricing_plan:pricing_plans(name, price_monthly, price_yearly)")
+    .select("*, product:products(name), pricing_plan:pricing_plans(name, price_monthly, price_yearly)")
     .single();
 
   if (updateError) {
+    console.error("[Stripe Service] switchPlan local update error:", updateError);
     throw new AppError(500, "Failed to update local subscription", "SUB_UPDATE_FAILED");
   }
 
@@ -565,12 +566,13 @@ export async function cancelSubscription(subscriptionId: string, customerId: str
 
   const { data: updatedSub, error: updateError } = await supabase
     .from("subscriptions")
-    .update({ canceled_at: new Date() })
+    .update({ canceled_at: new Date().toISOString() })
     .eq("id", subscriptionId)
-    .select("*, product:products(name, slug), pricing_plan:pricing_plans(name)")
+    .select("*, product:products(name), pricing_plan:pricing_plans(name)")
     .single();
 
   if (updateError) {
+    console.error("[Stripe Service] cancelSubscription local update error:", updateError);
     throw new AppError(500, "Failed to cancel subscription locally", "SUB_CANCEL_FAILED");
   }
 

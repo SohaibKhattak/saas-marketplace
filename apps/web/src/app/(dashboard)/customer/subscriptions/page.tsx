@@ -150,10 +150,10 @@ function SubscriptionsContent() {
     setSwitchingSub(sub);
     setSwitchError("");
     setSelectedBilling(sub.billingCycle as "MONTHLY" | "YEARLY");
-    
+
     // We already have available plans from the API!
     setAvailablePlans(sub.availablePlans);
-    
+
     if (sub.availablePlans.length > 0) {
       // Pre-select a different plan if possible
       const otherPlan = sub.availablePlans.find(p => p.id !== sub.currentPricingPlan.id);
@@ -236,73 +236,95 @@ function SubscriptionsContent() {
             return (
               <Card key={sub.id}>
                 <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    {sub.product.logoUrl && (
-                      <img src={sub.product.logoUrl} alt="" className="h-10 w-10 rounded-sm object-cover" />
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      {sub.product.logoUrl && (
+                        <img src={sub.product.logoUrl} alt="" className="h-10 w-10 rounded-sm object-cover" />
+                      )}
+                      <div>
+                        <CardTitle className="text-lg">
+                          <Link href={`/marketplace/${sub.product.slug}`} className="hover:underline">
+                            {sub.product.name}
+                          </Link>
+                        </CardTitle>
+                        <CardDescription>
+                          {sub.currentPricingPlan.name} plan &middot; by {sub.product.developer.user.fullName}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Badge variant={statusVariant[sub.status] ?? "secondary"}>
+                      {sub.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                    <div>
+                      <span className="text-gray-500">Billing: </span>
+                      <span className="font-semibold tracking-tight">
+                        ${sub.billingCycle === "YEARLY" && sub.currentPricingPlan.priceYearly
+                          ? sub.currentPricingPlan.priceYearly
+                          : sub.currentPricingPlan.priceMonthly}
+                        /{sub.billingCycle === "YEARLY" ? "year" : "month"}
+                      </span>
+                    </div>
+                    {sub.currentPeriodEnd && (
+                      <div>
+                        <span className="text-gray-500">
+                          {sub.flags.isCanceled ? "Access until: " : "Renews: "}
+                        </span>
+                        <span>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</span>
+                      </div>
                     )}
                     <div>
-                      <CardTitle className="text-lg">
-                        <Link href={`/marketplace/${sub.product.slug}`} className="hover:underline">
-                          {sub.product.name}
-                        </Link>
-                      </CardTitle>
-                      <CardDescription>
-                        {sub.currentPricingPlan.name} plan &middot; by {sub.product.developer.user.fullName}
-                      </CardDescription>
+                      <span className="text-gray-500">Since: </span>
+                      <span>{new Date(sub.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <Badge variant={statusVariant[sub.status] ?? "secondary"}>
-                    {sub.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                  <div>
-                    <span className="text-gray-500">Billing: </span>
-                    <span className="font-semibold tracking-tight">
-                      ${sub.billingCycle === "YEARLY" && sub.currentPricingPlan.priceYearly
-                        ? sub.currentPricingPlan.priceYearly
-                        : sub.currentPricingPlan.priceMonthly}
-                      /{sub.billingCycle === "YEARLY" ? "year" : "month"}
-                    </span>
-                  </div>
-                  {sub.currentPeriodEnd && (
-                    <div>
-                      <span className="text-gray-500">
-                        {sub.flags.isCanceled ? "Access until: " : "Renews: "}
-                      </span>
-                      <span>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</span>
+
+                  {/* State Indicators */}
+                  {sub.canceledAt && sub.currentPeriodEnd && (
+                    <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                      <span>Scheduled to cancel on <strong>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</strong> (You retain access until then)</span>
                     </div>
                   )}
-                  <div>
-                    <span className="text-gray-500">Since: </span>
-                    <span>{new Date(sub.createdAt).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex gap-2 flex-wrap">
-                {sub.product.site && (sub.flags.isActive || sub.flags.isTrialing) && (
-                  <Button
-                    size="sm"
-                    onClick={() => handleLaunchApp(sub.product.site!.siteUrl, sub.product.site!.subdomain)}
-                    disabled={launchingSlug === sub.product.site.subdomain}
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    {launchingSlug === sub.product.site.subdomain ? "Launching..." : "Launch App"}
-                  </Button>
-                )}
-                <Link href={`/marketplace/${sub.product.slug}`}>
-                  <Button size="sm" variant="outline">View Product</Button>
-                </Link>
-                {sub.allowedActions.canChangePlan && (
-                  <Button size="sm" variant="outline" onClick={() => openSwitchDialog(sub)}>
-                    Manage Subscription
-                  </Button>
-                )}
-              </CardFooter>
-                </Card>
+
+                  {sub.status === "TRIALING" && sub.currentPeriodEnd && !sub.canceledAt && (
+                    <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
+                      <span>Trial active until <strong>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</strong> (Will renew to active paid plan then)</span>
+                    </div>
+                  )}
+
+                  {sub.status === "PAST_DUE" && (
+                    <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-destructive animate-pulse flex-shrink-0" />
+                      <span>Payment failed &middot; Past due! Please check your billing details to avoid losing service.</span>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex gap-2 flex-wrap">
+                  {sub.product.site && (sub.flags.isActive || sub.flags.isTrialing) && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleLaunchApp(sub.product.site!.siteUrl, sub.product.site!.subdomain)}
+                      disabled={launchingSlug === sub.product.site.subdomain}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      {launchingSlug === sub.product.site.subdomain ? "Launching..." : "Launch App"}
+                    </Button>
+                  )}
+                  <Link href={`/marketplace/${sub.product.slug}`}>
+                    <Button size="sm" variant="outline">View Product</Button>
+                  </Link>
+                  {sub.allowedActions.canChangePlan && (
+                    <Button size="sm" variant="outline" onClick={() => openSwitchDialog(sub)}>
+                      Manage Subscription
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
             );
           })}
 
@@ -377,6 +399,15 @@ function SubscriptionsContent() {
               </div>
             )}
 
+            {switchingSub?.canceledAt && (
+              <div className="mb-6 rounded-lg bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-400 border border-amber-500/20 flex items-start gap-2">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-2 animate-pulse flex-shrink-0" />
+                <p>
+                  <strong>Subscription Cancelled:</strong> You can continue using this product and all its features until your current {switchingSub.status === "TRIALING" ? "trial" : "billing"} period ends on <strong>{switchingSub.currentPeriodEnd ? new Date(switchingSub.currentPeriodEnd).toLocaleDateString() : ""}</strong>.
+                </p>
+              </div>
+            )}
+
             <div className="grid gap-6 sm:grid-cols-2">
               {availablePlans.map((plan) => {
                 const isCurrent = plan.id === switchingSub?.currentPricingPlan.id;
@@ -385,13 +416,12 @@ function SubscriptionsContent() {
                   : plan.priceMonthly;
 
                 return (
-                  <Card 
-                    key={plan.id} 
-                    className={`group relative flex flex-col transition-all duration-300 border-2 overflow-hidden ${
-                      isCurrent 
-                        ? "border-primary shadow-xl shadow-primary/10 bg-primary/5" 
+                  <Card
+                    key={plan.id}
+                    className={`group relative flex flex-col transition-all duration-300 border-2 overflow-hidden ${isCurrent
+                        ? "border-primary shadow-xl shadow-primary/10 bg-primary/5"
                         : "border-border/50 hover:border-primary/30 hover:shadow-lg bg-card/50"
-                    }`}
+                      }`}
                   >
                     {isCurrent && (
                       <div className="absolute top-0 right-0">
@@ -400,7 +430,7 @@ function SubscriptionsContent() {
                         </div>
                       </div>
                     )}
-                    
+
                     <CardHeader className="pb-4">
                       <div className="flex justify-between items-start mb-1">
                         <CardTitle className="text-lg font-bold">{plan.name}</CardTitle>
@@ -430,12 +460,11 @@ function SubscriptionsContent() {
                     </CardContent>
 
                     <CardFooter className="pt-0 pb-6 px-6">
-                      <Button 
-                        className={`w-full font-bold transition-all ${
-                          isCurrent 
-                            ? "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20" 
+                      <Button
+                        className={`w-full font-bold transition-all ${isCurrent
+                            ? "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
                             : "bg-background hover:bg-accent"
-                        }`} 
+                          }`}
                         variant={isCurrent ? "outline" : "secondary"}
                         disabled={!isCurrent}
                       >
@@ -451,17 +480,18 @@ function SubscriptionsContent() {
           <DialogFooter className="bg-gray-50 dark:bg-white/5 p-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between items-center">
             <Button
               variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 font-semibold text-xs transition-colors"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 font-semibold text-xs transition-colors disabled:opacity-50 disabled:pointer-events-none"
               onClick={() => {
                 setCancelingSub(switchingSub);
                 setSwitchingSub(null);
               }}
+              disabled={!!switchingSub?.canceledAt}
             >
               Cancel Subscription
             </Button>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full sm:w-auto px-8 font-semibold"
                 onClick={() => setSwitchingSub(null)}
               >
