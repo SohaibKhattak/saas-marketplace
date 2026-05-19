@@ -37,6 +37,17 @@ export async function createCheckoutSession(
     throw new AppError(400, "Product is not published", "NOT_PUBLISHED");
   }
 
+  // Fetch developer profile to get stripe_account_id
+  const { data: devProfile, error: devError } = await supabase
+    .from("developer_profiles")
+    .select("stripe_account_id")
+    .eq("user_id", plan.product.developer_id)
+    .single();
+
+  if (devError || !devProfile) {
+    throw new AppError(404, "Developer profile not found", "DEVELOPER_NOT_FOUND");
+  }
+
   // Check if customer has any history with this product
   const { data: existingRecords } = await supabase
     .from("subscriptions")
@@ -130,6 +141,12 @@ export async function createCheckoutSession(
         billingCycle,
       },
       trial_period_days: trialDays,
+      ...(devProfile.stripe_account_id && {
+        transfer_data: {
+          destination: devProfile.stripe_account_id,
+          amount_percent: 100 - PLATFORM_FEE_PERCENT,
+        },
+      }),
     },
     metadata: {
       customerId,
@@ -339,6 +356,49 @@ async function handleInvoicePaid(invoice: any) {
     console.error("[Stripe Webhook] Failed to insert transaction record:", transError);
   } else {
     console.log(`[Stripe Webhook] Transaction recorded successfully for subscription ${subscription.id}`);
+  }
+
+  // Record the payout in our payouts table to keep developer balance ledger correct
+  const { data: fullDevProfile } = await supabase
+    .from("developer_profiles")
+    .select("stripe_account_id")
+    .eq("id", devProfile.id)
+    .single();
+
+  if (fullDevProfile?.stripe_account_id) {
+    let stripeTransferId: string | null = null;
+    if (invoice.payment_intent) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(invoice.payment_intent as string);
+        const chargeId = typeof pi.latest_charge === 'string' ? pi.latest_charge : pi.charges?.data?.[0]?.id;
+        if (chargeId) {
+          const charge = await stripe.charges.retrieve(chargeId);
+          stripeTransferId = charge.transfer as string;
+        }
+      } catch (err) {
+        console.error("[Stripe Webhook] Error fetching transfer ID:", err);
+      }
+    }
+
+    const periodStart = invoice.period_start ? new Date(invoice.period_start * 1000) : new Date();
+    const periodEnd = invoice.period_end ? new Date(invoice.period_end * 1000) : new Date();
+
+    const { error: payoutError } = await supabase.from("payouts").insert({
+      developer_id: devProfile.id,
+      amount: developerAmount,
+      currency: invoice.currency || "usd",
+      status: "COMPLETED",
+      stripe_transfer_id: stripeTransferId,
+      period_start: periodStart.toISOString(),
+      period_end: periodEnd.toISOString(),
+      processed_at: new Date().toISOString(),
+    });
+
+    if (payoutError) {
+      console.error("[Stripe Webhook] Failed to insert automatic payout record:", payoutError);
+    } else {
+      console.log(`[Stripe Webhook] Automatic payout recorded for developer ${devProfile.id}`);
+    }
   }
 }
 

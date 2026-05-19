@@ -2,6 +2,8 @@ import type { Response, NextFunction } from "express";
 import type { AuthRequest } from "../middleware/auth.js";
 import { supabase } from "../config/supabase.js";
 import { AppError } from "../middleware/error-handler.js";
+import { stripe } from "../config/stripe.js";
+import { env } from "../config/env.js";
 
 type ApplicationStatus = "PENDING" | "APPROVED" | "REJECTED";
 
@@ -755,3 +757,99 @@ export async function reviewApplication(
     next(err);
   }
 }
+
+export async function setupStripeConnect(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+
+    // 1. Fetch Developer Profile
+    const { data: profile, error: profileError } = await supabase
+      .from("developer_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileError || !profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
+    let stripeAccountId = profile.stripe_account_id;
+
+    // 2. Create Stripe Connect Account if not exists
+    if (!stripeAccountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_type: "individual",
+        business_profile: {
+          name: profile.business_name,
+        },
+      });
+      stripeAccountId = account.id;
+
+      // Save to Developer Profile
+      const { error: updateError } = await supabase
+        .from("developer_profiles")
+        .update({ stripe_account_id: stripeAccountId })
+        .eq("id", profile.id);
+
+      if (updateError) {
+        throw new AppError(500, "Failed to link Stripe account", "SUPABASE_ERROR");
+      }
+    }
+
+    // 3. Generate Account Link for onboarding redirect
+    const accountLink = await stripe.accountLinks.create({
+      account: stripeAccountId,
+      refresh_url: `${env.FRONTEND_URL}/developer/settings?stripe=refresh`,
+      return_url: `${env.FRONTEND_URL}/developer/settings?stripe=success`,
+      type: "account_onboarding",
+    });
+
+    res.json({ url: accountLink.url });
+  } catch (err) {
+    logDebug(
+      "Error in setupStripeConnect",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
+    next(err);
+  }
+}
+
+export async function createStripeLoginLink(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+
+    const { data: profile, error: profileError } = await supabase
+      .from("developer_profiles")
+      .select("stripe_account_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (profileError || !profile || !profile.stripe_account_id) {
+      throw new AppError(400, "Developer has not connected Stripe", "STRIPE_NOT_CONNECTED");
+    }
+
+    const loginLink = await stripe.accounts.createLoginLink(profile.stripe_account_id);
+
+    res.json({ url: loginLink.url });
+  } catch (err) {
+    logDebug(
+      "Error in createStripeLoginLink",
+      err instanceof Error ? (err.stack ?? err.message) : err,
+    );
+    next(err);
+  }
+}
+
