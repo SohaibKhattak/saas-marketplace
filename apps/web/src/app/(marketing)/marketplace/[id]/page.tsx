@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { api, ApiError } from "@/lib/api-client";
-import { useAuthStore } from "@/stores/auth-store";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import { api } from '@/lib/api-client';
+import { useAuthStore } from '@/stores/auth-store';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Card,
   CardContent,
@@ -15,13 +15,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Star, Check, ArrowLeft, Loader2, Package, ArrowRight, Pencil, Trash2 } from "lucide-react";
-import { PricingSection } from "@/components/marketplace/pricing-section";
-import { cn } from "@/lib/utils";
-
-
+} from '@/components/ui/card';
+import { Star, Check, ArrowLeft, Loader2, Package, ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { PricingSection } from '@/components/marketplace/pricing-section';
+import { ImageCarousel } from '@/components/marketplace/image-carousel';
+import { ReviewCard } from '@/components/marketplace/review-card';
+import { cn } from '@/lib/utils';
 
 interface PricingPlan {
   id: string;
@@ -43,11 +42,9 @@ interface Review {
 interface ProductDetail {
   id: string;
   name: string;
-  // slug: string;
   shortDescription: string | null;
   description: string;
   category: string;
-  // tags: string[];
   logoUrl: string | null;
   screenshots: string[];
   avgRating: number;
@@ -72,34 +69,33 @@ export default function ProductPage() {
   const { user } = useAuthStore();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [checkoutError, setCheckoutError] = useState("");
+  const [error, setError] = useState('');
+  const [checkoutError, setCheckoutError] = useState('');
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState("");
+  const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewError, setReviewError] = useState("");
+  const [reviewError, setReviewError] = useState('');
   const [userReview, setUserReview] = useState<Review | null>(null);
   const [reviewLoaded, setReviewLoaded] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "positive" | "negative">("all");
+  const [activeTab, setActiveTab] = useState<'all' | 'positive' | 'negative'>('all');
   const [isEditingUserReview, setIsEditingUserReview] = useState(false);
   const [editUserRating, setEditUserRating] = useState(0);
-  const [editUserComment, setEditUserComment] = useState("");
+  const [editUserComment, setEditUserComment] = useState('');
   const [reviewUpdating, setReviewUpdating] = useState(false);
   const fetchTabRef = useRef(activeTab);
-
   const { accessToken } = useAuthStore();
-  console.log(product)
+
   useEffect(() => {
     async function load() {
       try {
         const res = await api.get<{ data: ProductDetail }>(`/products/catalog/${id}`);
         setProduct(res.data);
       } catch {
-        setError("Product not found");
+        setError('Product not found');
       } finally {
         setLoading(false);
       }
@@ -107,16 +103,17 @@ export default function ProductPage() {
     load();
   }, [id]);
 
-  // Check if user already reviewed this product
   useEffect(() => {
     if (!product || !user || !accessToken) return;
     api.get<{ data: Review | null }>(`/products/${product.id}/reviews/me`, { token: accessToken })
-      .then((res) => { if (res.data) setUserReview(res.data); })
-      .catch(() => { })
+      .then((res) => {
+        if (res.data) setUserReview(res.data);
+      })
+      .catch(() => {})
       .finally(() => setReviewLoaded(true));
   }, [product, user, accessToken]);
 
-  const fetchReviews = async (tab: "all" | "positive" | "negative") => {
+  const fetchReviews = async (tab: 'all' | 'positive' | 'negative') => {
     fetchTabRef.current = tab;
     setReviewsLoading(true);
     try {
@@ -125,7 +122,7 @@ export default function ProductPage() {
         setReviews(res.data);
       }
     } catch (err) {
-      console.error("Failed to fetch reviews", err);
+      console.error('Failed to fetch reviews', err);
     } finally {
       if (fetchTabRef.current === tab) {
         setReviewsLoading(false);
@@ -142,15 +139,15 @@ export default function ProductPage() {
   async function handleSubmitReview() {
     if (!product || !accessToken) return;
     if (reviewRating === 0) {
-      setReviewError("Please select a rating");
+      setReviewError('Please select a rating');
       return;
     }
     if (!reviewComment.trim()) {
-      setReviewError("Please provide a comment for your review");
+      setReviewError('Please provide a comment for your review');
       return;
     }
     setReviewSubmitting(true);
-    setReviewError("");
+    setReviewError('');
     try {
       const res = await api.post<{ data: Review }>(
         `/products/${product.id}/reviews`,
@@ -158,19 +155,21 @@ export default function ProductPage() {
         { token: accessToken }
       );
       setUserReview(res.data);
-      // Refresh reviews if on "all" or matching tab
-      if (activeTab === "all" || (activeTab === "positive" && res.data.rating >= 3) || (activeTab === "negative" && res.data.rating < 3)) {
+      if (activeTab === 'all' || (activeTab === 'positive' && res.data.rating >= 3) || (activeTab === 'negative' && res.data.rating < 3)) {
         setReviews((prev) => [res.data, ...prev]);
       }
-      // Update counts
-      setProduct((prev) => prev ? {
-        ...prev,
-        _count: { ...prev._count, reviews: (prev._count?.reviews || 0) + 1 },
-      } : prev);
-      setReviewComment("");
+      setProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              _count: { ...prev._count, reviews: (prev._count?.reviews || 0) + 1 },
+            }
+          : prev
+      );
+      setReviewComment('');
       setReviewRating(0);
     } catch (err) {
-      setReviewError(err instanceof ApiError ? err.message : "Failed to submit review");
+      setReviewError(err instanceof Error ? err.message : 'Failed to submit review');
     } finally {
       setReviewSubmitting(false);
     }
@@ -182,16 +181,20 @@ export default function ProductPage() {
     try {
       await api.delete(`/products/reviews/${idToDelete}`, { token: accessToken });
       setReviews((prev) => prev.filter((r) => r.id !== idToDelete));
-      setProduct((prev) => prev ? {
-        ...prev,
-        _count: { ...prev._count, reviews: Math.max(0, prev._count.reviews - 1) },
-      } : prev);
+      setProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              _count: { ...prev._count, reviews: Math.max(0, prev._count.reviews - 1) },
+            }
+          : prev
+      );
       if (userReview?.id === idToDelete) {
         setUserReview(null);
         setIsEditingUserReview(false);
       }
     } catch (err) {
-      setReviewError(err instanceof ApiError ? err.message : "Failed to delete review");
+      setReviewError(err instanceof Error ? err.message : 'Failed to delete review');
     }
   }
 
@@ -219,15 +222,15 @@ export default function ProductPage() {
     }
   }
 
-  async function handleSubscribe(planId: string, billingCycle: "MONTHLY" | "YEARLY") {
+  async function handleSubscribe(planId: string, billingCycle: 'MONTHLY' | 'YEARLY') {
     if (!user || !accessToken) {
-      window.location.href = "/login";
+      window.location.href = '/login';
       return;
     }
     setSubscribing(planId);
     try {
       const res = await api.post<{ data: { url: string } }>(
-        "/subscriptions/checkout",
+        '/subscriptions/checkout',
         { pricingPlanId: planId, billingCycle },
         { token: accessToken }
       );
@@ -235,14 +238,13 @@ export default function ProductPage() {
         window.location.href = res.data.url;
       }
     } catch (err) {
-      setCheckoutError(err instanceof ApiError ? err.message : "Failed to start checkout");
+      setCheckoutError(err instanceof Error ? err.message : 'Failed to start checkout');
       setSubscribing(null);
     }
   }
 
   const [currentPage, setCurrentPage] = useState(1);
   const reviewsPerPage = 6;
-
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
   const paginatedReviews = reviews.slice((currentPage - 1) * reviewsPerPage, currentPage * reviewsPerPage);
 
@@ -257,7 +259,7 @@ export default function ProductPage() {
   if (error || !product) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">{error || "Product not found"}</p>
+        <p className="text-gray-500">{error || 'Product not found'}</p>
         <Link href="/marketplace">
           <Button variant="outline">Back to Marketplace</Button>
         </Link>
@@ -266,25 +268,32 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tighter">
             <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-white">S</div>
-            <span>Saasifyy</span>
+            <span className="text-gray-900">Marketplace</span>
           </Link>
           <nav className="flex items-center gap-4">
-            <Link href="/marketplace" className="text-sm font-medium text-gray-600 hover:text-black transition-colors">Marketplace</Link>
+            <Link href="/marketplace" className="text-sm font-medium text-gray-600 hover:text-black transition-colors">
+              All Products
+            </Link>
             <div className="h-4 w-px bg-gray-200" />
             {user ? (
-              <Link href={user.role === "ADMIN" ? "/admin/analytics" : user.role === "DEVELOPER" ? "/developer/products" : "/customer/subscriptions"}>
-                <Button size="sm" variant="ghost" className="font-semibold">Dashboard</Button>
+              <Link href={user.role === 'ADMIN' ? '/admin/analytics' : user.role === 'DEVELOPER' ? '/developer/products' : '/customer/subscriptions'}>
+                <Button size="sm" variant="ghost" className="font-semibold">
+                  Dashboard
+                </Button>
               </Link>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login"><Button variant="ghost" size="sm" className="font-medium">Sign in</Button></Link>
-                <Link href="/register"><Button size="sm" className="font-bold shadow-md shadow-primary/10">Get started</Button></Link>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="font-medium">
+                    Sign in
+                  </Button>
+                </Link>
               </div>
             )}
           </nav>
@@ -292,608 +301,449 @@ export default function ProductPage() {
       </header>
 
       <main className="flex-1">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-12 max-w-6xl">
           {/* Breadcrumb */}
-          <Link href="/marketplace" className="mb-6 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Marketplace
+          <Link href="/marketplace" className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium mb-8 group">
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+            Back to Products
           </Link>
 
-          <div className="mt-4 grid gap-12 lg:grid-cols-1">
-            {/* Main Content */}
-            <div className="space-y-12">
-              {/* Product Header */}
-              <div className="flex flex-col sm:flex-row items-start gap-8 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <div className="space-y-20">
+            {/* Product Header */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+              {/* Left: Logo & Info */}
+              <div className="space-y-8">
+                {/* Logo */}
                 {product.logoUrl ? (
-                  <div className="h-32 w-32 shrink-0 overflow-hidden rounded-2xl border border-slate-100 bg-white p-3 shadow-sm ring-4 ring-slate-50/50">
+                  <div className="h-32 w-32 rounded-2xl border-2 border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-4 flex items-center justify-center shadow-sm">
                     <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50">
-                    <Package className="h-10 w-10 text-slate-300" />
+                  <div className="flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50">
+                    <Package className="h-10 w-10 text-gray-300" />
                   </div>
                 )}
-                <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
-                    <Badge className="px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary border-primary/20 bg-primary/5 hover:bg-primary/5 rounded-full">{product.category}</Badge>
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                      <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Active Now
-                    </div>
-                  </div>
-                  <h1 className="text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl text-slate-900 mb-3">
-                    {product.name}
-                  </h1>
-                  <p className="text-lg text-slate-500 font-semibold mb-6 flex items-center gap-2">
-                    Crafted by <span className="text-slate-900 font-bold hover:text-primary transition-colors cursor-pointer border-b-2 border-slate-100 pb-0.5">{product.developer.user.full_name}</span>
-                  </p>
 
-                  <div className="flex flex-wrap items-center gap-6">
-                    <div className="flex items-center gap-2.5">
+                {/* Metadata */}
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider bg-gray-900 text-white border-none">
+                      {product.category}
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h1 className="text-5xl font-black text-gray-900 leading-tight mb-3">
+                      {product.name}
+                    </h1>
+                    <p className="text-lg text-gray-600 font-medium">
+                      By <span className="font-bold text-gray-900">{product.developer?.user?.full_name || 'Developer'}</span>
+                    </p>
+                  </div>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-4 pt-4">
+                    <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <Star key={s} className={cn("h-4 w-4", s <= Math.round(product.avgRating) ? "fill-yellow-400 text-yellow-400" : "text-slate-200")} />
+                          <Star
+                            key={s}
+                            className={cn(
+                              'h-5 w-5',
+                              s <= Math.round(product.avgRating) ? 'fill-gray-900 text-gray-900' : 'text-gray-300'
+                            )}
+                          />
                         ))}
                       </div>
-                      <span className="text-sm font-black text-slate-900">
-                        {product.avgRating.toFixed(1)} <span className="text-slate-400 font-bold ml-1">({product._count.reviews})</span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {(product.avgRating || 0).toFixed(1)}{' '}
+                        <span className="text-sm text-gray-500 font-normal ml-1">({product._count?.reviews || 0} reviews)</span>
                       </span>
                     </div>
 
-                    {product._count.subscriptions >= 50 && (
-                      <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-50 border border-slate-100">
-                        <div className="flex -space-x-2">
-                          {[1, 2, 3].map((i) => (
-                            <div key={i} className="h-6 w-6 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
-                              <div className="h-full w-full bg-gradient-to-br from-slate-300 to-slate-400" />
-                            </div>
-                          ))}
-                        </div>
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-tight">
-                          {product._count.subscriptions.toLocaleString()}+ users
-                        </span>
+                    {product._count?.subscriptions > 0 && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-200">
+                        <span className="text-sm font-bold text-gray-600">{(product._count?.subscriptions || 0).toLocaleString()}+ users</span>
                       </div>
                     )}
                   </div>
 
+                  {/* Description */}
+                  <p className="text-gray-600 text-lg leading-relaxed font-medium mt-6">
+                    {product.shortDescription || product.description}
+                  </p>
+
                   {product.site && (
-                    <div className="mt-8">
+                    <div className="pt-4">
                       <a
                         href={product.site.site_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group inline-flex items-center gap-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-all px-4 py-2.5 rounded-xl shadow-lg shadow-slate-900/10"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-lg hover:bg-black transition-colors shadow-lg group"
                       >
                         Visit Official Site
-                        <div className="p-0.5 rounded-md bg-white/10 group-hover:translate-x-1 transition-transform">
-                          <ArrowRight className="h-3 w-3" />
-                        </div>
+                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </a>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-24">
-                {/* About & Screenshots */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-                  {/* Left: Content */}
-                  <div className="lg:col-span-7 space-y-12">
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-1.5 bg-primary rounded-full" />
-                        <h2 className="text-2xl font-black tracking-tight text-slate-900">About {product.name}</h2>
-                      </div>
-                      <div className="whitespace-pre-wrap text-lg text-slate-600 leading-relaxed font-medium">
-                        {product.description}
-                      </div>
-                    </div>
+              {/* Right: Carousel */}
+              {product.screenshots && product.screenshots.length > 0 && (
+                <div className="sticky top-24">
+                  <ImageCarousel images={product.screenshots} alt={product.name} />
+                </div>
+              )}
+            </div>
 
-                    {/* <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20">
-                      <div className="absolute top-0 right-0 p-8 opacity-10">
-                        <Check className="h-32 w-32" />
-                      </div>
-                      <div className="relative z-10">
-                        <h3 className="text-2xl font-black mb-8">Core Features</h3>
-                        <div className="grid sm:grid-cols-2 gap-6">
-                          {Array.from(new Set(product.pricingPlans.flatMap(p => p.features))).slice(0, 8).map((feature, i) => (
-                            <div key={i} className="flex items-center gap-3 group">
-                              <div className="h-6 w-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-primary transition-colors">
-                                <Check className="h-3.5 w-3.5 text-white" />
-                              </div>
-                              <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div> */}
+            {/* Pricing Section */}
+            <div id="pricing" className="pt-8 border-t-2 border-gray-200">
+              <div className="space-y-12">
+                <div className="text-center max-w-2xl mx-auto space-y-4">
+                  <h2 className="text-4xl font-black text-gray-900">Choose your plan</h2>
+                  <p className="text-gray-600 font-medium text-lg">Simple, transparent pricing that scales with your needs.</p>
+                </div>
+                <PricingSection
+                  plans={product.pricingPlans}
+                  onSubscribe={handleSubscribe}
+                  subscribingPlanId={subscribing}
+                  isLoggedIn={!!user}
+                  isOwner={product.isOwner}
+                  activePlanId={product.activePlanId}
+                  userRole={user?.role}
+                />
+              </div>
+            </div>
+
+            {/* About Section */}
+            <div className="pt-8 border-t-2 border-gray-200">
+              <div className="space-y-8">
+                <div>
+                  <h2 className="text-4xl font-black text-gray-900 mb-6">About {product.name}</h2>
+                  <div className="text-lg text-gray-600 leading-relaxed whitespace-pre-wrap font-medium">
+                    {product.description}
                   </div>
+                </div>
+              </div>
+            </div>
 
-                  {/* Right: Screenshots */}
-                  <div className="lg:col-span-5">
-                    {product.screenshots.length > 0 && (
-                      <div className="space-y-8 sticky top-24">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-1.5 bg-primary rounded-full" />
-                          <h2 className="text-2xl font-black tracking-tight text-slate-900">Product Interface</h2>
+            {/* Reviews Section */}
+            <div id="reviews" className="pt-8 border-t-2 border-gray-200">
+              <div className="max-w-4xl mx-auto space-y-12">
+                {/* Section Header */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                  <div className="space-y-2">
+                    <h2 className="text-4xl font-black text-gray-900">Customer Reviews</h2>
+                    <p className="text-gray-600 font-medium">Real feedback from {product.name} users</p>
+                  </div>
+                  <div className="flex items-center gap-8 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                    <div className="text-center">
+                      <div className="text-3xl font-black text-gray-900">{(product.avgRating || 0).toFixed(1)}</div>
+                      <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Overall Rating</div>
+                    </div>
+                    <div className="w-px h-12 bg-gray-200" />
+                    <div className="text-center">
+                      <div className="text-3xl font-black text-gray-900">{product._count?.reviews || 0}</div>
+                      <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Total Reviews</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Write Review Form */}
+                {user && user.role === 'CUSTOMER' && reviewLoaded && !userReview && (
+                  <div className="p-8 rounded-2xl border-2 border-gray-200 bg-gray-50">
+                    {product.isSubscribed ? (
+                      <div className="space-y-8">
+                        <div>
+                          <h3 className="text-2xl font-black text-gray-900">Share Your Experience</h3>
+                          <p className="text-sm text-gray-600 font-medium mt-2">Help other users by sharing your honest feedback.</p>
                         </div>
-                        <div className="grid gap-6">
-                          {product.screenshots.map((url, i) => (
-                            <div key={i} className="group relative overflow-hidden rounded-[2rem] border border-slate-200 transition-all duration-500 hover:border-primary/20 hover:shadow-2xl">
-                              <img src={url} alt={`Screenshot ${i + 1}`} className="aspect-video w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                              <div className="absolute inset-0 bg-slate-900/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex items-center justify-center backdrop-blur-[2px]">
-                                <Button variant="secondary" size="sm" className="font-semibold rounded-lg shadow-xl">Expand View</Button>
-                              </div>
-                            </div>
-                          ))}
+
+                        {/* Rating */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Your Rating</label>
+                          <div className="flex gap-3">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setReviewRating(star)}
+                                onMouseEnter={() => setHoverRating(star)}
+                                onMouseLeave={() => setHoverRating(0)}
+                                className="transition-transform active:scale-90"
+                              >
+                                <Star
+                                  className={cn(
+                                    'h-8 w-8 transition-colors',
+                                    star <= (hoverRating || reviewRating)
+                                      ? 'fill-gray-900 text-gray-900'
+                                      : 'text-gray-300 hover:text-gray-400'
+                                  )}
+                                />
+                              </button>
+                            ))}
+                          </div>
                         </div>
+
+                        {/* Comment */}
+                        <div className="space-y-3">
+                          <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">Your Comment</label>
+                          <Textarea
+                            placeholder="What was your experience like? What features did you love most?"
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            className="min-h-[120px] p-4 rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-base font-medium"
+                          />
+                        </div>
+
+                        {reviewError && (
+                          <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider text-center">
+                            {reviewError}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={handleSubmitReview}
+                            disabled={reviewSubmitting}
+                            className="px-8 h-11 font-bold uppercase text-sm tracking-wider rounded-lg bg-gray-900 text-white hover:bg-black"
+                          >
+                            {reviewSubmitting ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Publishing...
+                              </>
+                            ) : (
+                              'Submit Review'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center space-y-4">
+                        <div className="h-12 w-12 rounded-xl bg-white border border-gray-300 flex items-center justify-center mx-auto">
+                          <Star className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-gray-900 text-lg">Subscribe to Review</h4>
+                          <p className="text-sm text-gray-600 font-medium mt-1">Only active subscribers can leave reviews.</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="rounded-lg border-gray-300 font-bold text-xs uppercase tracking-wider"
+                          onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                        >
+                          View Pricing
+                        </Button>
                       </div>
                     )}
                   </div>
-                </div>
+                )}
 
-                {/* Pricing Section */}
-                <div id="pricing-plans" className="pt-24 border-t border-slate-100">
-                  <div className="space-y-12">
-                    <div className="text-center max-w-2xl mx-auto space-y-4">
-                      <h2 className="text-4xl font-black tracking-tight text-slate-900">Choose your plan</h2>
-                      <p className="text-slate-500 font-medium">Simple, transparent pricing that grows with you.</p>
-                    </div>
-                     <PricingSection
-                      plans={product.pricingPlans}
-                      onSubscribe={handleSubscribe}
-                      subscribingPlanId={subscribing}
-                      isLoggedIn={!!user}
-                      isOwner={product.isOwner}
-                      activePlanId={product.activePlanId}
-                      userRole={user?.role}
-                    />
-                  </div>
-                </div>
-
-                {/* Reviews Section - Full Width */}
-                <div className="pt-24 border-t border-slate-100 pb-24">
-                  <div className="max-w-4xl mx-auto space-y-12">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-[4px] bg-primary rounded-lg" />
-                          <h2 className="text-3xl font-black tracking-tight text-slate-900">Customer Feedback</h2>
+                {/* User's Review */}
+                {userReview && (
+                  <Card className="border-2 border-gray-300 bg-gradient-to-br from-gray-50 to-white">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="space-y-1">
+                          <h4 className="font-bold text-gray-900">Your Feedback</h4>
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Verified Subscriber</p>
                         </div>
-                        <p className="text-slate-500 font-medium text-lg">See what the community is saying about {product.name}</p>
-                      </div>
-                      <div className="flex items-center gap-8 bg-white p-3 rounded-[2rem] border border-slate-100 shadow-sm">
-                        <div className="text-center">
-                          <div className="text-3xl font-black text-slate-900 leading-none">{product.avgRating.toFixed(1)}</div>
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Rating</div>
-                        </div>
-                        <div className="h-10 w-px bg-slate-100" />
-                        <div className="text-center">
-                          <div className="text-3xl font-black text-slate-900 leading-none">{product._count.reviews}</div>
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Reviews</div>
-                        </div>
-                      </div>
-                    </div>
-
-
-
-                    <div className="grid gap-8">
-                      {/* Review Form */}
-                      {user && user.role === "CUSTOMER" && reviewLoaded && !userReview && (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                          {product.isSubscribed ? (
-                            <Card className="overflow-hidden border border-slate-200 rounded-[2.5rem] bg-white shadow-2xl shadow-slate-100/50">
-                              <CardHeader className="p-10 pb-4">
-                                <h3 className="text-2xl font-black text-slate-900">Share your thoughts</h3>
-                                <p className="text-sm text-slate-500 font-medium">Both rating and comment are mandatory to ensure quality feedback.</p>
-                              </CardHeader>
-                              <CardContent className="p-10 pt-4 space-y-10">
-                                <div className="space-y-4">
-                                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Rating</label>
-                                  <div className="flex gap-2.5">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                      <button
-                                        key={star}
-                                        type="button"
-                                        onClick={() => setReviewRating(star)}
-                                        onMouseEnter={() => setHoverRating(star)}
-                                        onMouseLeave={() => setHoverRating(0)}
-                                        className="transition-transform active:scale-90"
-                                      >
-                                        <Star
-                                          className={cn(
-                                            "h-10 w-10 transition-all duration-200",
-                                            star <= (hoverRating || reviewRating)
-                                              ? "fill-yellow-400 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
-                                              : "text-slate-200 hover:text-slate-300"
-                                          )}
-                                        />
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Comment</label>
-                                  <Textarea
-                                    placeholder="What was your experience like? What did you love most?"
-                                    value={reviewComment}
-                                    onChange={(e) => setReviewComment(e.target.value)}
-                                    className="min-h-[150px] p-8 rounded-3xl border-slate-200 focus-visible:ring-primary/10 resize-none font-medium text-slate-600 text-lg"
-                                  />
-                                </div>
-
-                                {reviewError && (
-                                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold uppercase tracking-widest text-center animate-shake">
-                                    {reviewError}
-                                  </div>
-                                )}
-
-                                <div className="flex justify-end pt-4">
-                                  <Button
-                                    onClick={handleSubmitReview}
-                                    disabled={reviewSubmitting}
-                                    className="px-12 h-14 text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95"
-                                  >
-                                    {reviewSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing...</> : "Submit Review"}
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ) : (
-                            <div className="p-12  border-2 border-dashed border-slate-200 bg-slate-50/50 text-center space-y-6">
-                              <div className="h-16 w-16 rounded-3xl bg-white border border-slate-200 flex items-center justify-center mx-auto shadow-sm">
-                                <Star className="h-8 w-8 text-slate-300" />
-                              </div>
-                              <div className="space-y-2">
-                                <h3 className="font-black text-2xl text-slate-900">Verified Reviews Only</h3>
-                                <p className="text-sm text-slate-500 font-semibold max-w-sm mx-auto leading-relaxed">
-                                  To ensure the highest quality community feedback, only active subscribers can post reviews.
-                                </p>
-                              </div>
-                              <Button
-                                variant="outline"
-                                className="rounded-xl border-slate-200 font-black text-xs uppercase tracking-widest px-8"
-                                onClick={() => document.getElementById('pricing-plans')?.scrollIntoView({ behavior: 'smooth' })}
-                              >
-                                View Pricing Plans
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Current User Review Card */}
-                      {user && userReview && (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                          <Card className="overflow-hidden border border-primary/20 rounded-[1.5rem] bg-primary/5 shadow-xl shadow-primary/5">
-                            <CardContent className="p-6">
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-4">
-                                  <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black uppercase text-sm shadow-lg shadow-primary/20">
-                                    {user.fullName?.charAt(0) || 'U'}
-                                  </div>
-                                  <div>
-                                    <h4 className="font-bold text-slate-900 text-sm leading-none">Your Feedback</h4>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Verified Subscriber</p>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  {!isEditingUserReview && (
-                                    <div className="flex items-center gap-1">
-                                      <button
-                                        onClick={() => {
-                                          setIsEditingUserReview(true);
-                                          setEditUserRating(userReview.rating);
-                                          setEditUserComment(userReview.comment || "");
-                                        }}
-                                        className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-primary transition-colors"
-                                      >
-                                        <Pencil className="h-4 w-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteReview()}
-                                        className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </button>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg shadow-sm border border-slate-100">
-                                    {Array.from({ length: 5 }).map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={cn(
-                                          "h-3 w-3",
-                                          i < (isEditingUserReview ? editUserRating : userReview.rating) ? "fill-yellow-400 text-yellow-400" : "text-slate-200",
-                                          isEditingUserReview && "cursor-pointer hover:scale-110 transition-transform"
-                                        )}
-                                        onClick={() => isEditingUserReview && setEditUserRating(i + 1)}
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                              {isEditingUserReview ? (
-                                <div className="space-y-4">
-                                  <Textarea
-                                    value={editUserComment}
-                                    onChange={(e) => setEditUserComment(e.target.value)}
-                                    className="min-h-[100px] p-4 rounded-xl border-slate-200 focus-visible:ring-primary/10 resize-none font-medium text-slate-600 text-sm bg-white"
-                                  />
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setIsEditingUserReview(false)}
-                                      className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleUpdateReview(userReview.id, editUserRating, editUserComment)}
-                                      className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg"
-                                      disabled={reviewUpdating}
-                                    >
-                                      {reviewUpdating ? <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Updating...</> : "Save Changes"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="p-4 rounded-xl bg-white border border-slate-100 shadow-sm italic text-sm text-slate-700 leading-relaxed font-medium">
-                                  "{userReview.comment}"
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl w-fit">
-                        {[
-                          { id: 'all', label: 'All' },
-                          { id: 'positive', label: 'Positive' },
-                          { id: 'negative', label: 'Critical' }
-                        ].map((tab) => (
-                          <button
-                            key={tab.id}
-                            onClick={() => { setActiveTab(tab.id as any); setCurrentPage(1); }}
-                            className={cn(
-                              "px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all",
-                              activeTab === tab.id
-                                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
-                                : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
-                            )}
-                          >
-                            {tab.label}
-                          </button>
-                        ))}
-                      </div>
-                      {/* Review List */}
-                      <div className={`${reviewsLoading ? "flex items-center justify-center" : paginatedReviews.length === 0 ? "flex items-center justify-center" : "grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}`}>
-                        {reviewsLoading ? (
-                          <div className="py-24 text-center space-y-6 animate-in fade-in duration-500">
-                            <div className="h-20 w-20 rounded-[2rem] bg-slate-50 flex items-center justify-center mx-auto">
-                              <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
-                            </div>
-                            <p className="text-slate-500 font-medium text-center">Syncing feedback...</p>
-                          </div>
-                        ) : paginatedReviews.length > 0 ? (
-                          paginatedReviews.map((review, i) => (
-                            <ReviewCard
-                              key={review.id}
-                              review={review}
-                              index={i}
-                              currentUserId={user?.id}
-                              onUpdate={handleUpdateReview}
-                              onDelete={handleDeleteReview}
-                            />
-                          ))
-                        ) : (
-                          <div className="py-24 text-center space-y-6">
-                            <div className="h-20 w-20 rounded-[2rem] bg-slate-50 flex items-center justify-center mx-auto text-slate-300">
-                              <Package className="h-10 w-10" />
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-slate-900 font-black text-xl">No {activeTab} reviews found</p>
-                              <p className="text-slate-500 font-medium">Be the first to share your experience!</p>
-                            </div>
+                        {!isEditingUserReview && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setIsEditingUserReview(true);
+                                setEditUserRating(userReview.rating);
+                                setEditUserComment(userReview.comment || '');
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview()}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </div>
 
-                      {/* Pagination */}
-                      {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-3 pt-12">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={currentPage === 1}
-                            onClick={() => { setCurrentPage(prev => prev - 1); window.scrollTo({ top: document.getElementById('reviews-start')?.offsetTop || 0, behavior: 'smooth' }); }}
-                            className="rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-6 border-slate-200"
-                          >
-                            Previous
-                          </Button>
-                          <div className="flex items-center gap-2">
-                            {Array.from({ length: totalPages }).map((_, i) => (
-                              <button
+                      {/* Rating */}
+                      {!isEditingUserReview && (
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="flex gap-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star
                                 key={i}
-                                onClick={() => { setCurrentPage(i + 1); window.scrollTo({ top: document.getElementById('reviews-start')?.offsetTop || 0, behavior: 'smooth' }); }}
                                 className={cn(
-                                  "h-10 w-10 rounded-xl text-[11px] font-black transition-all",
-                                  currentPage === i + 1
-                                    ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
-                                    : "text-slate-400 hover:bg-slate-100"
+                                  'h-4 w-4',
+                                  i < userReview.rating
+                                    ? 'fill-gray-900 text-gray-900'
+                                    : 'text-gray-300'
                                 )}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs font-bold text-gray-600">{userReview.rating} / 5</span>
+                        </div>
+                      )}
+
+                      {isEditingUserReview ? (
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                onClick={() => setEditUserRating(star)}
+                                className="transition-transform hover:scale-110"
                               >
-                                {i + 1}
+                                <Star
+                                  className={cn(
+                                    'h-5 w-5',
+                                    star <= editUserRating
+                                      ? 'fill-gray-900 text-gray-900'
+                                      : 'text-gray-300'
+                                  )}
+                                />
                               </button>
                             ))}
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={currentPage === totalPages}
-                            onClick={() => { setCurrentPage(prev => prev + 1); window.scrollTo({ top: document.getElementById('reviews-start')?.offsetTop || 0, behavior: 'smooth' }); }}
-                            className="rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-6 border-slate-200"
-                          >
-                            Next
-                          </Button>
+                          <Textarea
+                            value={editUserComment}
+                            onChange={(e) => setEditUserComment(e.target.value)}
+                            className="min-h-[100px] p-3 rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-sm"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setIsEditingUserReview(false);
+                                setEditUserRating(userReview.rating);
+                                setEditUserComment(userReview.comment || '');
+                              }}
+                              className="rounded-lg border-gray-200 font-semibold text-xs uppercase tracking-wider"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateReview(userReview.id, editUserRating, editUserComment)}
+                              disabled={reviewUpdating}
+                              className="rounded-lg font-semibold text-xs uppercase tracking-wider"
+                            >
+                              {reviewUpdating ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                          </div>
                         </div>
+                      ) : (
+                        <p className="text-gray-700 text-base leading-relaxed font-medium italic">
+                          "{userReview.comment}"
+                        </p>
                       )}
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Review Tabs */}
+                <div className="flex items-center gap-2 p-1.5 bg-gray-100 rounded-xl w-fit">
+                  {[
+                    { id: 'all', label: 'All Reviews' },
+                    { id: 'positive', label: 'Positive' },
+                    { id: 'negative', label: 'Critical' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id as any);
+                        setCurrentPage(1);
+                      }}
+                      className={cn(
+                        'px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all',
+                        activeTab === tab.id
+                          ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                      )}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
+
+                {/* Reviews Grid */}
+                <div className="space-y-8">
+                  {reviewsLoading ? (
+                    <div className="flex justify-center py-16">
+                      <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                    </div>
+                  ) : paginatedReviews.length > 0 ? (
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      {paginatedReviews.map((review) => (
+                        <ReviewCard
+                          key={review.id}
+                          review={review}
+                          currentUserId={user?.id}
+                          onUpdate={handleUpdateReview}
+                          onDelete={handleDeleteReview}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-600 font-medium">No {activeTab} reviews yet. Be the first to share!</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
+                      className="rounded-lg border-gray-200 font-bold text-xs uppercase tracking-wider"
+                    >
+                      Previous
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }).map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i + 1)}
+                          className={cn(
+                            'h-9 w-9 rounded-lg text-xs font-bold transition-all',
+                            currentPage === i + 1
+                              ? 'bg-gray-900 text-white shadow-md'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          )}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      className="rounded-lg border-gray-200 font-bold text-xs uppercase tracking-wider"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </main>
-    </div>
-  );
-}
-function ReviewCard({
-  review,
-  index,
-  currentUserId,
-  onUpdate,
-  onDelete
-}: {
-  review: Review;
-  index: number;
-  currentUserId?: string;
-  onUpdate?: (reviewId: string, rating: number, comment: string) => Promise<any>;
-  onDelete?: (reviewId: string) => Promise<any>;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editRating, setEditRating] = useState(review.rating);
-  const [editComment, setEditComment] = useState(review.comment || "");
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const isOwner = currentUserId === review.customer.id;
-  const comment = review.comment || "";
-  const isLong = comment.length > 150;
-  const displayComment = isLong && !isExpanded ? `${comment.substring(0, 150)}...` : comment;
-
-  const handleUpdate = async () => {
-    if (!onUpdate) return;
-    setIsUpdating(true);
-    try {
-      await onUpdate(review.id, editRating, editComment);
-      setIsEditing(false);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!onDelete || !window.confirm("Are you sure you want to delete this review?")) return;
-    setIsDeleting(true);
-    try {
-      await onDelete(review.id);
-    } catch (err) {
-      console.error(err);
-      setIsDeleting(false);
-    }
-  };
-
-  return (
-    <div
-      className={cn(
-        "p-5 rounded-2xl border bg-white transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 group flex flex-col h-full",
-        isEditing ? "border-primary/30 ring-1 ring-primary/10 shadow-xl" : "border-slate-200 hover:border-primary/20 hover:shadow-xl hover:shadow-slate-200/40"
-      )}
-      style={{ animationDelay: `${index * 50}ms` }}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 group-hover:border-primary/20 transition-colors">
-            {review.customer.avatarUrl ? (
-              <img src={review.customer.avatarUrl} alt={review.customer.fullName} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-xs font-black text-slate-400 uppercase">{review.customer.fullName.charAt(0)}</span>
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-bold text-slate-900 text-xs leading-none truncate max-w-[100px]">{review.customer.fullName}</h4>
-              {/* {isOwner && (
-                <Badge variant="outline" className="h-4 px-1.5 text-[7px] font-black uppercase tracking-tighter bg-primary/5 text-primary border-primary/20">You</Badge>
-              )} */}
-            </div>
-            <div className="flex items-center gap-0.5 mt-1.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    "h-2.5 w-2.5",
-                    i < (isEditing ? editRating : review.rating) ? "fill-yellow-400 text-yellow-400" : "text-slate-200"
-                  )}
-                  onClick={() => isEditing && setEditRating(i + 1)}
-                  style={{ cursor: isEditing ? 'pointer' : 'default' }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest">
-          {new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-        </p>
-      </div>
-
-      <div className="flex-1 flex flex-col">
-        {isEditing ? (
-          <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
-            <Textarea
-              value={editComment}
-              onChange={(e) => setEditComment(e.target.value)}
-              className="min-h-[80px] p-3 text-[13px] rounded-xl border-slate-200 focus-visible:ring-primary/10 resize-none font-medium"
-              placeholder="Update your review..."
-            />
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={handleUpdate}
-                disabled={isUpdating || !editComment.trim() || editRating === 0}
-                className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg"
-              >
-                {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setIsEditing(false);
-                  setEditRating(review.rating);
-                  setEditComment(review.comment || "");
-                }}
-                className="h-8 px-4 text-[10px] font-black uppercase tracking-widest rounded-lg text-slate-500"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <p className="text-slate-600 font-medium leading-relaxed text-[13px]">
-              {displayComment}
-            </p>
-            {isLong && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-primary text-[11px] font-bold mt-2 hover:underline focus:outline-none w-fit"
-              >
-                {isExpanded ? "Show Less" : "Show More"}
-              </button>
-            )}
-          </>
-        )}
-      </div>
     </div>
   );
 }

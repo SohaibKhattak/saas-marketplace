@@ -34,7 +34,7 @@ const CATEGORIES = [
 interface Site {
   id: string;
   subdomain: string;
-  siteUrl: string;
+  site_url: string;
   status: string;
 }
 
@@ -215,7 +215,7 @@ export default function NewProductPage() {
                   <SelectContent>
                     {sites.map((site) => (
                       <SelectItem key={site.id} value={site.id}>
-                        {site.subdomain} — {site.siteUrl}
+                        {site.subdomain}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -245,10 +245,10 @@ export default function NewProductPage() {
             )}
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => router.back()}>
+            <Button type="button" variant="outline" onClick={() => router.back()} className={"cursor-pointer!"}>
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || !category}>
+            <Button type="submit" disabled={submitting || !category} className={"cursor-pointer!"}>
               {submitting ? "Creating..." : "Create Product"}
             </Button>
           </CardFooter>

@@ -5,43 +5,43 @@ import { usePathname } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/auth-store";
 import {
-  LayoutGrid, // Replaced LayoutDashboard
+  LayoutGrid,
   CreditCard,
   Package,
   Settings,
   Users,
-  FileCheck2, // Refined
-  Activity, // Replaced BarChart3
-  Wallet, // Replaced DollarSign
+  FileCheck2,
+  Activity,
+  Wallet,
   ShieldCheck,
   LogOut,
-  ChevronUp,
-  Store,
   Rocket,
-  UserCircle2, // Refined
-  Wrench, // Replaced Hammer
-  BellRing, // Refined
+  UserCircle2,
+  Wrench,
+  BellRing,
   Search,
   Zap,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -55,8 +55,6 @@ const customerNav: NavItem[] = [
   { label: "Profile", href: "/customer/profile", icon: UserCircle2 },
   { label: "Subscriptions", href: "/customer/subscriptions", icon: Zap },
   { label: "Billing", href: "/customer/billing", icon: CreditCard },
-  // { label: "Settings", href: "/customer/settings", icon: Settings },
-  // { label: "Notifications", href: "/customer/notifications", icon: Package },
 ];
 
 const developerNav: NavItem[] = [
@@ -65,8 +63,8 @@ const developerNav: NavItem[] = [
   { label: "Workspace", href: "/developer/start", icon: Wrench },
   { label: "Analytics", href: "/developer/analytics", icon: Activity },
   { label: "Revenue", href: "/developer/revenue", icon: Wallet },
-  { label: "Updates", href: "/developer/notifications", icon: BellRing },
-  { label: "Settings", href: "/developer/settings", icon: Settings },
+  // { label: "Updates", href: "/developer/notifications", icon: BellRing },
+  // { label: "Settings", href: "/developer/settings", icon: Settings },
 ];
 
 const adminNav: NavItem[] = [
@@ -79,152 +77,160 @@ const adminNav: NavItem[] = [
   { label: "System Logs", href: "/admin/reports", icon: Activity },
 ];
 
-function NavSection({
-  label,
-  items,
-  pathname,
-}: {
-  label: string;
-  items: NavItem[];
-  pathname: string;
-}) {
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  isActive={isActive}
-                  className={`transition-all duration-200 hover:bg-accent/50 ${isActive ? "font-medium text-primary bg-secondary/80" : "text-muted-foreground"
-                    }`}
-                  render={<Link href={item.href} />}
-                >
-                  <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : "opacity-70"}`} />
-                  <span>{item.label}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
-}
-
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const { state, toggleSidebar, isMobile } = useSidebar();
 
   if (!user) return null;
 
-  const initials = user.fullName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  // Consolidate navigation items based on user role
+  const menuItems: NavItem[] = [];
+
+  if (user.role === "CUSTOMER") {
+    menuItems.push(...customerNav);
+  } else if (user.role === "DEVELOPER") {
+    menuItems.push(...developerNav);
+  } else if (user.role === "ADMIN") {
+    menuItems.push(...adminNav);
+  }
+
+  // Add global shortcuts
+  if (user.role === "CUSTOMER") {
+    menuItems.push({ label: "Become a Developer", href: "/developer/onboarding", icon: Rocket });
+  }
+  menuItems.push({ label: "Marketplace", href: "/marketplace", icon: Search });
+
+  const isExpanded = state === "expanded";
 
   return (
-    <Sidebar className="border-r border-border/40 bg-background">
-      <SidebarHeader className="border-b border-border/40 px-6 py-6">
-        <Link
-          href="/marketplace"
-          className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-            <Store className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight">Saasifyy</span>
-        </Link>
-      </SidebarHeader>
-
-      <SidebarContent className="gap-0 py-2">
-        {/* Dynamic Role Navigation */}
-        {user.role === "CUSTOMER" && <NavSection label="Account" items={customerNav} pathname={pathname} />}
-        {user.role === "DEVELOPER" && <NavSection label="Developer Console" items={developerNav} pathname={pathname} />}
-        {user.role === "ADMIN" && <NavSection label="Administration" items={adminNav} pathname={pathname} />}
-
-        {/* Global Shortcuts Section */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Explore
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {user.role === "CUSTOMER" && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className="text-muted-foreground transition-colors hover:text-primary"
-                    render={<Link href="/developer/onboarding" />}
-                  >
-                    <Rocket className="h-4 w-4" />
-                    <span>Become a Developer</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={pathname === "/marketplace"}
-                  className={`transition-all ${pathname === "/marketplace" ? "bg-secondary" : "text-muted-foreground"}`}
-                  render={<Link href="/marketplace" />}
+    <Sidebar className="border-r border-border/40 bg-white" collapsible="icon">
+      {isExpanded ? (
+        <SidebarHeader className="border-b border-border/40 px-4 py-4 flex flex-row items-center justify-between">
+          <Link
+            href="/marketplace"
+            className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+          >
+            <div className="flex h-9 w-9 items-center justify-center bg-black text-white text-lg font-bold select-none rounded-none shrink-0">
+              S
+            </div>
+            <span className="text-base font-bold tracking-tight text-black font-sans">
+              Saasifyy
+            </span>
+          </Link>
+          <button
+            onClick={toggleSidebar}
+            className="flex h-8 w-8 items-center justify-center rounded-sm text-[#8B95A5] hover:text-black hover:bg-accent/55 transition-colors cursor-pointer"
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        </SidebarHeader>
+      ) : (
+        <>
+          <SidebarHeader className="px-2 py-4 flex items-center justify-center">
+            <Link href="/marketplace" className="transition-opacity hover:opacity-80">
+              <div className="flex h-8 w-8 items-center justify-center bg-black text-white text-base font-bold select-none rounded-none shrink-0">
+                S
+              </div>
+            </Link>
+          </SidebarHeader>
+          {!isMobile && (
+            <>
+              <div className="border-b border-border/40 w-full" />
+              <div className="px-2 py-2 flex items-center justify-center">
+                <button
+                  onClick={toggleSidebar}
+                  className="flex h-8 w-8 items-center justify-center rounded-sm text-[#8B95A5] hover:text-black hover:bg-accent/55 transition-colors cursor-pointer"
+                  aria-label="Expand sidebar"
                 >
-                  <Search className="h-4 w-4" />
-                  <span>Marketplace</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
+          <div className="border-b border-border/40 w-full" />
+        </>
+      )}
+
+      <SidebarContent className="py-4 px-2">
+        <SidebarGroup className="p-0">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      className={`h-9.5 px-3 gap-2.5 transition-all duration-150 rounded-none text-sm font-sans font-medium ${
+                        isActive
+                          ? "bg-black! text-white! hover:bg-black! hover:text-white!"
+                          : "text-[#8B95A5] hover:text-black hover:bg-gray-50/50"
+                      } group-data-[collapsible=icon]:p-1.5!`}
+                      render={<Link href={item.href} />}
+                      tooltip={item.label}
+                    >
+                      <item.icon
+                        className={`h-5 w-5 shrink-0 transition-colors ${
+                          isActive ? "text-white!" : "text-[#8B95A5] group-hover/menu-button:text-black"
+                        }`}
+                      />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/40 p-4">
+      <SidebarFooter className="p-2.5 border-t border-border/40 bg-white">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <SidebarMenuButton className="h-12 w-full ring-offset-background transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <Avatar className="h-8 w-8 border border-border/50">
-                      {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.fullName} />}
-                      <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col items-start gap-0.5 text-left">
-                      <span className="max-w-[120px] truncate text-sm font-medium leading-none">
-                        {user.fullName}
-                      </span>
-                      <span className="text-xs text-muted-foreground/80 font-normal">
-                        {user.role.toLowerCase()}
-                      </span>
-                    </div>
-                    <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" />
-                  </SidebarMenuButton>
+                  <SidebarMenuButton
+                    size="lg"
+                    className="w-full h-12 px-2.5 transition-all duration-150 rounded-none text-left flex items-center gap-3 text-sm font-sans font-medium text-black hover:bg-gray-50/50 cursor-pointer group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:p-0!"
+                  />
                 }
-              />
-              <DropdownMenuContent side="top" align="start" className="w-64 p-2 shadow-xl">
-                <div className="flex items-center gap-3 px-2 py-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-semibold">{user.fullName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
+              >
+                <Avatar className="h-8 w-8 rounded-full shrink-0">
+                  <AvatarImage src={user.avatarUrl || undefined} alt={user.fullName} />
+                  <AvatarFallback className="bg-black text-white text-xs font-bold rounded-full">
+                    {user.fullName ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+                  <span className="truncate text-sm font-bold text-black font-sans leading-none mb-1">
+                    {user.fullName}
+                  </span>
+                  <span className="truncate text-xs text-[#8B95A5] font-sans leading-none">
+                    {user.email}
+                  </span>
                 </div>
-                <DropdownMenuSeparator />
+                <ChevronsUpDown className="h-4 w-4 text-[#8B95A5] shrink-0 group-data-[collapsible=icon]:hidden" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="top"
+                align="end"
+                className="w-56 mb-2 rounded-none border border-border/40 bg-white p-1.5 shadow-md font-sans"
+              >
+                <div className="px-2 py-1.5 border-b border-border/40 mb-1">
+                  <p className="text-xs text-[#8B95A5] font-medium leading-none">Logged in as</p>
+                  <p className="text-sm font-bold text-black truncate mt-1">{user.fullName}</p>
+                  <p className="text-xs text-[#8B95A5] truncate mt-0.5">{user.email}</p>
+                </div>
                 <DropdownMenuItem
                   onClick={() => logout()}
-                  className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  className="flex items-center gap-2 px-2.5 py-2 text-sm text-[#8B95A5] hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-none"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

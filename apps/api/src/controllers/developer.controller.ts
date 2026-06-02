@@ -808,8 +808,8 @@ export async function setupStripeConnect(
     // 3. Generate Account Link for onboarding redirect
     const accountLink = await stripe.accountLinks.create({
       account: stripeAccountId,
-      refresh_url: `${env.FRONTEND_URL}/developer/settings?stripe=refresh`,
-      return_url: `${env.FRONTEND_URL}/developer/settings?stripe=success`,
+      refresh_url: `${env.FRONTEND_URL}/developer/profile?stripe=refresh`,
+      return_url: `${env.FRONTEND_URL}/developer/profile?stripe=success`,
       type: "account_onboarding",
     });
 

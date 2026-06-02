@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
-import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -86,51 +85,6 @@ export default function DeveloperSettingsPage() {
 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [stripeLoading, setStripeLoading] = useState(false);
-  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
-  const [stripeSetupError, setStripeSetupError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const res = await api.get<{ data: { stripeAccountId: string | null } }>("/developers/me", { token: useAuthStore.getState().accessToken! });
-        setStripeAccountId(res.data.stripeAccountId);
-      } catch (err) {
-        console.error("Failed to fetch profile", err);
-      }
-    }
-    fetchProfile();
-  }, []);
-
-  async function handleConnectStripe() {
-    setStripeLoading(true);
-    setStripeSetupError(null);
-    try {
-      const res = await api.post<{ url: string }>("/developers/stripe/connect", {}, { token: useAuthStore.getState().accessToken! });
-      window.location.href = res.url;
-    } catch (err: any) {
-      console.error("Failed to connect stripe", err);
-      setStripeSetupError(err.message || "Failed to start Stripe Connect setup.");
-    } finally {
-      setStripeLoading(false);
-    }
-  }
-
-  const [stripeDashboardLoading, setStripeDashboardLoading] = useState(false);
-
-  async function handleViewStripeDashboard() {
-    setStripeDashboardLoading(true);
-    setStripeSetupError(null);
-    try {
-      const res = await api.get<{ url: string }>("/developers/stripe/login-link", { token: useAuthStore.getState().accessToken! });
-      window.open(res.url, "_blank");
-    } catch (err: any) {
-      console.error("Failed to generate stripe login link", err);
-      setStripeSetupError(err.message || "Failed to open Stripe Dashboard.");
-    } finally {
-      setStripeDashboardLoading(false);
-    }
-  }
 
   function handleSave() {
     setSaving(true);
@@ -141,23 +95,6 @@ export default function DeveloperSettingsPage() {
       setTimeout(() => setSaved(false), 3000);
     }, 800);
   }
-
-  const [stripeSuccess, setStripeSuccess] = useState(false);
-  const [stripeRefresh, setStripeRefresh] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("stripe") === "success") setStripeSuccess(true);
-      if (params.get("stripe") === "refresh") setStripeRefresh(true);
-      
-      // Clean up URL
-      if (params.has("stripe")) {
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, newUrl);
-      }
-    }
-  }, []);
 
   return (
     <div className="space-y-6 pb-24">
@@ -177,26 +114,6 @@ export default function DeveloperSettingsPage() {
           Manage your notification preferences, appearance, and account settings.
         </p>
       </div>
-
-      {stripeSuccess && (
-        <div className="flex items-center gap-2 rounded-sm bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-400">
-          <CheckCircle2 className="h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold tracking-tight">Stripe Connected Successfully!</p>
-            <p className="text-green-700/80">You will now receive automatic payout transfers.</p>
-          </div>
-        </div>
-      )}
-
-      {stripeRefresh && (
-        <div className="flex items-center gap-2 rounded-sm bg-orange-500/10 p-4 text-sm text-orange-700">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
-          <div>
-            <p className="font-semibold tracking-tight">Stripe Connection Incomplete</p>
-            <p className="text-orange-700/80">Please click the setup button below again to complete your onboarding.</p>
-          </div>
-        </div>
-      )}
 
       {saved && (
         <div className="flex items-center gap-2 rounded-sm bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400 animate-fade-in">
@@ -362,54 +279,6 @@ export default function DeveloperSettingsPage() {
             </div>
             <Badge variant="secondary">{language}</Badge>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Payouts / Stripe */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-neutral-900" />
-            Payouts & Revenue Share
-          </CardTitle>
-          <CardDescription>
-            Link your Stripe account to receive your 85% revenue share automatically.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {stripeSetupError && (
-            <div className="mb-4 rounded-sm bg-destructive/10 p-4 text-sm text-destructive flex items-start gap-2">
-              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-semibold tracking-tight">Setup Failed</p>
-                <p className="text-destructive/80 mt-0.5">{stripeSetupError}</p>
-              </div>
-            </div>
-          )}
-          {!stripeAccountId ? (
-            <div className="rounded-sm border border-primary/20 bg-primary/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold tracking-tight text-primary-900">Setup Stripe Connect</p>
-                <p className="text-sm text-gray-600 mt-1">To get paid instantly for your subscriptions, you need to connect your Stripe account.</p>
-              </div>
-              <Button onClick={handleConnectStripe} disabled={stripeLoading}>
-                {stripeLoading ? "Connecting..." : "Set up Stripe Payouts"}
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-sm border border-green-500/20 bg-green-500/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold tracking-tight text-green-900 dark:text-green-400">Stripe Account Connected</p>
-                <p className="text-sm text-green-700/80 dark:text-green-500 mt-1">Your payouts are configured. You will automatically receive 85% of your sales revenue.</p>
-              </div>
-              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-                <Badge variant="outline" className="bg-green-500/20 text-green-700 border-green-500/30">Active</Badge>
-                <Button variant="outline" size="sm" onClick={handleViewStripeDashboard} disabled={stripeDashboardLoading}>
-                  {stripeDashboardLoading ? "Opening..." : "Go to Stripe Dashboard"}
-                </Button>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 

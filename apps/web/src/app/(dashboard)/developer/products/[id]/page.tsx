@@ -39,10 +39,10 @@ import { ImageUpload } from "@/components/ui/image-upload";
 interface PricingPlan {
   id: string;
   name: string;
-  priceMonthly: number;
-  priceYearly: number | null;
+  price_monthly: number;
+  price_yearly: number | null;
   features: string[];
-  trialDays: number;
+  trial_days: number;
   isActive: boolean;
   sortOrder: number;
 }
@@ -56,7 +56,7 @@ interface Product {
   category: string;
   // tags: string[];
   logoUrl: string | null;
-  // screenshots: string[];
+  screenshots?: string[];
   status: string;
   rejectionReason: string | null;
   site: { site_url: string; subdomain: string } | null;
@@ -137,38 +137,7 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [fetchProduct]);
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-    }
-  };
 
-  const handleScreenshotChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const newFiles = [...screenshotFiles];
-      newFiles[index] = file;
-      setScreenshotFiles(newFiles);
-
-      const newPreviews = [...screenshotPreviews];
-      newPreviews[index] = URL.createObjectURL(file);
-      setScreenshotPreviews(newPreviews);
-    }
-  };
-
-  const addScreenshotSlot = () => {
-    if (screenshotFiles.length < 8) {
-      setScreenshotFiles([...screenshotFiles, null]);
-      setScreenshotPreviews([...screenshotPreviews, ""]);
-    }
-  };
-
-  const removeScreenshotSlot = (index: number) => {
-    setScreenshotFiles(screenshotFiles.filter((_, i) => i !== index));
-    setScreenshotPreviews(screenshotPreviews.filter((_, i) => i !== index));
-  };
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -533,9 +502,9 @@ export default function ProductDetailPage() {
                         <Badge variant="secondary" className="ml-2">Inactive</Badge>
                       )}
                     </TableCell>
-                    <TableCell>${plan.priceMonthly}/mo</TableCell>
-                    <TableCell>{plan.priceYearly ? `$${plan.priceYearly}/yr` : "—"}</TableCell>
-                    <TableCell>{plan.trialDays > 0 ? `${plan.trialDays} days` : "—"}</TableCell>
+                    <TableCell>${plan.price_monthly}/mo</TableCell>
+                    <TableCell>{plan.price_yearly ? `$${plan.price_yearly}/yr` : "—"}</TableCell>
+                    <TableCell>{plan.trial_days > 0 ? `${plan.trial_days} days` : "—"}</TableCell>
                     <TableCell>
                       <span className="text-sm text-gray-500">
                         {(plan.features as string[]).length} features
