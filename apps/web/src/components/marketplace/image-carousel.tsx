@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageCarouselProps {
@@ -11,6 +11,7 @@ interface ImageCarouselProps {
 
 export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   if (!images || images.length === 0) {
     return null;
@@ -36,7 +37,8 @@ export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
         <img
           src={images[currentIndex]}
           alt={`${alt} - Slide ${currentIndex + 1}`}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-zoom-in"
+          onClick={() => setIsLightboxOpen(true)}
         />
 
         {/* Overlay gradient on hover */}
@@ -96,6 +98,29 @@ export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
               )}
             </button>
           ))}
+        </div>
+      )}
+
+      {isLightboxOpen && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white hover:text-gray-300 p-2.5 bg-black/40 hover:bg-black/60 rounded-full transition-all cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLightboxOpen(false);
+            }}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img 
+            src={images[currentIndex]} 
+            alt={`${alt} full view`} 
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl transition-all scale-100" 
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

@@ -54,13 +54,17 @@ export default function HomePage() {
 
             <div className="animate-fade-in-delay-3 mt-10 flex flex-col sm:flex-row items-start gap-4">
               <Link href="/marketplace">
-                <Button size="lg" className="h-14 px-10 text-base font-semibold rounded-sm shadow-sm shadow-primary/25 hover:shadow-sm hover:shadow-primary/30 transition-all">
+                <Button size="lg" className="group h-14 px-10 text-base cursor-pointer font-semibold rounded-sm shadow-sm shadow-primary/25 hover:shadow-sm hover:shadow-primary/30 transition-all">
                   Explore Marketplace
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-1 h-5 w-5 group-hover:translate-x-1 duration-250 transition-all" />
                 </Button>
               </Link>
               <Link href="/register">
-                <Button variant="outline" size="lg" className="h-14 px-10 text-base font-semibold rounded-sm border-2 hover:bg-black hover:text-primary-foreground hover:border-primary transition-all">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-14 px-10 text-base font-semibold rounded-sm border-2 cursor-pointer transition-all hover:!bg-black hover:!text-primary-foreground hover:!border-primary"
+                >
                   Start Building
                   <Rocket className="ml-2 h-5 w-5" />
                 </Button>
@@ -194,7 +198,7 @@ export default function HomePage() {
                   <li className="flex items-start gap-3"><ArrowUpRight className="h-4 w-4 text-neutral-900 mt-0.5 shrink-0" /> Rate & review products</li>
                 </ul>
                 <Link href="/register" className="mt-8 block">
-                  <Button className="w-full rounded-sm" variant="outline">Sign up as Customer</Button>
+                  <Button className="w-full rounded-sm cursor-pointer" variant="outline">Sign up as Customer</Button>
                 </Link>
               </div>
 
@@ -214,7 +218,7 @@ export default function HomePage() {
                   <li className="flex items-start gap-3"><ArrowUpRight className="h-4 w-4 text-neutral-900 mt-0.5 shrink-0" /> Real-time analytics dashboard</li>
                 </ul>
                 <Link href="/register?role=developer" className="mt-8 block">
-                  <Button className="w-full rounded-sm shadow-sm shadow-primary/20">Become a Developer</Button>
+                  <Button className="w-full rounded-sm shadow-sm shadow-primary/20 cursor-pointer">Become a Developer</Button>
                 </Link>
               </div>
 
@@ -231,7 +235,7 @@ export default function HomePage() {
                   <li className="flex items-start gap-3"><ArrowUpRight className="h-4 w-4 text-neutral-900 mt-0.5 shrink-0" /> User management & moderation</li>
                 </ul>
                 <Link href="/login" className="mt-8 block">
-                  <Button className="w-full rounded-sm" variant="outline">Admin Login</Button>
+                  <Button className="w-full rounded-sm cursor-pointer" variant="outline">Admin Login</Button>
                 </Link>
               </div>
             </div>
@@ -283,14 +287,15 @@ export default function HomePage() {
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/register">
-                  <Button size="lg" className="h-14 px-10 text-base font-semibold rounded-sm shadow-sm shadow-primary/25">
+                  <Button size="lg" className="group h-14 px-10 text-base font-semibold rounded-sm shadow-sm shadow-primary/25 cursor-pointer">
                     Create Account
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-1 h-5 w-5 group-hover:translate-x-1 transition-all duration-300" />
                   </Button>
                 </Link>
                 <Link href="/marketplace">
-                  <Button variant="outline" size="lg" className="h-14 px-10 text-base font-semibold rounded-sm border-2">
+                  <Button variant="outline" size="lg" className="group h-14 px-10 text-base font-semibold rounded-sm border-2 cursor-pointer hover:!bg-black hover:!text-white">
                     Explore Products
+                    <ArrowRight className="ml-1 h-5 w-5 group-hover:translate-x-1 transition-all duration-300" />
                   </Button>
                 </Link>
               </div>

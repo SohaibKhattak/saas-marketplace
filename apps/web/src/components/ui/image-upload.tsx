@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 import { Button } from "./button";
+import { Label } from "./label";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
@@ -60,7 +61,7 @@ export function ImageUpload({
 
   return (
     <div className="space-y-4 w-full">
-      {label && <label className="text-sm font-black uppercase tracking-widest text-slate-400">{label}</label>}
+      {label && <Label>{label}</Label>}
       
       {value.length < maxFiles && (
         <div 
@@ -96,31 +97,35 @@ export function ImageUpload({
             const preview = typeof item === "string" ? item : objectUrls.get(item);
             
             return (
-              <div key={index} className="group relative aspect-video rounded-[1.5rem] overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-500">
+              <div key={index} className="group relative aspect-video rounded-[1.5rem] overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all duration-350">
                 {preview ? (
                   <img 
                     src={preview} 
                     alt={`Preview ${index + 1}`} 
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" 
                   />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center bg-slate-50">
                     <ImageIcon className="w-8 h-8 text-slate-200" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    className="h-10 w-10 rounded-2xl shadow-2xl scale-75 group-hover:scale-100 transition-all duration-500"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(index);
-                    }}
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
+
+                {/* X icon on top left to unselect */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile(index);
+                  }}
+                  className="absolute top-2 left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 hover:bg-black text-white hover:text-red-400 transition-all duration-200 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                  aria-label="Remove image"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+
+                {/* Visual Order Badge on top right */}
+                <div className="absolute top-2 right-2 z-10 px-2.5 py-0.5 rounded-full bg-slate-900/70 backdrop-blur-xs text-[10px] font-extrabold text-white tracking-wider shadow-sm select-none">
+                  #{index + 1}
                 </div>
               </div>
             );

@@ -86,8 +86,8 @@ export default function ProductsPage() {
           </p>
         </div>
         <Link href="/developer/products/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button className={"group cursor-pointer"}>
+            <Plus className="mr-2 h-4 w-4 group-hover:scale-125 duration-200 transition-all" />
             New Product
           </Button>
         </Link>
@@ -137,7 +137,7 @@ export default function ProductsPage() {
                               <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain" />
                             </div>
                           ) : (
-                             <div className="h-8 w-8 rounded-md bg-gray-100" />
+                            <div className="h-8 w-8 rounded-md bg-gray-100" />
                           )}
                           <p className="font-semibold tracking-tight">{product.name}</p>
                         </div>
@@ -152,7 +152,7 @@ export default function ProductsPage() {
                       <TableCell>{product._count.subscriptions}</TableCell>
                       <TableCell className="text-right">
                         <Link href={`/developer/products/${product.id}`}>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" className={"cursor-pointer hover:!bg-black hover:!text-white"}>
                             Manage
                           </Button>
                         </Link>

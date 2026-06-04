@@ -267,6 +267,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
       .update({
         name: data.name,
         description: data.description,
+        category: data.category,
         logo_url: logoUrl,
         screenshots: finalScreenshots,
       })
@@ -532,6 +533,7 @@ export async function getDeveloperProducts(
         status: product.status,
         rejectionReason: product.rejection_reason,
         avgRating: product.avg_rating ?? 0,
+        createdAt: product.created_at,
         developer,
         site,
         pricingPlans: pricing,
@@ -715,6 +717,7 @@ export async function getProductById(
       status: product.status,
       rejectionReason: product.rejection_reason,
       avgRating: product.avg_rating ?? 0,
+      createdAt: product.created_at,
       developer: developer
         ? {
           id: developer.id,

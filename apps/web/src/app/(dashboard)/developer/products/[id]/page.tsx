@@ -10,6 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -33,8 +40,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, Send, Globe, Pencil, Loader2, ImageIcon } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Send,
+  Globe,
+  Pencil,
+  Loader2,
+  Calendar,
+  ArrowLeft,
+  Users,
+  MessageSquare,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { ImageCarousel } from "@/components/marketplace/image-carousel";
+
+const CATEGORIES = [
+  "CRM", "Project Management", "Marketing", "Analytics", "E-Commerce",
+  "Education", "Finance", "Healthcare", "Communication", "Productivity",
+  "Developer Tools", "Other",
+];
 
 interface PricingPlan {
   id: string;
@@ -50,11 +77,8 @@ interface PricingPlan {
 interface Product {
   id: string;
   name: string;
-  // slug: string;
-  // shortDescription: string | null;
   description: string;
   category: string;
-  // tags: string[];
   logoUrl: string | null;
   screenshots?: string[];
   status: string;
@@ -62,6 +86,7 @@ interface Product {
   site: { site_url: string; subdomain: string } | null;
   pricingPlans: PricingPlan[];
   _count: { subscriptions: number; reviews: number };
+  createdAt?: string;
 }
 
 const statusVariant: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -83,16 +108,20 @@ export default function ProductDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  console.log(product)
+  const [activeLightboxImage, setActiveLightboxImage] = useState<string | null>(null);
+
+  // Editing state
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
   const [logoFiles, setLogoFiles] = useState<(File | string)[]>([]);
   const [screenshotFiles, setScreenshotFiles] = useState<(File | string)[]>([]);
 
   const isChanged = product ? (
-    name !== product.name || 
-    description !== product.description || 
+    name !== product.name ||
+    description !== product.description ||
+    category !== product.category ||
     logoFiles.some(f => f instanceof File) ||
     screenshotFiles.some(f => f instanceof File) ||
     logoFiles.length === 0 || // Removed logo
@@ -107,13 +136,14 @@ export default function ProductDetailPage() {
   const [planFeatures, setPlanFeatures] = useState("");
   const [planTrialDays, setPlanTrialDays] = useState("0");
   const [savingPlan, setSavingPlan] = useState(false);
-  
+
   // Delete plan dialog
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
   const [deletingPlan, setDeletingPlan] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [reviewing, setReviewing] = useState(false);
+
   const fetchProduct = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -123,6 +153,7 @@ export default function ProductDetailPage() {
       setProduct(res.data);
       setName(res.data.name);
       setDescription(res.data.description);
+      setCategory(res.data.category);
       setLogoFiles(res.data.logoUrl ? [res.data.logoUrl] : []);
       setScreenshotFiles(res.data.screenshots || []);
     } catch {
@@ -137,7 +168,17 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [fetchProduct]);
 
-
+  // Enter edit mode and populate state from product data
+  const handleStartEdit = () => {
+    if (product) {
+      setName(product.name);
+      setDescription(product.description);
+      setCategory(product.category);
+      setLogoFiles(product.logoUrl ? [product.logoUrl] : []);
+      setScreenshotFiles(product.screenshots || []);
+      setIsEditing(true);
+    }
+  };
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -155,20 +196,18 @@ export default function ProductDetailPage() {
       const formData = new FormData();
       formData.append("name", name);
       formData.append("description", description);
-      
+      formData.append("category", category);
+
       if (logoFiles[0] instanceof File) {
         formData.append("logo", logoFiles[0]);
       } else {
         formData.append("logoUrl", logoFiles[0] as string);
       }
-      
+
       screenshotFiles.forEach((file) => {
         if (file instanceof File) {
           formData.append("screenshots", file);
         } else {
-          // If we want to keep existing screenshots, we need a way to tell the backend.
-          // For now, let's assume the backend replaces them all with what's sent.
-          // We might need to send the URLs of existing screenshots we want to keep.
           formData.append("existingScreenshots", file);
         }
       });
@@ -198,10 +237,9 @@ export default function ProductDetailPage() {
       fetchProduct();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to submit");
+    } finally {
+      setReviewing(false);
     }
-      finally {
-        setReviewing(false);
-      }
   }
 
   async function handleDeleteProduct() {
@@ -250,7 +288,7 @@ export default function ProductDetailPage() {
     if (!planToDelete) return;
     setDeletingPlan(true);
     setError("");
-    
+
     try {
       await api.delete(`/products/plans/${planToDelete}`, { token: accessToken! });
       setPlanToDelete(null);
@@ -263,11 +301,23 @@ export default function ProductDetailPage() {
   }
 
   if (loading) {
-    return <div className="py-12 text-center text-gray-500">Loading...</div>;
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-gray-500">Loading product details...</p>
+      </div>
+    );
   }
 
   if (!product) {
-    return <div className="py-12 text-center text-gray-500">Product not found</div>;
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
+        <p className="text-lg font-medium text-gray-900">Product not found</p>
+        <Button variant="outline" onClick={() => router.push("/developer/products")}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+        </Button>
+      </div>
+    );
   }
 
   const canEdit = product.status === "DRAFT" || product.status === "REJECTED";
@@ -287,28 +337,31 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{product.name}</h1>
-          <div className="mt-1 flex items-center gap-2">
-            <Badge variant={statusVariant[product.status] ?? "secondary"}>
-              {product.status.replace("_", " ")}
-            </Badge>
-            <span className="text-sm text-gray-500">
-              {product._count.subscriptions} subscribers
-            </span>
-          </div>
+    <div className="mx-auto max-w-5xl space-y-8 pb-12">
+      {/* Navigation & Action Bar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/developer/products")} className="h-8 px-2">
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back
+          </Button>
+          <span className="text-gray-300">|</span>
+          <span className="text-sm text-gray-500 font-medium">Product Management</span>
         </div>
-        <div className="flex gap-2">
+
+        <div className="flex flex-wrap gap-2">
+          {canEdit && !isEditing && (
+            <Button variant="outline" size="sm" onClick={handleStartEdit} className="h-9 cursor-pointer ">
+              <Pencil className="mr-2 h-4 w-4 text-primary" /> Edit Details
+            </Button>
+          )}
           {canSubmit && (
-            <Button onClick={handleSubmitForReview} className={"cursor-pointer"}>
+            <Button size="sm" onClick={handleSubmitForReview} disabled={reviewing} className="h-9 cursor-pointer">
               <Send className="mr-2 h-4 w-4" />
-              { !reviewing ? "Submit for Review" : <Loader2 className="animate-spin" /> }
+              {reviewing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for Review"}
             </Button>
           )}
           {isPublished && (
-            <Button variant="outline" size="sm" onClick={handleUnpublish}>
+            <Button variant="outline" size="sm" onClick={handleUnpublish} className="h-9">
               Unpublish
             </Button>
           )}
@@ -316,145 +369,295 @@ export default function ProductDetailPage() {
             variant="destructive"
             size="sm"
             onClick={handleDeleteProduct}
-            className="flex items-center gap-2 px-3 cursor-pointer"
+            className="h-9 flex items-center gap-2 px-3 cursor-pointer"
           >
-            <Trash2 className="h-4 w-4" />
-            Delete
+            <Trash2 className="h-4 w-4" /> Delete Product
           </Button>
         </div>
       </div>
 
       {product.rejectionReason && (
-        <div className="rounded-sm border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm font-semibold tracking-tight text-destructive">Rejection Reason</p>
-          <p className="mt-1 text-sm text-destructive/80">{product.rejectionReason}</p>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3">
+          <div className="bg-destructive/10 p-2 rounded-full text-destructive">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold tracking-tight text-destructive">Product Rejected</p>
+            <p className="mt-1 text-sm text-destructive/80 leading-relaxed">{product.rejectionReason}</p>
+          </div>
         </div>
       )}
 
       {error && (
-        <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20">{error}</div>
       )}
       {success && (
-        <div className="rounded-sm border border-green-500/50 bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+        <div className="rounded-lg border border-green-500/20 bg-green-500/5 p-4 text-sm text-green-700 dark:text-green-400">
           {success}
         </div>
       )}
 
-      {canEdit && (
-        <div className="rounded-lg bg-primary/10 p-4 border border-primary/20 flex items-center gap-3">
-          <div className="bg-primary/20 p-2 rounded-full">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      {/* Pro tip for edits */}
+      {canEdit && !isEditing && (
+        <div className="rounded-lg bg-primary/5 p-4 border border-primary/10 flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-full">
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <p className="text-sm font-medium text-primary">
-            Pro tip: Adding a professional logo and screenshots can help you achieve your goals by increasing trust and conversions!
+            Tip: Keep your product information updated. Make sure to upload between 5 to 8 screenshots for optimal conversions on the marketplace!
           </p>
         </div>
       )}
 
-      {/* Product Info */}
-      <Card>
-        <form onSubmit={handleSave}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Product Information</CardTitle>
-                <CardDescription>
-                  {canEdit ? "Edit your product details" : "Product details (read-only while published/pending)"}
-                </CardDescription>
-              </div>
-              {canEdit && (
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  className={"cursor-pointer"}
-                  onClick={() => setIsEditing(!isEditing)}
-                >
-                  <Pencil className="h-4 w-4 text-green-600 hover:text-blue-500" />
-                </Button>
+      {/* Main Content Grid */}
+      {!isEditing ? (
+        <div className="space-y-8">
+          {/* Product Logo Section at the Top */}
+          <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-b from-gray-50/50 to-white rounded-3xl border border-gray-150 p-6 shadow-sm">
+            <div
+              className="relative w-full max-w-3xl h-64 sm:h-80 md:h-[400px] rounded-[2.5rem] border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center cursor-zoom-in hover:scale-[1.01] active:scale-99 transition-all duration-300 group"
+              onClick={() => product.logoUrl && setActiveLightboxImage(product.logoUrl)}
+            >
+              {product.logoUrl ? (
+                <>
+                  <img
+                    src={product.logoUrl}
+                    alt={product.name}
+                    className="h-full w-full object-contain p-4 md:p-8 transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 flex items-center justify-center transition-colors duration-300">
+                    <Sparkles className="w-8 h-8 text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-sm" />
+                  </div>
+                </>
+              ) : (
+                <span className="text-6xl font-extrabold text-gray-400 tracking-tight">{product.name.charAt(0)}</span>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canEdit || !isEditing} required minLength={3} />
-            </div>
+          </div>
 
-            <div className="space-y-4">
-              <ImageUpload
-                label="Logo"
-                value={logoFiles}
-                onChange={setLogoFiles}
-                maxFiles={1}
-                description="Square PNG or JPG works best"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="desc">Description</Label>
-              <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} disabled={!canEdit || !isEditing} rows={6} required minLength={20} />
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Input value={product.category} disabled />
-            </div>
-
-            <div className="space-y-4 border-t pt-8">
-              <ImageUpload
-                label="Screenshots"
-                value={screenshotFiles}
-                onChange={setScreenshotFiles}
-                maxFiles={8}
-                description="Upload 5-8 screenshots for best results"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Linked WordPress Site</Label>
-              {product.site ? (
-                <div className="flex items-center gap-2 rounded-sm border p-3">
-                  <Globe className="h-4 w-4 text-gray-500" />
-                  <a
-                    href={product.site.site_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold tracking-tight text-neutral-900 hover:underline"
-                  >
-                    {product.site.site_url}
-                  </a>
+          {/* Screenshots Section */}
+          <Card className="border border-gray-200 shadow-md overflow-hidden rounded-3xl">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-6 py-5">
+              <CardTitle className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" /> Product Gallery
+              </CardTitle>
+              <CardDescription className="text-gray-500">Visual showcase of the product interface and user experience</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {product.screenshots && product.screenshots.length > 0 ? (
+                <div className="w-full">
+                  <ImageCarousel images={product.screenshots} alt={product.name} />
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No WordPress site linked</p>
+                <div className="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center text-gray-450 bg-gray-50/50">
+                  <Sparkles className="h-10 w-10 mx-auto mb-3 text-gray-300 animate-pulse" />
+                  <p className="text-base font-semibold text-gray-700">No screenshots uploaded</p>
+                  <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">Upload screenshots in edit mode to display here</p>
+                </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Product Information Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left: General Info and Description */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Product Details Card */}
+              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="border-b border-gray-100 bg-gray-50/30 p-6">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">{product.name}</h1>
+                      <Badge variant={statusVariant[product.status] ?? "secondary"} className="px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+                        {product.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500 items-center">
+                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+                        {product.category}
+                      </span>
+                      {product.createdAt && (
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>Created {new Date(product.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 space-y-6">
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">About the Product</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                      {product.description || "No description provided."}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* WordPress Site Integration Card */}
+              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-lg font-bold text-gray-900 tracking-tight">Linked WordPress Site</CardTitle>
+                  <CardDescription className="text-gray-500">The site connected to this product delivery</CardDescription>
+                </CardHeader>
+                <CardContent className="px-6 pb-6">
+                  {product.site ? (
+                    <div className="flex items-center gap-4 rounded-2xl border border-gray-150 p-4 bg-gray-50/50 hover:bg-gray-50 transition-colors duration-250">
+                      <div className="p-3 bg-white rounded-xl border shadow-sm">
+                        <Globe className="h-6 w-6 text-gray-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <a
+                          href={product.site.site_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold text-gray-900 hover:text-primary hover:underline flex items-center gap-1 truncate"
+                        >
+                          {product.site.site_url}
+                        </a>
+                        <p className="text-xs text-gray-500 mt-0.5">Subdomain: {product.site.subdomain}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No WordPress site linked to this product.</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-          {canEdit && isEditing && (
-            <CardFooter className="flex justify-end gap-2">
-              <Button type="button" variant="outline"  className={"cursor-pointer" } onClick={() => {
-                setIsEditing(false);
-                setName(product?.name || "");
-                setDescription(product?.description || "");
-               
-              }}>
+
+            {/* Right: Metrics / Action Box */}
+            <div className="space-y-6">
+              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-lg font-bold text-gray-900 tracking-tight">Analytics & Metrics</CardTitle>
+                  <CardDescription className="text-gray-500">Product performance overview</CardDescription>
+                </CardHeader>
+                <CardContent className="px-6 pb-6 space-y-4">
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50/60 border border-blue-100/50 hover:scale-[1.02] transition-transform duration-200">
+                    <div className="bg-blue-500 p-3 rounded-xl text-white shadow-md shadow-blue-500/10">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Subscribers</p>
+                      <p className="text-2xl font-extrabold text-gray-950 mt-1">{product._count.subscriptions}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-50/60 border border-amber-100/50 hover:scale-[1.02] transition-transform duration-200">
+                    <div className="bg-amber-500 p-3 rounded-xl text-white shadow-md shadow-amber-500/10">
+                      <MessageSquare className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Reviews</p>
+                      <p className="text-2xl font-extrabold text-gray-950 mt-1">{product._count.reviews}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Edit Mode - Form Based */
+        <Card className="border border-gray-200 shadow-sm">
+          <form onSubmit={handleSave}>
+            <CardHeader className="border-b">
+              <CardTitle className="text-xl">Edit Product Information</CardTitle>
+              <CardDescription>
+                Modify details for your product listing.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Product Name *</Label>
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Category *</Label>
+                <Select value={category} onValueChange={(val) => setCategory(val ?? "")}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <ImageUpload
+                  label="Product Logo *"
+                  value={logoFiles}
+                  onChange={setLogoFiles}
+                  maxFiles={1}
+                  description="Square PNG or JPG works best (max 1)"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="desc">Description *</Label>
+                <Textarea
+                  id="desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={6}
+                  required
+                  minLength={20}
+                />
+              </div>
+
+              <div className="space-y-2 pt-4 border-t">
+                <ImageUpload
+                  label="Screenshots"
+                  value={screenshotFiles}
+                  onChange={setScreenshotFiles}
+                  maxFiles={8}
+                  description="Upload between 5 and 8 screenshots for optimal conversions"
+                />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end gap-2 border-t pt-6 bg-gray-50/50">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  setName(product.name);
+                  setDescription(product.description);
+                  setCategory(product.category);
+                  setLogoFiles(product.logoUrl ? [product.logoUrl] : []);
+                  setScreenshotFiles(product.screenshots || []);
+                }}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving || !isChanged} className={"cursor-pointer"}>
+              <Button type="submit" disabled={saving || !isChanged}>
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
             </CardFooter>
-          )}
-        </form>
-      </Card>
+          </form>
+        </Card>
+      )}
 
-      {/* Pricing Plans */}
-      <Card>
+      {/* Pricing Plans Section - Always Visible */}
+      <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <CardTitle>Pricing Plans</CardTitle>
+                <CardTitle className="text-lg font-bold text-gray-900">Pricing Plans</CardTitle>
                 {isRefreshing && !loading && (
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 )}
@@ -462,70 +665,71 @@ export default function ProductDetailPage() {
               <CardDescription>
                 {product.pricingPlans.length === 0
                   ? "Add at least one pricing plan before submitting for review"
-                  : `${product.pricingPlans.length} plan(s)`}
+                  : `${product.pricingPlans.length} plan(s) available`}
               </CardDescription>
             </div>
-            <Button size="sm" variant="default" onClick={() => setShowPlanDialog(true)} disabled={isRefreshing} className={"cursor-pointer" } >
-              <Plus className="h-4 w-4" />
-              Add Plan
+            <Button size="sm" variant="default" onClick={() => setShowPlanDialog(true)} disabled={isRefreshing} className="h-9 group">
+              <Plus className="mr-1 h-4 w-4 group-hover:scale-125 transition-all duration-200 cursor-pointer" /> Add Pricing Plan
             </Button>
           </div>
         </CardHeader>
         <CardContent className="relative">
           {isRefreshing && !loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-b-lg">
-               <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           )}
           {product.pricingPlans.length === 0 ? (
-            <div className="rounded-sm border border-dashed p-8 text-center text-gray-500">
+            <div className="rounded-xl border-2 border-dashed p-8 text-center text-gray-500 bg-gray-50">
               No pricing plans yet. Add one to get started.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Monthly</TableHead>
-                  <TableHead>Yearly</TableHead>
-                  <TableHead>Trial</TableHead>
-                  <TableHead>Features</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {product.pricingPlans.map((plan) => (
-                  <TableRow key={plan.id}>
-                    <TableCell>
-                      <span className="font-semibold tracking-tight">{plan.name}</span>
-                      {!plan.isActive && (
-                        <Badge variant="secondary" className="ml-2">Inactive</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>${plan.price_monthly}/mo</TableCell>
-                    <TableCell>{plan.price_yearly ? `$${plan.price_yearly}/yr` : "—"}</TableCell>
-                    <TableCell>{plan.trial_days > 0 ? `${plan.trial_days} days` : "—"}</TableCell>
-                    <TableCell>
-                      <span className="text-sm text-gray-500">
-                        {(plan.features as string[]).length} features
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" onClick={() => setPlanToDelete(plan.id)} disabled={isRefreshing} className={"cursor-pointer" } >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Monthly</TableHead>
+                    <TableHead>Yearly</TableHead>
+                    <TableHead>Trial</TableHead>
+                    <TableHead>Features</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {product.pricingPlans.map((plan) => (
+                    <TableRow key={plan.id}>
+                      <TableCell>
+                        <span className="font-semibold text-gray-900">{plan.name}</span>
+                        {!plan.isActive && (
+                          <Badge variant="secondary" className="ml-2">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>${plan.price_monthly}/mo</TableCell>
+                      <TableCell>{plan.price_yearly ? `$${plan.price_yearly}/yr` : "—"}</TableCell>
+                      <TableCell>{plan.trial_days > 0 ? `${plan.trial_days} days` : "—"}</TableCell>
+                      <TableCell>
+                        <span className="text-sm text-gray-500">
+                          {plan.features.length} features
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" onClick={() => setPlanToDelete(plan.id)} disabled={isRefreshing} className="h-8 w-8 p-0">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Add Plan Dialog */}
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <form onSubmit={handleAddPlan}>
             <DialogHeader>
               <DialogTitle>Add Pricing Plan</DialogTitle>
@@ -556,10 +760,10 @@ export default function ProductDetailPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowPlanDialog(false)}  className={"cursor-pointer" } >
+              <Button type="button" variant="outline" onClick={() => setShowPlanDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={savingPlan} className={"cursor-pointer" } >
+              <Button type="submit" disabled={savingPlan}>
                 {savingPlan ? "Adding..." : "Add Plan"}
               </Button>
             </DialogFooter>
@@ -569,23 +773,47 @@ export default function ProductDetailPage() {
 
       {/* Delete Plan Confirm Dialog */}
       <Dialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Delete Pricing Plan</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this pricing plan? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setPlanToDelete(null)} className="cursor-pointer">
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button type="button" variant="outline" onClick={() => setPlanToDelete(null)}>
               Cancel
             </Button>
-            <Button type="button" variant="destructive" onClick={executeDeletePlan} disabled={deletingPlan} className="cursor-pointer">
+            <Button type="button" variant="destructive" onClick={executeDeletePlan} disabled={deletingPlan}>
               {deletingPlan ? "Deleting..." : "Delete Plan"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Lightbox Modal */}
+      {activeLightboxImage && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300"
+          onClick={() => setActiveLightboxImage(null)}
+        >
+          <button
+            className="absolute top-6 right-6 text-white hover:text-gray-300 p-2.5 bg-black/40 hover:bg-black/60 rounded-full transition-all cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveLightboxImage(null);
+            }}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={activeLightboxImage}
+            alt="Preview logo"
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl transition-all scale-100"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
