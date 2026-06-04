@@ -75,7 +75,7 @@ export async function getBillingHistory(req: AuthRequest, res: Response, next: N
     );
     res.json({
       data: transactions,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: { page, limit, total, totalPages: total && total > 0 ? Math.ceil(total / limit) : 0 },
     });
   } catch (err) {
     next(err);
