@@ -218,7 +218,7 @@ export async function suspendUser(req: AuthRequest, res: Response, next: NextFun
 
 export async function deleteUser(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     logDebug('Deleting user', { id });
     const check = await pool.query('SELECT role FROM users WHERE id = $1', [id]);
     if (check.rows.length === 0) {

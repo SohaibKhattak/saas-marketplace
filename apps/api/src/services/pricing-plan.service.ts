@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.js";
+// import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
 
 // export async function createPricingPlan(
@@ -88,21 +88,21 @@ import { AppError } from "../middleware/error-handler.js";
 //   });
 // }
 
-async function verifyProductOwnership(productId: string, developerId: string) {
-  const profile = await prisma.developerProfile.findUnique({
-    where: { userId: developerId },
-  });
+// async function verifyProductOwnership(productId: string, developerId: string) {
+//   const profile = await prisma.developerProfile.findUnique({
+//     where: { userId: developerId },
+//   });
 
-  if (!profile) {
-    throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
-  }
+//   if (!profile) {
+//     throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+//   }
 
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) {
-    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
-  }
+//   const product = await prisma.product.findUnique({ where: { id: productId } });
+//   if (!product) {
+//     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+//   }
 
-  if (product.developerId !== profile.id) {
-    throw new AppError(403, "You do not own this product", "FORBIDDEN");
-  }
-}
+//   if (product.developerId !== profile.id) {
+//     throw new AppError(403, "You do not own this product", "FORBIDDEN");
+//   }
+// }

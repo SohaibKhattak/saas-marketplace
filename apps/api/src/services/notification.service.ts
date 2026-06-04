@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.js";
+import { supabase } from "../config/supabase.js";
 
 export async function createNotification(data: {
   userId: string;
@@ -7,40 +7,77 @@ export async function createNotification(data: {
   message: string;
   link?: string;
 }) {
-  return prisma.notification.create({ data });
+  const { data: inserted, error } = await supabase
+    .from("notifications")
+    .insert(data)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return inserted;
 }
 
 export async function getUserNotifications(userId: string, page: number, limit: number) {
-  const where = { userId };
+  const fromRange = (page - 1) * limit;
+  const toRange = fromRange + limit - 1;
 
-  const [notifications, total, unreadCount] = await Promise.all([
-    prisma.notification.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.notification.count({ where }),
-    prisma.notification.count({ where: { userId, isRead: false } }),
+  const [notificationsRes, totalRes, unreadRes] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("userId", userId)
+      .order("createdAt", { ascending: false })
+      .range(fromRange, toRange),
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("userId", userId),
+    supabase
+      .from("notifications")
+      .select("*", { count: "exact", head: true })
+      .eq("userId", userId)
+      .eq("isRead", false),
   ]);
 
-  return { notifications, total, unreadCount };
+  if (notificationsRes.error) throw notificationsRes.error;
+  if (totalRes.error) throw totalRes.error;
+  if (unreadRes.error) throw unreadRes.error;
+
+  return {
+    notifications: notificationsRes.data || [],
+    total: totalRes.count || 0,
+    unreadCount: unreadRes.count || 0,
+  };
 }
 
 export async function markAsRead(userId: string, notificationId: string) {
-  return prisma.notification.updateMany({
-    where: { id: notificationId, userId },
-    data: { isRead: true },
-  });
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ isRead: true })
+    .eq("id", notificationId)
+    .eq("userId", userId);
+
+  if (error) throw error;
+  return data;
 }
 
 export async function markAllAsRead(userId: string) {
-  return prisma.notification.updateMany({
-    where: { userId, isRead: false },
-    data: { isRead: true },
-  });
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ isRead: true })
+    .eq("userId", userId);
+
+  if (error) throw error;
+  return data;
 }
 
 export async function getUnreadCount(userId: string) {
-  return prisma.notification.count({ where: { userId, isRead: false } });
+  const { count, error } = await supabase
+    .from("notifications")
+    .select("*", { count: "exact", head: true })
+    .eq("userId", userId)
+    .eq("isRead", false);
+
+  if (error) throw error;
+  return count || 0;
 }

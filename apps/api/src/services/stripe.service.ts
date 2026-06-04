@@ -370,7 +370,9 @@ async function handleInvoicePaid(invoice: any) {
     if (invoice.payment_intent) {
       try {
         const pi = await stripe.paymentIntents.retrieve(invoice.payment_intent as string);
-        const chargeId = typeof pi.latest_charge === 'string' ? pi.latest_charge : pi.charges?.data?.[0]?.id;
+        const chargeId = typeof pi.latest_charge === 'string'
+          ? pi.latest_charge
+          : (pi.latest_charge as Stripe.Charge | null)?.id;
         if (chargeId) {
           const charge = await stripe.charges.retrieve(chargeId);
           stripeTransferId = charge.transfer as string;
