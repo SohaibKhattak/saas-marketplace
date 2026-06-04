@@ -36,7 +36,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(2525),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().default("Saasifyy <noreply@saasifyy.com>"),
+  SMTP_FROM: z.string().default("Saasifyy <noreply@saasifyy.tech>"),
   
   // Email (Resend)
   RESEND_API_KEY: z.string().startsWith("re_").optional(),

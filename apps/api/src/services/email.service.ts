@@ -73,24 +73,25 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
   `;
 
   // --- Nodemailer Implementation ---
-  await transporter.sendMail({
-    from: FROM_EMAIL,
-    to,
-    subject: "Reset your Saasifyy password",
-    html: htmlContent,
-  });
+  // await transporter.sendMail({
+  //   from: FROM_EMAIL,
+  //   to,
+  //   subject: "Reset your Saasifyy password",
+  //   html: htmlContent,
+  // });
 
-  /*
+  
   // --- Resend Implementation ---
   if (resend) {
-    await resend.emails.send({
+    const res = await resend.emails.send({
       from: FROM_EMAIL,
       to,
       subject: "Reset your Saasifyy password",
       html: htmlContent,
     });
+    console.log("email resp: ",res)
   }
-  */
+  
 }
 
 export async function sendNewSubscriptionEmail(
@@ -110,24 +111,24 @@ export async function sendNewSubscriptionEmail(
   `;
 
   // --- Nodemailer Implementation ---
-  await transporter.sendMail({
-    from: FROM_EMAIL,
-    to: developerEmail,
-    subject: `New subscriber for ${data.productName}!`,
-    html: htmlContent,
-  });
+  // await transporter.sendMail({
+  //   from: FROM_EMAIL,
+  //   to: developerEmail,
+  //   subject: `New subscriber for ${data.productName}!`,
+  //   html: htmlContent,
+  // });
 
-  /*
+  
   // --- Resend Implementation ---
   if (resend) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: developerEmail,
-      subject: \`New subscriber for \${data.productName}!\`,
+      subject: `New subscriber for \${data.productName}!`,
       html: htmlContent,
     });
   }
-  */
+  
 }
 
 export async function sendSubscriptionConfirmationEmail(
@@ -147,22 +148,22 @@ export async function sendSubscriptionConfirmationEmail(
   `;
 
   // --- Nodemailer Implementation ---
-  await transporter.sendMail({
-    from: FROM_EMAIL,
-    to: customerEmail,
-    subject: `Subscription confirmed — ${data.productName}`,
-    html: htmlContent,
-  });
+  // await transporter.sendMail({
+  //   from: FROM_EMAIL,
+  //   to: customerEmail,
+  //   subject: `Subscription confirmed — ${data.productName}`,
+  //   html: htmlContent,
+  // });
 
-  /*
+  
   // --- Resend Implementation ---
   if (resend) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: customerEmail,
-      subject: \`Subscription confirmed — \${data.productName}\`,
+      subject: `Subscription confirmed — \${data.productName}`,
       html: htmlContent,
     });
   }
-  */
+  
 }
