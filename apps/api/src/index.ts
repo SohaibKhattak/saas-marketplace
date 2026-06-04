@@ -9,9 +9,11 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { rateLimit } from "./middleware/rate-limit.js";
+import { ensureUsersAuthColumns } from "./utils/db-upgrades.js";
 
 // Route imports
 import authRoutes from "./routes/auth.routes.js";
+import googleRoutes from "./routes/google.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import developerRoutes from "./routes/developer.routes.js";
 import productRoutes from "./routes/product.routes.js";
@@ -35,7 +37,13 @@ app.use(
     credentials: true,
   })
 );
-app.use(pinoHttp({ logger }));
+app.use(
+  pinoHttp({
+    logger,
+    // Disable automatic request/response logging in development to keep terminal clean
+    autoLogging: env.NODE_ENV === "production",
+  })
+);
 app.use(cookieParser());
 
 // Stripe webhooks need raw body — must be before express.json()
@@ -57,8 +65,8 @@ app.get("/api/docs.json", (_req, res) => {
 // Health check with DB connectivity
 app.get("/api/health", async (_req, res) => {
   try {
-    const { prisma } = await import("./config/database.js");
-    await prisma.$queryRawUnsafe("SELECT 1");
+    const { query } = await import("./config/database.js");
+    await query("SELECT 1");
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   } catch {
     res.status(503).json({ status: "unhealthy", timestamp: new Date().toISOString() });
@@ -67,6 +75,7 @@ app.get("/api/health", async (_req, res) => {
 
 // API routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", googleRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/developers", developerRoutes);
 app.use("/api/v1/products", productRoutes);
@@ -79,8 +88,18 @@ app.use("/api/v1/notifications", notificationRoutes);
 // Error handling
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  logger.info(`API server running on http://localhost:${PORT}`);
-});
+async function startServer() {
+  try {
+    await ensureUsersAuthColumns();
+  } catch (err) {
+    logger.warn({ err }, "Failed to run users auth-column self-heal on startup");
+  }
+
+  app.listen(PORT, () => {
+    logger.info(`API server running on http://localhost:${PORT}`);
+  });
+}
+
+void startServer();
 
 export default app;

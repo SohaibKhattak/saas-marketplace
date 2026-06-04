@@ -1,10 +1,11 @@
 import { Router } from "express";
 import * as productController from "../controllers/product.controller.js";
 import * as reviewController from "../controllers/review.controller.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, optionalAuthenticate } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
 import { validate } from "../middleware/validate.js";
 import { z } from "zod";
+import { productAssetsUpload } from "../middleware/product-assets-upload.js";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const createProductSchema = z.object({
   shortDescription: z.string().max(300).optional(),
   description: z.string().min(20).max(10000),
   category: z.string().min(1),
-  tags: z.array(z.string()).max(10).default([]),
+  tags: z.array(z.string()).max(10).optional(),
   siteId: z.string().uuid().optional(),
 });
 
@@ -23,8 +24,6 @@ const updateProductSchema = z.object({
   description: z.string().min(20).max(10000).optional(),
   category: z.string().min(1).optional(),
   tags: z.array(z.string()).max(10).optional(),
-  logoUrl: z.string().url().optional(),
-  screenshots: z.array(z.string().url()).max(5).optional(),
   siteId: z.string().uuid().optional(),
 });
 
@@ -106,7 +105,7 @@ router.get("/", productController.listMarketplaceProducts);
  *       200: { description: Product with developer, plans, and reviews }
  *       404: { description: Product not found }
  */
-router.get("/catalog/:slug", productController.getProductBySlug);
+router.get("/catalog/:id", optionalAuthenticate, productController.getProductById);
 
 /**
  * @swagger
@@ -170,7 +169,17 @@ router.get("/me", authenticate, requireRole("DEVELOPER", "ADMIN"), productContro
  */
 router.get("/detail/:id", authenticate, productController.getProductById);
 
-router.post("/", authenticate, requireRole("DEVELOPER", "ADMIN"), validate(createProductSchema), productController.createProduct);
+router.post(
+  "/",
+  authenticate,
+  requireRole("DEVELOPER", "ADMIN"),
+  productAssetsUpload.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "screenshots", maxCount: 8 },
+  ]),
+  validate(createProductSchema),
+  productController.createProduct
+);
 
 /**
  * @swagger
@@ -192,7 +201,17 @@ router.post("/", authenticate, requireRole("DEVELOPER", "ADMIN"), validate(creat
  *     responses:
  *       200: { description: Product deleted }
  */
-router.patch("/:id", authenticate, requireRole("DEVELOPER", "ADMIN"), validate(updateProductSchema), productController.updateProduct);
+router.patch(
+  "/:id",
+  authenticate,
+  requireRole("DEVELOPER", "ADMIN"),
+  productAssetsUpload.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "screenshots", maxCount: 8 },
+  ]),
+  validate(updateProductSchema),
+  productController.updateProduct
+);
 router.delete("/:id", authenticate, requireRole("DEVELOPER", "ADMIN"), productController.deleteProduct);
 
 /**
@@ -240,6 +259,7 @@ router.patch("/plans/:planId", authenticate, requireRole("DEVELOPER", "ADMIN"), 
 router.delete("/plans/:planId", authenticate, requireRole("DEVELOPER", "ADMIN"), productController.deletePricingPlan);
 
 // --- Review routes ---
+router.get("/:productId/reviews", reviewController.getProductReviews);
 router.get("/:productId/reviews/me", authenticate, reviewController.getUserReview);
 router.post("/:productId/reviews", authenticate, validate(createReviewSchema), reviewController.createReview);
 router.patch("/reviews/:reviewId", authenticate, validate(updateReviewSchema), reviewController.updateReview);

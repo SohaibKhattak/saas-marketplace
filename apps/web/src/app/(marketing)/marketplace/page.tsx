@@ -18,8 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight, X } from "lucide-react";
+import { useAuthStore } from "@/stores/auth-store";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   "CRM", "Project Management", "Marketing", "Analytics", "E-Commerce",
@@ -42,7 +45,6 @@ interface MarketplaceProduct {
   slug: string;
   shortDescription: string | null;
   category: string;
-  tags: string[];
   logoUrl: string | null;
   avgRating: number;
   totalSubscribers: number;
@@ -50,43 +52,45 @@ interface MarketplaceProduct {
   developer: {
     user: { fullName: string; avatarUrl: string | null };
   };
-  pricingPlans: { priceMonthly: number }[];
+  pricingPlans: { price_monthly: number }[];
   _count: { reviews: number };
 }
 
 function StarRating({ rating, count }: { rating: number; count: number }) {
   return (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          className={`h-3.5 w-3.5 ${
-            star <= Math.round(rating)
-              ? "fill-yellow-400 text-yellow-400"
-              : "fill-muted text-muted"
-          }`}
-        />
-      ))}
-      <span className="ml-1 text-sm text-muted-foreground">({count})</span>
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`h-3.5 w-3.5 ${
+              star <= Math.round(rating)
+                ? "fill-black text-black"
+                : "fill-gray-200 text-gray-200"
+            }`}
+          />
+        ))}
+      </div>
+      <span className="text-xs font-medium text-gray-600">
+        {rating.toFixed(1)}
+      </span>
+      <span className="text-xs text-gray-400">({count})</span>
     </div>
   );
 }
 
 export default function MarketplacePage() {
+  const { user } = useAuthStore();
   const [products, setProducts] = useState<MarketplaceProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [category, setCategory] = useState("All");
   const [sortBy, setSortBy] = useState("latest");
-  const [priceRange, setPriceRange] = useState("0");
-  const [tagFilter, setTagFilter] = useState("");
+  const [priceRange, setPriceRange] = useState("Any price");
   const [error, setError] = useState("");
   const limit = 12;
-
-  // Collect all unique tags from loaded products for the tag filter
-  const allTags = Array.from(new Set(products.flatMap((p) => p.tags))).sort();
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -98,9 +102,8 @@ export default function MarketplacePage() {
         sortBy,
       });
       if (search) params.set("search", search);
-      if (category !== "all") params.set("category", category);
-      if (tagFilter) params.set("tag", tagFilter);
-      const range = PRICE_RANGES[parseInt(priceRange)];
+      if (category !== "All") params.set("category", category);
+      const range = PRICE_RANGES.find(r => r.label === priceRange);
       if (range?.min !== undefined) params.set("minPrice", range.min.toString());
       if (range?.max !== undefined) params.set("maxPrice", range.max.toString());
 
@@ -115,7 +118,7 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, category, sortBy, priceRange, tagFilter]);
+  }, [page, search, category, sortBy, priceRange]);
 
   useEffect(() => {
     fetchProducts();
@@ -128,182 +131,219 @@ export default function MarketplacePage() {
 
   const totalPages = Math.ceil(total / limit);
 
-  return (
-    <div className="flex min-h-screen flex-col">
+  const content = (
+    <div className="flex min-h-screen flex-col w-full bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-card border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2 font-bold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Store className="h-4 w-4" />
-            </div>
-            <span>Saasifyy</span>
-          </Link>
-          <nav className="flex items-center gap-2">
-            <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-foreground">
-              Marketplace
+      {!user ? (
+        <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2 font-bold">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
+                <Store className="h-4 w-4" />
+              </div>
+              <span className="text-gray-900">Saasifyy</span>
             </Link>
-            <ThemeToggle />
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Sign in</Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm" className="shadow-md shadow-primary/20">Get started</Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
+            <nav className="flex items-center gap-3">
+              <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
+                Marketplace
+              </Link>
+
+              <Link href="/login">
+                <Button variant="ghost" size="sm" className="text-gray-700 hover:text-gray-900">Sign in</Button>
+              </Link>
+              <Link href="/register">
+                <Button size="sm" className="bg-black text-white hover:bg-gray-900">Get started</Button>
+              </Link>
+            </nav>
+          </div>
+        </header>
+      ) : (
+        <header className="sticky top-0 z-50 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4">
+          <SidebarTrigger />
+          <div className="h-6 w-px bg-gray-200" />
+          <span className="font-semibold text-gray-900">Marketplace</span>
+        </header>
+      )}
 
       <main className="flex-1">
-        {/* Hero banner */}
-        <div className="hero-gradient border-b">
-          <div className="container mx-auto px-4 py-12 text-center">
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight animate-fade-in">
-              Explore the <span className="gradient-text">Marketplace</span>
+        {/* Hero Banner */}
+        <div className="relative border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white px-4 py-16 sm:py-24">
+          <div className="container mx-auto max-w-6xl text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4">
+              Discover Premium SaaS Tools
             </h1>
-            <p className="mt-3 text-muted-foreground max-w-lg mx-auto animate-fade-in-delay-1">
-              Discover SaaS products built by developers on our platform
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Explore high-quality SaaS solutions built by expert developers. Find the perfect tool to accelerate your business growth.
             </p>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
-          {/* Search & Filters */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center animate-fade-in-delay-2">
-            <form onSubmit={handleSearch} className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="pl-10 h-11"
-              />
+        <div className="container mx-auto max-w-6xl px-4 py-10">
+          {/* Filters Section */}
+          <div className="mb-12">
+            <form onSubmit={handleSearch} className="space-y-6">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <Input
+                  placeholder="Search products, categories, features..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  className="pl-12 h-12 border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-black/10 focus-visible:border-gray-500 font-medium text-base"
+                />
+              </div>
+
+              {/* Filter Controls Grid */}
+              <div className="grid gap-6 sm:grid-cols-3">
+                {/* Category Filter */}
+                <div className="space-y-2.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Category
+                  </label>
+                  <Select value={category} onValueChange={(val) => { setCategory(val ?? "All"); setPage(1); }}>
+                    <SelectTrigger className="h-11 border-gray-300 rounded-lg bg-white text-gray-900 text-sm hover:border-gray-400 focus:border-gray-500 transition-colors data-[placeholder]:text-gray-500">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg border-gray-300">
+                      <SelectItem value="All" className="text-sm">All Categories</SelectItem>
+                      {CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat} className="text-sm">{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Price Range Filter */}
+                <div className="space-y-2.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Price Range
+                  </label>
+                  <Select value={priceRange} onValueChange={(val) => { setPriceRange(val ?? "Any price"); setPage(1); }}>
+                    <SelectTrigger className="h-11 border-gray-300 rounded-lg bg-white text-gray-900 text-sm hover:border-gray-400 focus:border-gray-500 transition-colors data-[placeholder]:text-gray-500">
+                      <SelectValue placeholder="Any price" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg border-gray-300">
+                      {PRICE_RANGES.map((range) => (
+                        <SelectItem key={range.label} value={range.label} className="text-sm">{range.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Sort By Filter */}
+                <div className="space-y-2.5">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Sort By
+                  </label>
+                  <Select value={sortBy} onValueChange={(val) => { setSortBy(val ?? "latest"); setPage(1); }}>
+                    <SelectTrigger className="h-11 border-gray-300 rounded-lg bg-white text-gray-900 text-sm hover:border-gray-400 focus:border-gray-500 transition-colors data-[placeholder]:text-gray-500">
+                      <SelectValue placeholder="Latest Arrival" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg border-gray-300">
+                      <SelectItem value="latest" className="text-sm">Latest Arrival</SelectItem>
+                      <SelectItem value="popular" className="text-sm">Most Popular</SelectItem>
+                      <SelectItem value="rating" className="text-sm">Top Rated</SelectItem>
+                      <SelectItem value="name" className="text-sm">Alphabetical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </form>
-            <div className="flex gap-2">
-              <Select value={category} onValueChange={(val) => { setCategory(val ?? "all"); setPage(1); }}>
-                <SelectTrigger className="w-44 h-11">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={priceRange} onValueChange={(val) => { setPriceRange(val ?? "0"); setPage(1); }}>
-                <SelectTrigger className="w-40 h-11">
-                  <SelectValue placeholder="Price range" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRICE_RANGES.map((range, i) => (
-                    <SelectItem key={i} value={i.toString()}>{range.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={sortBy} onValueChange={(val) => { setSortBy(val ?? "latest"); setPage(1); }}>
-                <SelectTrigger className="w-36 h-11">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="latest">Latest</SelectItem>
-                  <SelectItem value="popular">Popular</SelectItem>
-                  <SelectItem value="rating">Top Rated</SelectItem>
-                  <SelectItem value="name">Name A-Z</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
-          {/* Active tag filters */}
-          {allTags.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2 items-center">
-              <span className="text-xs text-muted-foreground">Tags:</span>
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => { setTagFilter(tagFilter === tag ? "" : tag); setPage(1); }}
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                    tagFilter === tag
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {tag}
-                  {tagFilter === tag && <X className="ml-1 h-3 w-3" />}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Results Info */}
+          <div className="mb-10 flex items-center justify-between border-b border-gray-200 pb-5">
+            <p className="text-sm font-medium text-gray-700">
+              <span className="font-bold text-gray-900">{total}</span> product{total !== 1 ? "s" : ""} found
+            </p>
+          </div>
 
-          {/* Results count */}
-          <p className="mt-4 text-sm text-muted-foreground">
-            {total} product{total !== 1 ? "s" : ""} found
-          </p>
-
-          {/* Error */}
+          {/* Error Message */}
           {error && (
-            <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+            <div className="mb-8 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
           )}
 
           {/* Product Grid */}
           {loading ? (
-            <div className="mt-8 py-16 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-              <p className="mt-3 text-muted-foreground">Loading products...</p>
+            <div className="py-20 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-400" />
+              <p className="mt-4 text-gray-600">Loading products...</p>
             </div>
           ) : products.length === 0 ? (
-            <div className="mt-8 rounded-2xl border border-dashed p-16 text-center">
-              <Package className="mx-auto h-12 w-12 text-muted-foreground/40" />
-              <p className="mt-4 text-lg font-medium">No products found</p>
-              <p className="mt-2 text-sm text-muted-foreground">Try adjusting your search or filters</p>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 py-16 text-center">
+              <Package className="mx-auto h-12 w-12 text-gray-300" />
+              <p className="mt-4 text-lg font-semibold text-gray-900">No products found</p>
+              <p className="mt-2 text-sm text-gray-600">Try adjusting your search or filters</p>
             </div>
           ) : (
-            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {products.map((product, i) => (
-                <Link key={product.id} href={`/marketplace/${product.slug}`}>
-                  <Card className={`h-full group border hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-slide-up${i < 3 ? (i > 0 ? `-delay-${i}` : "") : ""}`}>
-                    {/* Gradient top bar */}
-                    <div className={`h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60 rounded-t-lg transition-opacity ${product.isFeatured ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
-                    <div className="p-6 pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{product.name}</h3>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            by {product.developer.user.fullName}
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 mb-12">
+              {products.map((product) => (
+                <Link key={product.id} href={`/marketplace/${product.id}`}>
+                  <Card className="h-full group border border-gray-200 rounded-xl bg-white overflow-hidden transition-all duration-300 hover:border-gray-400 hover:shadow-xl">
+                    {/* Image/Logo Area - Larger and Dominant */}
+                    <div className="relative w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100 border-b border-gray-200 flex items-center justify-center overflow-hidden group-hover:from-gray-100 group-hover:to-gray-200 transition-colors">
+                      {product.logoUrl ? (
+                        <img 
+                          src={product.logoUrl} 
+                          alt={product.name} 
+                          className="h-20 w-20 object-contain transition-transform duration-300 group-hover:scale-110"
+                        />
+                      ) : (
+                        <Package className="h-16 w-16 text-gray-300 group-hover:text-gray-400 transition-colors" />
+                      )}
+                      
+                      {/* Badges - Positioned on Image */}
+                      <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+                        {product.isFeatured && (
+                          <Badge className="text-xs font-semibold px-2.5 py-1 rounded-md bg-black text-white border-none shadow-sm">
+                            Featured
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs font-medium text-gray-700 border-gray-300 bg-white shadow-sm">
+                          {product.category}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 space-y-4 p-6">
+                        {/* Title */}
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900 group-hover:text-black transition-colors line-clamp-2 leading-tight">
+                            {product.name}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1.5">
+                            By <span className="font-semibold text-gray-800">{product.developer.user.fullName}</span>
                           </p>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          {product.isFeatured && (
-                            <Badge className="text-[10px] px-1.5 py-0">Featured</Badge>
-                          )}
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                            <Package className="h-5 w-5" />
+
+                        {/* Description */}
+                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                          {product.shortDescription ?? product.name}
+                        </p>
+                      </div>
+
+                      {/* Footer with Rating and Price */}
+                      <div className="border-t border-gray-200 px-6 py-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <StarRating rating={product.avgRating} count={product._count.reviews} />
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs font-medium text-gray-500 mb-0.5">Starting at</div>
+                            <div className="font-bold text-lg text-gray-900">
+                              {product.pricingPlans.length > 0
+                                ? `$${product.pricingPlans[0].price_monthly}`
+                                : "Free"}
+                              <span className="text-xs text-gray-500 font-normal ml-1">/mo</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <CardContent className="pt-0">
-                      <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
-                        {product.shortDescription ?? product.name}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        <Badge variant="outline" className="text-xs">{product.category}</Badge>
-                        {product.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex items-center justify-between border-t pt-4">
-                      <StarRating rating={product.avgRating} count={product._count.reviews} />
-                      <div className="text-sm font-semibold text-primary">
-                        {product.pricingPlans.length > 0
-                          ? `$${product.pricingPlans[0].priceMonthly}/mo`
-                          : "Free"}
-                      </div>
-                    </CardFooter>
                   </Card>
                 </Link>
               ))}
@@ -312,25 +352,48 @@ export default function MarketplacePage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-10 flex items-center justify-center gap-2">
-              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                <ArrowLeft className="mr-1 h-4 w-4" /> Previous
+            <div className="flex items-center justify-center gap-2 border-t border-gray-200 pt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed h-9 px-3"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Previous
               </Button>
-              <div className="flex items-center gap-1 mx-4">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 5).map((p) => (
-                  <Button
-                    key={p}
-                    variant={p === page ? "default" : "ghost"}
-                    size="sm"
-                    className="w-9 h-9"
-                    onClick={() => setPage(p)}
-                  >
-                    {p}
-                  </Button>
-                ))}
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .slice(0, 5)
+                  .map((p) => (
+                    <Button
+                      key={p}
+                      variant={p === page ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        "w-9 h-9 rounded-lg text-sm font-medium transition-all",
+                        p === page
+                          ? "bg-black text-white border-black hover:bg-gray-900"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+                      )}
+                      onClick={() => setPage(p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
               </div>
-              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                Next <ArrowRight className="ml-1 h-4 w-4" />
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 disabled:opacity-50 disabled:cursor-not-allowed h-9 px-3"
+              >
+                Next
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           )}
@@ -338,11 +401,24 @@ export default function MarketplacePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-muted/30 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-gray-200 bg-white py-8">
+        <div className="container mx-auto max-w-6xl px-4 text-center text-sm text-gray-600">
           <p>Saasifyy - Multi-Tenant SaaS Platform</p>
         </div>
       </footer>
     </div>
   );
+
+  if (user) {
+    return (
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          {content}
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
+
+  return content;
 }

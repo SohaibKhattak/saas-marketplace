@@ -107,11 +107,11 @@ export default function PayoutsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
-        <p className="text-muted-foreground mt-1">Manage developer payout schedules</p>
+        <p className="text-gray-500 mt-1">Manage developer payout schedules</p>
       </div>
 
       {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
 
       {/* Developer Balances */}
@@ -122,9 +122,9 @@ export default function PayoutsPage() {
         </CardHeader>
         <CardContent>
           {loadingSummary ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : summary.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No developer earnings yet</p>
+            <p className="py-8 text-center text-gray-500">No developer earnings yet</p>
           ) : (
             <Table>
               <TableHeader>
@@ -140,13 +140,13 @@ export default function PayoutsPage() {
                   <TableRow key={dev.developerId}>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{dev.developerName}</p>
-                        <p className="text-xs text-muted-foreground">{dev.developerEmail}</p>
+                        <p className="font-semibold tracking-tight">{dev.developerName}</p>
+                        <p className="text-xs text-gray-500">{dev.developerEmail}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">${dev.totalEarned.toFixed(2)}</TableCell>
                     <TableCell className="text-right">${dev.totalPaid.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell className="text-right font-semibold tracking-tight">
                       ${dev.balance.toFixed(2)}
                     </TableCell>
                   </TableRow>
@@ -165,9 +165,9 @@ export default function PayoutsPage() {
         </CardHeader>
         <CardContent>
           {loadingPayouts ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : payouts.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">No payouts recorded yet</p>
+            <p className="py-8 text-center text-gray-500">No payouts recorded yet</p>
           ) : (
             <>
               <Table>
@@ -190,7 +190,7 @@ export default function PayoutsPage() {
                       <TableCell>
                         <Badge variant={statusVariant[p.status] ?? "secondary"}>{p.status}</Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">${p.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-semibold tracking-tight">${p.amount.toFixed(2)}</TableCell>
                       <TableCell className="text-right">
                         {p.status === "PENDING" && (
                           <Button size="sm" variant="outline" onClick={() => handleMarkStatus(p.id, "COMPLETED")}>
@@ -211,7 +211,7 @@ export default function PayoutsPage() {
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-center gap-2">
                   <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
-                  <span className="text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+                  <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
                   <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
                 </div>
               )}

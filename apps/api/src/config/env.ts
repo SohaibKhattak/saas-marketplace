@@ -11,6 +11,15 @@ const envSchema = z.object({
 
   // Database
   DATABASE_URL: z.string().url(),
+  SUPABASE_USER: z.string(),
+  SUPABASE_HOST: z.string(),
+  SUPABASE_DATABASE_NAME: z.string(),
+  SUPABASE_DATABASE_PASSWORD: z.string(),
+  SUPABASE_PORT: z.coerce.number().default(5432),
+  SUPABASE_SSL_REJECT_UNAUTHORIZED: z
+    .string()
+    .transform((v) => v === "true")
+    .default("true"),
 
   // JWT
   JWT_ACCESS_SECRET: z.string().min(32),
@@ -22,8 +31,15 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
 
+  // Email
+  SMTP_HOST: z.string().default("smtp.mailtrap.io"),
+  SMTP_PORT: z.coerce.number().default(2525),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default("Saasifyy <noreply@saasifyy.tech>"),
+  
   // Email (Resend)
-  RESEND_API_KEY: z.string().startsWith("re_"),
+  RESEND_API_KEY: z.string().startsWith("re_").optional(),
 
   // Supabase Storage (optional — only needed for file uploads)
   SUPABASE_URL: z.string().url().optional(),

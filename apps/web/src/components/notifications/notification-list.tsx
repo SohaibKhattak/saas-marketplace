@@ -45,7 +45,7 @@ export function NotificationList() {
   }, [accessToken, page]);
 
   useEffect(() => {
-    fetchNotifications();
+    // fetchNotifications();
   }, [fetchNotifications]);
 
   async function handleMarkAllRead() {
@@ -74,7 +74,7 @@ export function NotificationList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
-          <p className="text-muted-foreground mt-1">{total} notification{total !== 1 ? "s" : ""}</p>
+          <p className="text-gray-500 mt-1">{total} notification{total !== 1 ? "s" : ""}</p>
         </div>
         {hasUnread && (
           <Button variant="outline" size="sm" onClick={handleMarkAllRead}>
@@ -85,17 +85,17 @@ export function NotificationList() {
       </div>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="mt-4 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
 
       {loading ? (
         <div className="mt-8 py-12 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-neutral-900" />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-          <Bell className="mx-auto h-12 w-12 text-muted-foreground/40" />
-          <p className="mt-4 text-lg font-medium">No notifications yet</p>
+        <div className="mt-8 rounded-sm border border-dashed p-12 text-center text-gray-500">
+          <Bell className="mx-auto h-12 w-12 text-gray-500/40" />
+          <p className="mt-4 text-lg font-semibold tracking-tight">No notifications yet</p>
           <p className="mt-1 text-sm">You&apos;ll see updates about your subscriptions and products here.</p>
         </div>
       ) : (
@@ -104,7 +104,7 @@ export function NotificationList() {
             const content = (
               <Card
                 key={notif.id}
-                className={`cursor-pointer transition-colors hover:bg-muted/50 ${!notif.isRead ? "border-primary/30 bg-primary/5" : ""}`}
+                className={`cursor-pointer transition-colors hover:bg-muted/50 ${!notif.isRead ? "border-primary/30 bg-gray-100" : ""}`}
                 onClick={() => !notif.isRead && handleMarkRead(notif.id)}
               >
                 <CardContent className="py-3 px-4">
@@ -112,13 +112,13 @@ export function NotificationList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         {!notif.isRead && (
-                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                          <span className="h-2 w-2 rounded-sm bg-black shrink-0" />
                         )}
-                        <p className="text-sm font-medium truncate">{notif.title}</p>
+                        <p className="text-sm font-semibold tracking-tight truncate">{notif.title}</p>
                       </div>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{notif.message}</p>
+                      <p className="mt-0.5 text-sm text-gray-500">{notif.message}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    <span className="text-xs text-gray-500 whitespace-nowrap">
                       {new Date(notif.createdAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -140,7 +140,7 @@ export function NotificationList() {
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                 Previous
               </Button>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-gray-500">
                 Page {page} of {totalPages}
               </span>
               <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>

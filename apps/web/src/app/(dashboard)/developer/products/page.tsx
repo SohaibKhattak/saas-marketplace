@@ -26,6 +26,7 @@ import { Plus } from "lucide-react";
 interface Product {
   id: string;
   name: string;
+  logoUrl: string | null;
   slug: string;
   category: string;
   status: string;
@@ -80,19 +81,19 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">My Products</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-gray-500 mt-1">
             Manage your SaaS product listings ({total} total)
           </p>
         </div>
         <Link href="/developer/products/new">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button className={"group cursor-pointer"}>
+            <Plus className="mr-2 h-4 w-4 group-hover:scale-125 duration-200 transition-all" />
             New Product
           </Button>
         </Link>
       </div>
 
-      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>
@@ -101,10 +102,10 @@ export default function ProductsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : products.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
-              <p className="text-lg font-medium">No products yet</p>
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
+              <p className="text-lg font-semibold tracking-tight">No products yet</p>
               <p className="mt-1 text-sm">Create your first product to get started</p>
               <Link href="/developer/products/new">
                 <Button className="mt-4" variant="outline">
@@ -130,8 +131,16 @@ export default function ProductsPage() {
                   {products.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-xs text-muted-foreground">/{product.slug}</p>
+                        <div className="flex items-center gap-3">
+                          {product.logoUrl ? (
+                            <div className="h-8 w-8 overflow-hidden rounded-md border">
+                              <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain" />
+                            </div>
+                          ) : (
+                            <div className="h-8 w-8 rounded-md bg-gray-100" />
+                          )}
+                          <p className="font-semibold tracking-tight">{product.name}</p>
+                        </div>
                       </TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell>
@@ -143,7 +152,7 @@ export default function ProductsPage() {
                       <TableCell>{product._count.subscriptions}</TableCell>
                       <TableCell className="text-right">
                         <Link href={`/developer/products/${product.id}`}>
-                          <Button size="sm" variant="outline">
+                          <Button size="sm" variant="outline" className={"cursor-pointer hover:!bg-black hover:!text-white"}>
                             Manage
                           </Button>
                         </Link>
@@ -155,7 +164,7 @@ export default function ProductsPage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-500">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex gap-2">

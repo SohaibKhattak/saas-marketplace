@@ -21,7 +21,7 @@ function getTabDot(name: string): string {
   const ext = name.split(".").pop()?.toLowerCase();
   const colors: Record<string, string> = {
     tsx: "bg-blue-400",
-    ts: "bg-blue-500",
+    ts: "bg-white0",
     jsx: "bg-yellow-400",
     js: "bg-yellow-500",
     css: "bg-pink-400",
@@ -46,14 +46,14 @@ export function EditorTabs({ tabs, activeTab, onTabClick, onTabClose }: EditorTa
             className={`flex items-center gap-1.5 px-3 py-2 text-sm cursor-pointer border-r border-border min-w-0 group transition-colors ${
               isActive
                 ? "bg-card text-foreground border-b-2 border-b-primary"
-                : "text-muted-foreground hover:bg-accent/50"
+                : "text-gray-500 hover:bg-accent/50"
             }`}
             onClick={() => onTabClick(tab.id)}
           >
-            <span className={`h-2 w-2 rounded-full shrink-0 ${getTabDot(tab.name)}`} />
+            <span className={`h-2 w-2 rounded-sm shrink-0 ${getTabDot(tab.name)}`} />
             <span className="truncate max-w-[120px]">{tab.name}</span>
             {tab.isDirty && (
-              <Circle className="h-2 w-2 fill-current text-primary shrink-0" />
+              <Circle className="h-2 w-2 fill-current text-neutral-900 shrink-0" />
             )}
             <button
               className="ml-1 p-0.5 rounded hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity shrink-0"

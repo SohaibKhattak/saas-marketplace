@@ -79,6 +79,8 @@ router.post("/apply", validate(applicationSchema), developerController.apply);
  */
 router.get("/me", developerController.getProfile);
 router.patch("/me", requireRole("DEVELOPER", "ADMIN"), validate(updateProfileSchema), developerController.updateProfile);
+router.post("/stripe/connect", requireRole("DEVELOPER", "ADMIN"), developerController.setupStripeConnect);
+router.get("/stripe/login-link", requireRole("DEVELOPER", "ADMIN"), developerController.createStripeLoginLink);
 
 // GET /api/v1/developers/me/sites — redirects to /api/v1/wp/sites
 router.get("/me/sites", requireRole("DEVELOPER", "ADMIN"), (req, res) => {

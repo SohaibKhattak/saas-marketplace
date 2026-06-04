@@ -115,7 +115,7 @@ export default function ApplicationsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Developer Applications</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Review and approve pending developer applications ({total} pending)
       </p>
 
@@ -128,9 +128,9 @@ export default function ApplicationsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : applications.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No pending applications
             </div>
           ) : (
@@ -150,8 +150,8 @@ export default function ApplicationsPage() {
                     <TableRow key={app.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{app.user.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{app.user.email}</p>
+                          <p className="font-semibold tracking-tight">{app.user.fullName}</p>
+                          <p className="text-xs text-gray-500">{app.user.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>{app.businessName}</TableCell>
@@ -175,7 +175,7 @@ export default function ApplicationsPage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-500">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex gap-2">
@@ -225,42 +225,42 @@ export default function ApplicationsPage() {
           {reviewingApp && (
             <div className="space-y-4">
               {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">
                   {error}
                 </div>
               )}
 
-              <div className="space-y-3 rounded-lg border p-4">
+              <div className="space-y-3 rounded-sm border p-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Applicant</span>
-                  <span className="text-sm font-medium">{reviewingApp.user.fullName}</span>
+                  <span className="text-sm text-gray-500">Applicant</span>
+                  <span className="text-sm font-semibold tracking-tight">{reviewingApp.user.fullName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Personal Email</span>
+                  <span className="text-sm text-gray-500">Personal Email</span>
                   <span className="text-sm">{reviewingApp.user.email}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Business Name</span>
-                  <span className="text-sm font-medium">{reviewingApp.businessName}</span>
+                  <span className="text-sm text-gray-500">Business Name</span>
+                  <span className="text-sm font-semibold tracking-tight">{reviewingApp.businessName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Business Email</span>
+                  <span className="text-sm text-gray-500">Business Email</span>
                   <span className="text-sm">{reviewingApp.businessEmail}</span>
                 </div>
                 {reviewingApp.taxId && (
                   <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Tax ID</span>
+                    <span className="text-sm text-gray-500">Tax ID</span>
                     <span className="text-sm">{reviewingApp.taxId}</span>
                   </div>
                 )}
                 {reviewingApp.bio && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Bio</span>
+                    <span className="text-sm text-gray-500">Bio</span>
                     <p className="mt-1 text-sm">{reviewingApp.bio}</p>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">User Since</span>
+                  <span className="text-sm text-gray-500">User Since</span>
                   <span className="text-sm">
                     {new Date(reviewingApp.user.createdAt).toLocaleDateString()}
                   </span>

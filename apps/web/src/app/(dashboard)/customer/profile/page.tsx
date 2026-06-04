@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -17,6 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   User,
   Mail,
@@ -36,8 +39,9 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
-  const { user, accessToken, fetchUser } = useAuthStore();
+  const { user, accessToken, fetchUser, updateUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pwDialogOpen, setPwDialogOpen] = useState(false);
 
   // Profile state
   const [firstName, setFirstName] = useState(() => {
@@ -52,6 +56,7 @@ export default function ProfilePage() {
   const [bio, setBio] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl ?? null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -72,6 +77,12 @@ export default function ProfilePage() {
     .toUpperCase()
     .slice(0, 2) ?? "U";
 
+  const currentFullName = `${firstName} ${lastName}`.trim();
+  const isProfileDirty =
+    currentFullName !== (user?.fullName ?? "") ||
+    avatarFile !== null ||
+    avatarPreview !== (user?.avatarUrl ?? null);
+
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -85,6 +96,7 @@ export default function ProfilePage() {
       return;
     }
 
+    setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = (ev) => {
       setAvatarPreview(ev.target?.result as string);
@@ -92,27 +104,36 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
-  function removePhoto() {
-    setAvatarPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
+  // function removePhoto() {
+  //   setAvatarPreview(null);
+  //   if (fileInputRef.current) fileInputRef.current.value = "";
+  // }
 
   async function handleProfileSave() {
     setProfileMessage(null);
     setSaving(true);
     try {
       const fullName = `${firstName} ${lastName}`.trim();
-      const updateData: { fullName: string; avatarUrl?: string | null } = { fullName };
-      if (avatarPreview !== (user?.avatarUrl ?? null)) {
-        updateData.avatarUrl = avatarPreview;
+      const formData = new FormData();
+      formData.append("fullName", fullName);
+      if (avatarFile) {
+        formData.append("avatar", avatarFile);
       }
-      await api.patch("/users/me", updateData, { token: accessToken! });
-      await fetchUser();
+
+      const res = await api.patch<{ data: { avatarUrl?: string, fullName?: string } }>("/users/me", formData, {
+        token: accessToken!
+      });
+
+      updateUser(res.data);
+      if (res?.data?.avatarUrl) {
+        setAvatarPreview(res.data.avatarUrl);
+      }
+      setAvatarFile(null);
       setProfileMessage({ type: "success", text: "Profile updated successfully" });
-    } catch (err) {
+    } catch (err: any) {
       setProfileMessage({
         type: "error",
-        text: err instanceof ApiError ? err.message : "Failed to update profile",
+        text: err.message || "Failed to update profile",
       });
     } finally {
       setSaving(false);
@@ -134,16 +155,20 @@ export default function ProfilePage() {
 
     setPwSaving(true);
     try {
-      await api.post(
-        "/users/me/change-password",
-        { currentPassword, newPassword },
-        { token: accessToken! }
-      );
+      const res = await api.post<{ data: { message: string } }>("/users/me/change-password", { currentPassword, newPassword }, {
+        token: accessToken!
+      });
+
       setPwMessage({ type: "success", text: "Password changed successfully" });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (err) {
+      // Close dialog after short delay
+      setTimeout(() => {
+        setPwDialogOpen(false);
+        setPwMessage(null);
+      }, 1200);
+    } catch (err: any) {
       setPwMessage({
         type: "error",
         text: err instanceof ApiError ? err.message : "Failed to change password",
@@ -156,18 +181,18 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6 pb-24">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/customer/subscriptions" className="hover:text-foreground transition-colors">
+      <div className="flex items-center gap-1.5 text-sm text-gray-500">
+        <Link href="/customer/subscriptions" className="hover:text-neutral-900 transition-colors">
           Dashboard
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground font-medium">Profile</span>
+        <span className="text-neutral-900 font-semibold tracking-tight">Profile</span>
       </div>
 
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-gray-500 mt-1">
           Manage your personal details, contact information, and security preferences.
         </p>
       </div>
@@ -177,8 +202,8 @@ export default function ProfilePage() {
         <div
           className={`flex items-center gap-2 rounded-lg p-3 text-sm animate-fade-in ${
             profileMessage.type === "success"
-              ? "bg-green-500/10 text-green-700 dark:text-green-400"
-              : "bg-destructive/10 text-destructive"
+              ? "bg-green-50 text-green-700 border border-green-200 shadow-sm rounded-sm"
+              : "bg-red-50 text-red-700 border border-red-200 shadow-sm rounded-sm"
           }`}
         >
           {profileMessage.type === "success" ? (
@@ -190,15 +215,15 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Public Profile Section */}
-      <Card>
+      {/* Profile Information Section */}
+      <Card className="border border-gray-200 shadow-sm rounded-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            Public Profile
+            <User className="h-5 w-5 text-black" />
+            Profile Information
           </CardTitle>
           <CardDescription>
-            This information will be displayed on your public profile.
+            Manage your personal details and contact info.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -206,13 +231,18 @@ export default function ProfilePage() {
             {/* Avatar with upload */}
             <div className="flex flex-col items-center gap-3">
               <div className="relative group">
-                <Avatar className="h-28 w-28 border-4 border-muted">
-                  {avatarPreview ? (
-                    <AvatarImage src={avatarPreview} alt="Profile photo" />
-                  ) : null}
-                  <AvatarFallback className="text-3xl font-semibold bg-primary/10 text-primary">
-                    {initials}
-                  </AvatarFallback>
+                <Avatar className="h-28 w-28 border-2 border-gray-200">
+                  {saving && avatarFile ? (
+                    <div className="flex h-full w-full items-center justify-center bg-gray-100">
+                      <Loader2 className="h-8 w-8 text-black animate-spin" />
+                    </div>
+                  ) : avatarPreview ? (
+                    <AvatarImage src={avatarPreview} alt="Profile photo" className="object-cover" />
+                  ) : (
+                    <AvatarFallback className="text-3xl font-semibold bg-primary/10 text-black">
+                      {initials}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
                 {/* Hover overlay */}
                 <button
@@ -236,23 +266,23 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
+                  className="flex items-center gap-1.5 text-sm text-black font-semibold tracking-tight hover:underline"
                 >
                   <ImagePlus className="h-3.5 w-3.5" />
                   {avatarPreview ? "Change Photo" : "Upload Photo"}
                 </button>
-                {avatarPreview && (
+                {/* {avatarPreview && (
                   <button
                     type="button"
                     onClick={removePhoto}
-                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-destructive transition-colors"
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-destructive transition-colors"
                   >
                     <X className="h-3.5 w-3.5" />
                     Remove
                   </button>
-                )}
+                )} */}
               </div>
-              <p className="text-xs text-muted-foreground text-center">
+              <p className="text-xs text-gray-500 text-center">
                 JPG, PNG or GIF. Max 5MB.
               </p>
             </div>
@@ -267,7 +297,7 @@ export default function ProfilePage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="John"
-                    className="h-11"
+                    className="h-11 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black"
                   />
                 </div>
                 <div className="space-y-2">
@@ -277,23 +307,23 @@ export default function ProfilePage() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Doe"
-                    className="h-11"
+                    className="h-11 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="jobTitle">Job Title</Label>
                 <Input
                   id="jobTitle"
                   value={jobTitle}
                   onChange={(e) => setJobTitle(e.target.value)}
                   placeholder="e.g. Product Manager, Developer, Designer"
-                  className="h-11"
+                  className="h-11 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black"
                 />
-              </div>
+              </div> */}
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
@@ -301,209 +331,72 @@ export default function ProfilePage() {
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Write a short bio..."
                   rows={4}
-                  className="resize-none"
+                  className="resize-none border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black"
                 />
+              </div> */}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="font-semibold tracking-tight text-neutral-900">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      value={user?.email ?? ""}
+                      disabled
+                      className="h-11 pl-10 pr-20 border-gray-300 bg-gray-50 rounded-sm text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+                {/* <div className="space-y-2">
+                  <Label htmlFor="phone" className="font-semibold tracking-tight text-neutral-900">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+1 (555) 123-4567"
+                      className="h-11 pl-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black"
+                    />
+                  </div>
+                </div> */}
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Contact Details Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" />
-            Contact Details
-          </CardTitle>
-          <CardDescription>
-            Your contact information is kept private and secure.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  value={user?.email ?? ""}
-                  disabled
-                  className="h-11 pl-10 pr-20"
-                />
-                <Badge
-                  variant="secondary"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
-                >
-                  Verified
-                </Badge>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+1 (555) 123-4567"
-                  className="h-11 pl-10"
-                />
-              </div>
-            </div>
+          <Separator className="my-8" />
+          
+          <div className="space-y-1 mb-6">
+            <h3 className="text-lg font-semibold tracking-tight text-neutral-900 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-black" />
+              Account Information
+            </h3>
+            <p className="text-sm text-gray-500">
+              Details about your account status and membership.
+            </p>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Security & Login Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            Security & Login
-          </CardTitle>
-          <CardDescription>
-            Keep your account secure by updating your password regularly.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pwMessage && (
-            <div
-              className={`flex items-center gap-2 rounded-lg p-3 text-sm mb-5 animate-fade-in ${
-                pwMessage.type === "success"
-                  ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                  : "bg-destructive/10 text-destructive"
-              }`}
-            >
-              {pwMessage.type === "success" ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" />
-              )}
-              {pwMessage.text}
-            </div>
-          )}
-
-          <form onSubmit={handlePasswordChange} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPw ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  placeholder="Enter current password"
-                  className="h-11 pl-10 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPw(!showCurrentPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="newPassword"
-                    type={showNewPw ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    minLength={8}
-                    placeholder="Min 8 characters"
-                    className="h-11 pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPw(!showNewPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="confirmNewPassword"
-                    type={showConfirmPw ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    minLength={8}
-                    placeholder="Confirm new password"
-                    className="h-11 pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPw(!showConfirmPw)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button type="submit" variant="outline" disabled={pwSaving}>
-                {pwSaving ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
-                ) : (
-                  <><Lock className="mr-2 h-4 w-4" /> Update Password</>
-                )}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Account Info Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-primary" />
-            Account Information
-          </CardTitle>
-          <CardDescription>
-            Details about your account status and membership.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Account Type</p>
+              <p className="text-sm text-gray-500">Account Type</p>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="font-medium">
+                <Badge variant="secondary" className="font-semibold tracking-tight">
                   {user?.role === "DEVELOPER" ? "Developer" : user?.role === "ADMIN" ? "Admin" : "Customer"}
                 </Badge>
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Email Status</p>
+              <p className="text-sm text-gray-500">Email Status</p>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium">Verified</span>
+                <span className="text-sm font-semibold tracking-tight">Verified</span>
               </div>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Member Since</p>
-              <p className="text-sm font-medium">
+              <p className="text-sm text-gray-500">Member Since</p>
+              <p className="text-sm font-semibold tracking-tight">
                 {new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
               </p>
             </div>
@@ -511,9 +404,162 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Manage Security Section */}
+      <Card className="border border-gray-200 shadow-sm rounded-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-black" />
+            Manage Security
+          </CardTitle>
+          <CardDescription>
+            Update your password to keep your account secure.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold tracking-tight text-neutral-900">Password</p>
+              <p className="text-sm text-gray-500">Change your password to keep your account secure.</p>
+            </div>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger render={
+                  <div>
+                    <Dialog open={pwDialogOpen} onOpenChange={setPwDialogOpen}>
+                      <DialogTrigger
+                        render={
+                          <Button
+                            variant="outline"
+                            disabled={user?.authProvider === 'GOOGLE'}
+                            className="border-gray-300 hover:bg-gray-50 text-neutral-900 font-semibold tracking-tight transition-all duration-200"
+                          >
+                            <Lock className="mr-2 h-4 w-4" /> Change Password
+                          </Button>
+                        }
+                      />
+                      {user?.authProvider !== 'GOOGLE' && (
+                        <DialogContent className="sm:max-w-106.25 rounded-sm">
+                          <DialogHeader>
+                            <DialogTitle>Change Password</DialogTitle>
+                            <DialogDescription>
+                              Enter your current password and a new one to update your security credentials.
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          {pwMessage && (
+                            <div className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${
+                              pwMessage.type === 'success'
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-red-50 text-red-700 border border-red-200'
+                            }`}>
+                              {pwMessage.type === 'success' ? (
+                                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 shrink-0" />
+                              )}
+                              {pwMessage.text}
+                            </div>
+                          )}
+
+                          <form onSubmit={handlePasswordChange} className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="currentPassword">Current Password</Label>
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                <Input
+                                  id="currentPassword"
+                                  type={showCurrentPw ? "text" : "password"}
+                                  value={currentPassword}
+                                  onChange={(e) => setCurrentPassword(e.target.value)}
+                                  required
+                                  placeholder="Enter current password"
+                                  className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowCurrentPw(!showCurrentPw)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
+                                >
+                                  {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="newPassword">New Password</Label>
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                <Input
+                                  id="newPassword"
+                                  type={showNewPw ? "text" : "password"}
+                                  value={newPassword}
+                                  onChange={(e) => setNewPassword(e.target.value)}
+                                  required
+                                  minLength={8}
+                                  placeholder="Min 8 characters"
+                                  className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowNewPw(!showNewPw)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
+                                >
+                                  {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                <Input
+                                  id="confirmNewPassword"
+                                  type={showConfirmPw ? "text" : "password"}
+                                  value={confirmPassword}
+                                  onChange={(e) => setConfirmPassword(e.target.value)}
+                                  required
+                                  minLength={8}
+                                  placeholder="Confirm new password"
+                                  className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowConfirmPw(!showConfirmPw)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
+                                >
+                                  {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex justify-end pt-4">
+                              <Button type="submit" className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all duration-200" disabled={pwSaving}>
+                                {pwSaving ? (
+                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
+                                ) : (
+                                  <><Lock className="mr-2 h-4 w-4" /> Save Password</>
+                                )}
+                              </Button>
+                            </div>
+                          </form>
+                        </DialogContent>
+                      )}
+                    </Dialog>
+                  </div>
+                } />
+                {user?.authProvider === 'GOOGLE' && (
+                  <TooltipContent>
+                    <p>Google accounts cannot change password via this method. Please manage it via Google.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Sticky Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="flex items-center justify-end gap-3 px-6 py-3 max-w-screen-xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+        <div className="flex items-center justify-end gap-3 px-6 py-3 max-w-7xl mx-auto">
           <Button
             variant="outline"
             onClick={() => {
@@ -530,7 +576,7 @@ export default function ProfilePage() {
           >
             Cancel
           </Button>
-          <Button onClick={handleProfileSave} disabled={saving}>
+          <Button onClick={handleProfileSave} className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all" disabled={saving || !isProfileDirty}>
             {saving ? (
               <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
             ) : (

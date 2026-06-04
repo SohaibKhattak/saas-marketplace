@@ -70,11 +70,11 @@ export default function RevenuePage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Revenue</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Monitor your earnings and transaction history ({total} transactions)
       </p>
 
-      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>
@@ -83,9 +83,9 @@ export default function RevenuePage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : transactions.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No transactions yet. Revenue will appear here once you have paying subscribers.
             </div>
           ) : (
@@ -110,7 +110,7 @@ export default function RevenuePage() {
                       <TableCell>
                         <div>
                           <p className="text-sm">{tx.customer.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{tx.customer.email}</p>
+                          <p className="text-xs text-gray-500">{tx.customer.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>{tx.subscription?.product.name ?? "—"}</TableCell>
@@ -121,8 +121,8 @@ export default function RevenuePage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">${tx.amount.toFixed(2)}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">${tx.platformFee.toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-medium">${tx.developerAmount.toFixed(2)}</TableCell>
+                      <TableCell className="text-right text-gray-500">${tx.platformFee.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-semibold tracking-tight">${tx.developerAmount.toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -130,7 +130,7 @@ export default function RevenuePage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+                  <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
                     <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>

@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.js";
+import { pool } from "../config/database.js";
 
 // ─── Admin Platform Analytics ──────────────────────────────────────────────
 
@@ -9,38 +9,32 @@ export async function getPlatformKPIs() {
     totalProducts,
     publishedProducts,
     activeSubscriptions,
-    totalRevenue,
-    platformRevenue,
+    totalRevenueRes,
+    platformRevenueRes,
     pendingApplications,
     pendingProducts,
   ] = await Promise.all([
-    prisma.user.count(),
-    prisma.developerProfile.count({ where: { applicationStatus: "APPROVED" } }),
-    prisma.product.count(),
-    prisma.product.count({ where: { status: "PUBLISHED" } }),
-    prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
-    prisma.transaction.aggregate({
-      where: { status: "SUCCEEDED" },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: { status: "SUCCEEDED" },
-      _sum: { platformFee: true },
-    }),
-    prisma.developerProfile.count({ where: { applicationStatus: "PENDING" } }),
-    prisma.product.count({ where: { status: "PENDING_REVIEW" } }),
+    pool.query(`SELECT COUNT(*) FROM users`),
+    pool.query(`SELECT COUNT(*) FROM developer_profiles WHERE application_status = 'APPROVED'`),
+    pool.query(`SELECT COUNT(*) FROM products`),
+    pool.query(`SELECT COUNT(*) FROM products WHERE status = 'PUBLISHED'`),
+    pool.query(`SELECT COUNT(*) FROM subscriptions WHERE status IN ('ACTIVE', 'TRIALING')`),
+    pool.query(`SELECT SUM(amount) FROM transactions WHERE status = 'SUCCEEDED'`),
+    pool.query(`SELECT SUM(platform_fee) FROM transactions WHERE status = 'SUCCEEDED'`),
+    pool.query(`SELECT COUNT(*) FROM developer_profiles WHERE application_status = 'PENDING'`),
+    pool.query(`SELECT COUNT(*) FROM products WHERE status = 'PENDING_REVIEW'`),
   ]);
 
   return {
-    totalUsers,
-    totalDevelopers,
-    totalProducts,
-    publishedProducts,
-    activeSubscriptions,
-    totalRevenue: totalRevenue._sum.amount ?? 0,
-    platformRevenue: platformRevenue._sum.platformFee ?? 0,
-    pendingApplications,
-    pendingProducts,
+    totalUsers: parseInt(totalUsers.rows[0].count, 10),
+    totalDevelopers: parseInt(totalDevelopers.rows[0].count, 10),
+    totalProducts: parseInt(totalProducts.rows[0].count, 10),
+    publishedProducts: parseInt(publishedProducts.rows[0].count, 10),
+    activeSubscriptions: parseInt(activeSubscriptions.rows[0].count, 10),
+    totalRevenue: parseFloat(totalRevenueRes.rows[0].sum) || 0,
+    platformRevenue: parseFloat(platformRevenueRes.rows[0].sum) || 0,
+    pendingApplications: parseInt(pendingApplications.rows[0].count, 10),
+    pendingProducts: parseInt(pendingProducts.rows[0].count, 10),
   };
 }
 
@@ -48,24 +42,16 @@ export async function getRevenueByMonth(months: number = 12) {
   const since = new Date();
   since.setMonth(since.getMonth() - months);
 
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      status: "SUCCEEDED",
-      createdAt: { gte: since },
-    },
-    select: {
-      amount: true,
-      platformFee: true,
-      developerAmount: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const txRes = await pool.query(`
+    SELECT amount, platform_fee as "platformFee", developer_amount as "developerAmount", created_at as "createdAt"
+    FROM transactions
+    WHERE status = 'SUCCEEDED' AND created_at >= $1
+    ORDER BY created_at ASC
+  `, [since]);
 
-  // Group by month
   const monthlyData: Record<string, { month: string; revenue: number; platformFee: number; developerPayout: number }> = {};
 
-  for (const tx of transactions) {
+  for (const tx of txRes.rows) {
     const key = `${tx.createdAt.getFullYear()}-${String(tx.createdAt.getMonth() + 1).padStart(2, "0")}`;
     if (!monthlyData[key]) {
       monthlyData[key] = { month: key, revenue: 0, platformFee: 0, developerPayout: 0 };
@@ -79,90 +65,82 @@ export async function getRevenueByMonth(months: number = 12) {
 }
 
 export async function getRecentTransactions(limit: number = 10) {
-  return prisma.transaction.findMany({
-    include: {
-      customer: { select: { fullName: true, email: true } },
-      developer: {
-        include: { user: { select: { fullName: true } } },
-      },
-      subscription: {
-        include: {
-          product: { select: { name: true } },
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
+  const res = await pool.query(`
+    SELECT
+      t.id, t.amount, t.platform_fee as "platformFee", t.developer_amount as "developerAmount", t.status, t.type, t.created_at as "createdAt",
+      u.full_name as customer_name, u.email as customer_email,
+      d_u.full_name as developer_name,
+      p.name as product_name
+    FROM transactions t
+    JOIN users u ON t.customer_id = u.id
+    JOIN developer_profiles d ON t.developer_id = d.id
+    JOIN users d_u ON d.user_id = d_u.id
+    LEFT JOIN subscriptions sub ON t.subscription_id = sub.id
+    LEFT JOIN products p ON sub.product_id = p.id
+    ORDER BY t.created_at DESC
+    LIMIT $1
+  `, [limit]);
+
+  return res.rows.map(row => ({
+    id: row.id,
+    amount: row.amount,
+    platformFee: row.platformFee,
+    developerAmount: row.developerAmount,
+    status: row.status,
+    type: row.type,
+    createdAt: row.createdAt,
+    customer: { fullName: row.customer_name, email: row.customer_email },
+    developer: { user: { fullName: row.developer_name } },
+    subscription: row.product_name ? { product: { name: row.product_name } } : null
+  }));
 }
 
 // ─── Developer Analytics ──────────────────────────────────────────────────
 
 export async function getDeveloperAnalytics(userId: string) {
-  const profile = await prisma.developerProfile.findUnique({
-    where: { userId },
-  });
+  const profileRes = await pool.query(`SELECT id FROM developer_profiles WHERE user_id = $1`, [userId]);
+  if (profileRes.rowCount === 0) return null;
+  const developerId = profileRes.rows[0].id;
 
-  if (!profile) return null;
-
-  const [
-    totalProducts,
-    publishedProducts,
-    totalSubscribers,
-    totalRevenue,
-    totalTransactions,
-  ] = await Promise.all([
-    prisma.product.count({ where: { developerId: profile.id } }),
-    prisma.product.count({ where: { developerId: profile.id, status: "PUBLISHED" } }),
-    prisma.subscription.count({
-      where: {
-        product: { developerId: profile.id },
-        status: { in: ["ACTIVE", "TRIALING"] },
-      },
-    }),
-    prisma.transaction.aggregate({
-      where: { developerId: profile.id, status: "SUCCEEDED" },
-      _sum: { developerAmount: true },
-    }),
-    prisma.transaction.count({ where: { developerId: profile.id } }),
+  const [tProd, pProd, tSub, tRev, tTx] = await Promise.all([
+    pool.query(`SELECT COUNT(*) FROM products WHERE developer_id = $1`, [userId]),
+    pool.query(`SELECT COUNT(*) FROM products WHERE developer_id = $1 AND status = 'PUBLISHED'`, [userId]),
+    pool.query(`
+      SELECT COUNT(*) FROM subscriptions s
+      JOIN products p ON s.product_id = p.id
+      WHERE p.developer_id = $1 AND s.status IN ('ACTIVE', 'TRIALING')
+    `, [userId]),
+    pool.query(`SELECT SUM(developer_amount) FROM transactions WHERE developer_id = $1 AND status = 'SUCCEEDED'`, [developerId]),
+    pool.query(`SELECT COUNT(*) FROM transactions WHERE developer_id = $1`, [developerId])
   ]);
 
   return {
-    totalProducts,
-    publishedProducts,
-    totalSubscribers,
-    totalRevenue: totalRevenue._sum.developerAmount ?? 0,
-    totalTransactions,
+    totalProducts: parseInt(tProd.rows[0].count, 10),
+    publishedProducts: parseInt(pProd.rows[0].count, 10),
+    totalSubscribers: parseInt(tSub.rows[0].count, 10),
+    totalRevenue: parseFloat(tRev.rows[0].sum) || 0,
+    totalTransactions: parseInt(tTx.rows[0].count, 10),
   };
 }
 
 export async function getDeveloperRevenueByMonth(userId: string, months: number = 12) {
-  const profile = await prisma.developerProfile.findUnique({
-    where: { userId },
-  });
-
-  if (!profile) return [];
+  const profileRes = await pool.query(`SELECT id FROM developer_profiles WHERE user_id = $1`, [userId]);
+  if (profileRes.rowCount === 0) return [];
+  const developerId = profileRes.rows[0].id;
 
   const since = new Date();
   since.setMonth(since.getMonth() - months);
 
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      developerId: profile.id,
-      status: "SUCCEEDED",
-      createdAt: { gte: since },
-    },
-    select: {
-      developerAmount: true,
-      amount: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const txRes = await pool.query(`
+    SELECT developer_amount as "developerAmount", amount, created_at as "createdAt"
+    FROM transactions
+    WHERE developer_id = $1 AND status = 'SUCCEEDED' AND created_at >= $2
+    ORDER BY created_at ASC
+  `, [developerId, since]);
 
   const monthlyData: Record<string, { month: string; revenue: number; gross: number }> = {};
 
-  for (const tx of transactions) {
+  for (const tx of txRes.rows) {
     const key = `${tx.createdAt.getFullYear()}-${String(tx.createdAt.getMonth() + 1).padStart(2, "0")}`;
     if (!monthlyData[key]) {
       monthlyData[key] = { month: key, revenue: 0, gross: 0 };
@@ -175,32 +153,47 @@ export async function getDeveloperRevenueByMonth(userId: string, months: number 
 }
 
 export async function getDeveloperTransactions(userId: string, page: number, limit: number) {
-  const profile = await prisma.developerProfile.findUnique({
-    where: { userId },
-  });
+  const profileRes = await pool.query(`SELECT id FROM developer_profiles WHERE user_id = $1`, [userId]);
 
-  if (!profile) return { transactions: [], total: 0 };
+  if (profileRes.rowCount === 0) return { transactions: [], total: 0 };
 
-  const where = { developerId: profile.id };
+  const developerId = profileRes.rows[0].id;
 
-  const [transactions, total] = await Promise.all([
-    prisma.transaction.findMany({
-      where,
-      include: {
-        customer: { select: { fullName: true, email: true } },
-        subscription: {
-          include: {
-            product: { select: { name: true } },
-            pricingPlan: { select: { name: true } },
-          },
-        },
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.transaction.count({ where }),
-  ]);
+  const countRes = await pool.query(`SELECT COUNT(*) FROM transactions WHERE developer_id = $1`, [developerId]);
+  const total = parseInt(countRes.rows[0].count, 10);
+
+  const offset = (page - 1) * limit;
+  const txRes = await pool.query(`
+    SELECT
+      t.id, t.amount, t.platform_fee as "platformFee", t.developer_amount as "developerAmount",
+      t.status, t.type, t.created_at as "createdAt",
+      u.full_name, u.email as user_email,
+      p.name as product_name,
+      pp.name as plan_name
+    FROM transactions t
+    JOIN users u ON t.customer_id = u.id
+    LEFT JOIN subscriptions sub ON t.subscription_id = sub.id
+    LEFT JOIN products p ON sub.product_id = p.id
+    LEFT JOIN pricing_plans pp ON sub.pricing_plan_id = pp.id
+    WHERE t.developer_id = $1
+    ORDER BY t.created_at DESC
+    LIMIT $2 OFFSET $3
+  `, [developerId, limit, offset]);
+
+  const transactions = txRes.rows.map(row => ({
+    id: row.id,
+    amount: row.amount,
+    platformFee: row.platformFee,
+    developerAmount: row.developerAmount,
+    status: row.status,
+    type: row.type,
+    createdAt: row.createdAt,
+    customer: { fullName: row.full_name, email: row.user_email },
+    subscription: row.product_name || row.plan_name ? {
+      product: { name: row.product_name },
+      pricingPlan: { name: row.plan_name }
+    } : null
+  }));
 
   return { transactions, total };
 }

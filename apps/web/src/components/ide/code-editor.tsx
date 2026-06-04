@@ -2,7 +2,6 @@
 
 import { useRef, useCallback } from "react";
 import Editor, { OnMount, OnChange } from "@monaco-editor/react";
-import { useTheme } from "@/components/theme-provider";
 import { Loader2 } from "lucide-react";
 
 interface CodeEditorProps {
@@ -13,7 +12,7 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ value, language, onChange, path }: CodeEditorProps) {
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = 'light' as string;
   const editorRef = useRef<unknown>(null);
 
   const handleMount: OnMount = useCallback((editor) => {
@@ -41,7 +40,7 @@ export function CodeEditor({ value, language, onChange, path }: CodeEditorProps)
         onMount={handleMount}
         path={path}
         loading={
-          <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
+          <div className="flex items-center justify-center h-full gap-2 text-gray-500">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Loading editor...</span>
           </div>

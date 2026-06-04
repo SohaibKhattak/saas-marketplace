@@ -3,6 +3,8 @@ import type { Request, Response, NextFunction } from "express";
 import type { AuthRequest } from "../middleware/auth.js";
 import { authenticate } from "../middleware/auth.js";
 import { requireRole } from "../middleware/rbac.js";
+import { supabase } from "../config/supabase.js";
+import { AppError } from "../middleware/error-handler.js";
 import * as wordpressService from "../services/wordpress.service.js";
 
 const router = Router();
@@ -143,8 +145,35 @@ router.post("/launch-token", async (req: AuthRequest, res: Response, next: NextF
  */
 router.get("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
-    const sites = await wordpressService.getDeveloperSites(profile.id);
+    const userId = req.user!.userId;
+    if(!userId) {
+      res.status(400).json({ error: { message: "User ID is required" } });
+      return;
+    }     
+    const { data: profile, error } = await supabase
+      .from("developer_profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
+    if (!profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
+    // const sites = await wordpressService.getDeveloperSites(profile.id);
+    const {data:sites, error: sitesError} = await supabase.from("developer_sites")
+      .select("*")
+      .eq("developer_id", profile.id)
+      .order("created_at", { ascending: false })
+
+    if (sitesError) {
+      throw new AppError(500, sitesError.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
     res.json({ data: sites });
   } catch (err) {
     next(err);
@@ -159,7 +188,20 @@ router.post("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest
       res.status(400).json({ error: { message: "subdomain is required" } });
       return;
     }
-    const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
+    const { data: profile, error } = await supabase
+      .from("developer_profiles")
+      .select("id")
+      .eq("user_id", req.user!.userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
+    if (!profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
     const site = await wordpressService.provisionSite(profile.id, subdomain);
     res.status(201).json({ data: site });
   } catch (err) {
@@ -171,9 +213,58 @@ router.post("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest
 router.delete("/sites/:id", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
-    const profile = await (await import("../services/developer.service.js")).getDeveloperProfile(req.user!.userId);
-    const result = await wordpressService.deleteSite(id, profile.id);
-    res.json({ data: result });
+    const { data: profile, error } = await supabase
+      .from("developer_profiles")
+      .select("id")
+      .eq("user_id", req.user!.userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+
+    if (!profile) {
+      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    }
+
+    // const result = await wordpressService.deleteSite(id, profile.id);
+     // Find the site
+  const { data: site, error: siteError } = await supabase
+    .from("developer_sites")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (siteError) {
+    throw new AppError(500, siteError.message, "DB_ERROR");
+  }
+
+  if (!site) {
+    throw new AppError(404, "Site not found", "SITE_NOT_FOUND");
+  }
+
+  if (site.developer_id !== profile.id) {
+    throw new AppError(403, "You do not own this site", "FORBIDDEN");
+  }
+
+  // Delete the WordPress subsite via WP-CLI if it has a wpSiteId
+  
+  const result = wordpressService.deleteWPSite(site);
+  if (!result) {
+    throw new AppError(500, "Failed to delete WordPress site", "WP_DELETE_ERROR");
+  } 
+
+  // Delete from database
+  const { error: deleteError } = await supabase
+    .from("developer_sites")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    throw new AppError(500, deleteError.message, "DB_ERROR");
+  }
+
+  res.json({ data: { message: "Site deleted" } });
   } catch (err) {
     next(err);
   }

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { templates, Template } from "./templates";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   ArrowRight,
   Code2,
@@ -39,7 +38,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/developer/products"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
@@ -47,27 +46,27 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
         </div>
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
             <span>Saasifyy</span>
           </Link>
         </div>
-        <ThemeToggle />
+        
       </div>
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Header */}
         <div className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-gray-100 text-neutral-900 px-4 py-1.5 rounded-sm text-sm font-semibold tracking-tight mb-6">
             <Code2 className="h-4 w-4" />
             Code Editor
           </div>
           <h1 className="text-4xl font-bold mb-4 gradient-text">
             Choose a Template
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl">
+          <p className="text-lg text-gray-500 max-w-xl">
             Start building your SaaS product from a professional template.
             Full source code, customizable, and ready to deploy.
           </p>
@@ -82,10 +81,10 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
             return (
               <button
                 key={template.id}
-                className={`group relative text-left p-6 rounded-2xl border-2 transition-all duration-300 ${
+                className={`group relative text-left p-6 rounded-sm border-2 transition-all duration-300 ${
                   isHovered
-                    ? "border-primary bg-primary/5 shadow-xl shadow-primary/10 -translate-y-2"
-                    : "border-border bg-card hover:border-primary/50 hover:shadow-lg"
+                    ? "border-primary bg-gray-100 shadow-sm shadow-primary/10 -translate-y-2"
+                    : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
                 }`}
                 style={{ animationDelay: `${index * 100}ms` }}
                 onMouseEnter={() => setHoveredId(template.id)}
@@ -94,7 +93,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
               >
                 {/* Popular badge for first */}
                 {index === 0 && (
-                  <div className="absolute -top-3 right-4 bg-primary text-primary-foreground text-xs font-medium px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <div className="absolute -top-3 right-4 bg-black text-primary-foreground text-xs font-semibold tracking-tight px-2.5 py-0.5 rounded-sm flex items-center gap-1">
                     <Star className="h-3 w-3 fill-current" />
                     Popular
                   </div>
@@ -102,10 +101,10 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
 
                 {/* Icon */}
                 <div
-                  className={`h-14 w-14 rounded-xl flex items-center justify-center mb-4 transition-colors ${
+                  className={`h-14 w-14 rounded-sm flex items-center justify-center mb-4 transition-colors ${
                     isHovered
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-black text-primary-foreground"
+                      : "bg-muted text-gray-500"
                   }`}
                 >
                   <Icon className="h-7 w-7" />
@@ -113,7 +112,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
 
                 {/* Content */}
                 <h3 className="text-lg font-semibold mb-2">{template.name}</h3>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                <p className="text-sm text-gray-500 mb-4 line-clamp-2">
                   {template.description}
                 </p>
 
@@ -122,7 +121,7 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
                   {template.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md"
+                      className="text-xs bg-muted text-gray-500 px-2 py-0.5 rounded-sm"
                     >
                       {tag}
                     </span>
@@ -131,8 +130,8 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
 
                 {/* Action */}
                 <div
-                  className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                    isHovered ? "text-primary" : "text-muted-foreground"
+                  className={`flex items-center gap-1.5 text-sm font-semibold tracking-tight transition-colors ${
+                    isHovered ? "text-neutral-900" : "text-gray-500"
                   }`}
                 >
                   <span>Start Building</span>
@@ -148,13 +147,13 @@ export function TemplateSelector({ onSelect }: TemplateSelectorProps) {
         </div>
 
         {/* Bottom info */}
-        <div className="mt-12 flex items-center gap-6 text-sm text-muted-foreground animate-fade-in">
+        <div className="mt-12 flex items-center gap-6 text-sm text-gray-500 animate-fade-in">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-yellow-500" />
             <span>Instant setup</span>
           </div>
           <div className="flex items-center gap-2">
-            <Code2 className="h-4 w-4 text-blue-500" />
+            <Code2 className="h-4 w-4 text-neutral-900" />
             <span>Full source code</span>
           </div>
           <div className="flex items-center gap-2">

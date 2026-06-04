@@ -136,11 +136,11 @@ export default function UsersPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         Manage platform users and permissions ({total} total)
       </p>
 
-      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>
@@ -177,9 +177,9 @@ export default function UsersPage() {
           </div>
 
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : users.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No users found
             </div>
           ) : (
@@ -199,8 +199,8 @@ export default function UsersPage() {
                     <TableRow key={u.id}>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{u.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                          <p className="font-semibold tracking-tight">{u.fullName}</p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -250,7 +250,7 @@ export default function UsersPage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-500">
                     Page {page} of {totalPages}
                   </p>
                   <div className="flex gap-2">

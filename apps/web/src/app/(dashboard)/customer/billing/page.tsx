@@ -75,9 +75,9 @@ export default function BillingPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Billing History</h1>
-      <p className="text-muted-foreground mt-1">View your payment history and invoices</p>
+      <p className="text-gray-500 mt-1">View your payment history and invoices</p>
 
-      {error && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       <Card className="mt-6">
         <CardHeader>
@@ -88,9 +88,9 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : transactions.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No billing history yet
             </div>
           ) : (
@@ -126,7 +126,7 @@ export default function BillingPage() {
                           {tx.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell className="text-right font-semibold tracking-tight">
                         ${tx.amount.toFixed(2)} {tx.currency.toUpperCase()}
                       </TableCell>
                     </TableRow>
@@ -136,7 +136,7 @@ export default function BillingPage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+                  <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
                     <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>

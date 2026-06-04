@@ -92,6 +92,59 @@ export async function generateReport(req: AuthRequest, res: Response, next: Next
     const report = await payoutService.generateFinancialReport(
       new Date(startDate as string), new Date(endDate as string)
     );
+
+    // const transactions = await prisma.transaction.findMany({
+    //     where: {
+    //       createdAt: { gte: startDate, lte: endDate },
+    //       status: "SUCCEEDED",
+    //     },
+    //     include: {
+    //       customer: { select: { fullName: true, email: true } },
+    //       developer: {
+    //         include: { user: { select: { fullName: true } } },
+    //       },
+    //       subscription: {
+    //         include: {
+    //           product: { select: { name: true } },
+    //           pricingPlan: { select: { name: true } },
+    //         },
+    //       },
+    //     },
+    //     orderBy: { createdAt: "asc" },
+    //   });
+
+    //   // Generate CSV
+    //   const header = "Date,Customer,Customer Email,Developer,Product,Plan,Amount,Platform Fee,Developer Amount,Type,Status";
+    //   const rows = transactions.map((tx: any) => {
+    //     return [
+    //       tx.createdAt.toISOString().split("T")[0],
+    //       `"${tx.customer.fullName}"`,
+    //       tx.customer.email,
+    //       `"${tx.developer.user.fullName}"`,
+    //       `"${tx.subscription?.product.name ?? "N/A"}"`,
+    //       `"${tx.subscription?.pricingPlan.name ?? "N/A"}"`,
+    //       tx.amount.toFixed(2),
+    //       tx.platformFee.toFixed(2),
+    //       tx.developerAmount.toFixed(2),
+    //       tx.type,
+    //       tx.status,
+    //     ].join(",");
+    //   });
+
+    //   const totals = transactions.reduce(
+    //     (acc: any, tx: any) => ({
+    //       amount: acc.amount + tx.amount,
+    //       platformFee: acc.platformFee + tx.platformFee,
+    //       developerAmount: acc.developerAmount + tx.developerAmount,
+    //     }),
+    //     { amount: 0, platformFee: 0, developerAmount: 0 }
+    //   );
+
+    //   rows.push("");
+    //   rows.push(`,,,,,,${totals.amount.toFixed(2)},${totals.platformFee.toFixed(2)},${totals.developerAmount.toFixed(2)},,TOTALS`);
+
+    //   const report = { csv: [header, ...rows].join("\n"), count: transactions.length, totals };
+
     res.json({ data: report });
   } catch (err) {
     next(err);

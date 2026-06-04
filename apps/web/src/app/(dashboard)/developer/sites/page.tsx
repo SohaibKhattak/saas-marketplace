@@ -40,10 +40,10 @@ import {
 interface Site {
   id: string;
   subdomain: string;
-  siteUrl: string;
-  wpSiteId: number | null;
+  site_url: string;
+  wp_site_id: number | null;
   status: string;
-  createdAt: string;
+  created_at: string;
 }
 
 const WP_DOMAIN = "saasifyy.tech";
@@ -70,6 +70,8 @@ export default function SitesPage() {
     subdomain: string;
   } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [siteToDelete, setSiteToDelete] = useState<Site | null>(null);
 
   const fetchSites = useCallback(async () => {
     try {
@@ -84,18 +86,35 @@ export default function SitesPage() {
 
   useEffect(() => {
     fetchSites();
-  }, [fetchSites]);
+    
+    // Polling: refresh every 5 seconds if there are sites in PROVISIONING status
+    const interval = setInterval(() => {
+      const hasProvisioning = sites.some(s => s.status === "PROVISIONING");
+      if (hasProvisioning) {
+        fetchSites();
+      }
+    }, 5000);
 
-  async function handleDelete(siteId: string) {
-    if (!confirm("Are you sure you want to delete this site? This cannot be undone.")) return;
-    setDeletingId(siteId);
+    return () => clearInterval(interval);
+  }, [fetchSites, sites]);
+
+  function confirmDelete(site: Site) {
+    setSiteToDelete(site);
+    setDeleteModalOpen(true);
+  }
+
+  async function handleDelete() {
+    if (!siteToDelete) return;
+    setDeletingId(siteToDelete.id);
+    setDeleteModalOpen(false);
     try {
-      await api.delete(`/wp/sites/${siteId}`, { token: accessToken! });
+      await api.delete(`/wp/sites/${siteToDelete.id}`, { token: accessToken! });
       fetchSites();
     } catch (err) {
       alert(err instanceof ApiError ? err.message : "Failed to delete site");
     } finally {
       setDeletingId(null);
+      setSiteToDelete(null);
     }
   }
 
@@ -127,29 +146,31 @@ export default function SitesPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-sm text-gray-500">
         <Link href="/developer/products" className="hover:text-foreground transition-colors">
           Dashboard
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground font-medium">WordPress Sites</span>
+        <span className="text-foreground font-semibold tracking-tight">WordPress Sites</span>
       </div>
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">WordPress Sites</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-gray-500 mt-1">
             Create and manage your no-code WordPress sites
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger
-            render={<Button />}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New Site
-          </DialogTrigger>
+            render={
+              <Button className='cursor-pointer hover:bg-mauve-800' onClick={() => setDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4 hover:scale-125 transform duration-200" />
+                New Site
+              </Button>
+            }
+          />
           <DialogContent>
             <form onSubmit={handleProvision}>
               <DialogHeader>
@@ -160,7 +181,7 @@ export default function SitesPage() {
               </DialogHeader>
               <div className="py-4 space-y-4">
                 {error && (
-                  <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
+                  <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {error}
                   </div>
@@ -176,15 +197,15 @@ export default function SitesPage() {
                       required
                       className="rounded-r-none"
                     />
-                    <span className="inline-flex items-center px-3 h-9 rounded-r-md border border-l-0 border-input bg-muted text-sm text-muted-foreground">
+                    <span className="inline-flex items-center px-3 h-9 rounded-r-md border border-l-0 border-input bg-muted text-sm text-gray-500">
                       .{WP_DOMAIN}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500">
                     Lowercase letters, numbers, and hyphens only (3-32 characters)
                   </p>
                   {subdomain && (
-                    <p className="text-xs text-primary">
+                    <p className="text-xs text-neutral-900">
                       Your site will be available at: <strong>https://{subdomain}.{WP_DOMAIN}</strong>
                     </p>
                   )}
@@ -224,25 +245,25 @@ export default function SitesPage() {
           </DialogHeader>
           {credentials && (
             <div className="space-y-4 py-2">
-              <div className="rounded-lg bg-muted p-4 space-y-3">
+              <div className="rounded-sm bg-muted p-4 space-y-3">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Site URL</p>
-                  <p className="text-sm font-medium">https://{credentials.subdomain}.{WP_DOMAIN}</p>
+                  <p className="text-xs text-gray-500 mb-1">Site URL</p>
+                  <p className="text-sm font-semibold tracking-tight">https://{credentials.subdomain}.{WP_DOMAIN}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">WordPress Admin</p>
-                  <p className="text-sm font-medium">{credentials.loginUrl}</p>
+                  <p className="text-xs text-gray-500 mb-1">WordPress Admin</p>
+                  <p className="text-sm font-semibold tracking-tight">{credentials.loginUrl}</p>
                 </div>
                 <div className="border-t pt-3">
-                  <p className="text-xs text-muted-foreground mb-1">Username</p>
-                  <p className="text-sm font-mono font-medium bg-background rounded px-2 py-1">{credentials.username}</p>
+                  <p className="text-xs text-gray-500 mb-1">Username</p>
+                  <p className="text-sm font-mono font-semibold tracking-tight bg-background rounded px-2 py-1">{credentials.username}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Password</p>
-                  <p className="text-sm font-mono font-medium bg-background rounded px-2 py-1">{credentials.password}</p>
+                  <p className="text-xs text-gray-500 mb-1">Password</p>
+                  <p className="text-sm font-mono font-semibold tracking-tight bg-background rounded px-2 py-1">{credentials.password}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded-sm p-3">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>Save these credentials now. You can change your password later from WordPress admin.</span>
               </div>
@@ -264,22 +285,22 @@ export default function SitesPage() {
         </DialogContent>
       </Dialog>
 
-      {error && !dialogOpen && <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {error && !dialogOpen && <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
       {/* Sites Grid */}
       {loading ? (
         <div className="py-16 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
-          <p className="mt-4 text-muted-foreground">Loading your sites...</p>
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-500" />
+          <p className="mt-4 text-gray-500">Loading your sites...</p>
         </div>
       ) : sites.length === 0 ? (
         <Card>
           <CardContent className="py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 mx-auto mb-4">
-              <Globe className="h-8 w-8 text-primary" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-gray-100 mx-auto mb-4">
+              <Globe className="h-8 w-8 text-neutral-900" />
             </div>
             <h3 className="text-lg font-semibold">No WordPress sites yet</h3>
-            <p className="text-muted-foreground mt-1 max-w-md mx-auto">
+            <p className="text-gray-500 mt-1 max-w-md mx-auto">
               Create your first WordPress site to start building your SaaS product with no code.
               You&apos;ll get a fully hosted WordPress environment with themes, plugins, and WooCommerce.
             </p>
@@ -293,15 +314,15 @@ export default function SitesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {sites.map((site) => {
             const config = statusConfig[site.status] ?? { variant: "secondary" as const, label: site.status };
-            const siteUrl = `https://${site.subdomain}.${WP_DOMAIN}`;
-            const adminUrl = `https://${site.subdomain}.${WP_DOMAIN}/wp-admin`;
+            const siteUrl = site.site_url;
+            const adminUrl = `${site.site_url}/wp-admin`;
 
             return (
               <Card key={site.id} className="hover:border-primary/30 transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-green-500/10">
                         <Globe className="h-5 w-5 text-green-500" />
                       </div>
                       <div>
@@ -313,15 +334,15 @@ export default function SitesPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="text-xs text-gray-500 space-y-1">
                     <div className="flex justify-between">
                       <span>Created</span>
-                      <span>{new Date(site.createdAt).toLocaleDateString()}</span>
+                      <span>{new Date(site.created_at).toLocaleDateString()}</span>
                     </div>
-                    {site.wpSiteId && (
+                    {site.wp_site_id && (
                       <div className="flex justify-between">
                         <span>WP Site ID</span>
-                        <span>#{site.wpSiteId}</span>
+                        <span>#{site.wp_site_id}</span>
                       </div>
                     )}
                   </div>
@@ -330,13 +351,13 @@ export default function SitesPage() {
                     <div className="space-y-2">
                       <div className="flex gap-2">
                         <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full">
+                          <Button variant="outline" size="sm" className="w-full cursor-pointer">
                             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
                             View Site
                           </Button>
                         </a>
                         <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button size="sm" className="w-full">
+                          <Button size="sm" className="w-full cursor-pointer">
                             <Settings className="mr-1.5 h-3.5 w-3.5" />
                             WP Admin
                           </Button>
@@ -345,8 +366,8 @@ export default function SitesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(site.id)}
+                        className="w-full text-destructive hover:text-destructive cursor-pointer hover:bg-destructive/10"
+                        onClick={() => site && confirmDelete(site)}
                         disabled={deletingId === site.id}
                       >
                         {deletingId === site.id ? (
@@ -359,7 +380,7 @@ export default function SitesPage() {
                   )}
 
                   {site.status === "PROVISIONING" && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 bg-muted/50 rounded-sm p-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Setting up your WordPress site...</span>
                     </div>
@@ -367,7 +388,7 @@ export default function SitesPage() {
 
                   {site.status === "SUSPENDED" && (
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/5 rounded-sm p-3">
                         <AlertCircle className="h-4 w-4" />
                         <span>Site creation failed. Please try again.</span>
                       </div>
@@ -375,7 +396,7 @@ export default function SitesPage() {
                         variant="outline"
                         size="sm"
                         className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(site.id)}
+                        onClick={() => confirmDelete(site)}
                         disabled={deletingId === site.id}
                       >
                         {deletingId === site.id ? (
@@ -393,19 +414,51 @@ export default function SitesPage() {
 
           {/* Add New Site Card */}
           <Card
-            className="border-dashed hover:border-primary/50 transition-colors cursor-pointer flex items-center justify-center min-h-[200px]"
+            className="border-dashed hover:border-primary/50 transition-colors cursor-pointer flex items-center justify-center min-h-50"
             onClick={() => setDialogOpen(true)}
           >
             <CardContent className="text-center py-8">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted mx-auto mb-3">
-                <Plus className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted mx-auto mb-3">
+                <Plus className="h-6 w-6 text-gray-500" />
               </div>
-              <p className="text-sm font-medium">Create New Site</p>
-              <p className="text-xs text-muted-foreground mt-1">Add another WordPress site</p>
+              <p className="text-sm font-semibold tracking-tight">Create New Site</p>
+              <p className="text-xs text-gray-500 mt-1">Add another WordPress site</p>
             </CardContent>
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <DialogTitle>Delete Site?</DialogTitle>
+            </div>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{siteToDelete?.subdomain}.{WP_DOMAIN}</strong>?
+              This action cannot be undone and all site content will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingId !== null}
+            >
+              {deletingId ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Deleting...</>
+              ) : (
+                <><Trash2 className="mr-2 h-4 w-4" />Delete Site</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

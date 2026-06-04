@@ -51,12 +51,32 @@ async function tryRefreshToken(): Promise<string | null> {
 }
 
 async function request<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
-  const { token, headers: customHeaders, ...fetchOptions } = options;
+  let { token } = options;
+  const { headers: customHeaders, ...fetchOptions } = options;
+
+  const isFormData = typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...customHeaders as Record<string, string>,
   };
+
+  if (!isFormData && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (!token && typeof window !== "undefined") {
+    try {
+      const authData = localStorage.getItem("auth-store");
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        if (parsed?.state?.accessToken) {
+          token = parsed.state.accessToken;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -116,19 +136,23 @@ export const api = {
   get: <T>(endpoint: string, options?: FetchOptions) =>
     request<T>(endpoint, { ...options, method: "GET" }),
 
-  post: <T>(endpoint: string, body?: unknown, options?: FetchOptions) =>
-    request<T>(endpoint, {
+  post: <T>(endpoint: string, body?: unknown, options?: FetchOptions) => {
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+    return request<T>(endpoint, {
       ...options,
       method: "POST",
-      body: body ? JSON.stringify(body) : undefined,
-    }),
+      body: isFormData ? (body as FormData) : (body ? JSON.stringify(body) : undefined),
+    });
+  },
 
-  patch: <T>(endpoint: string, body?: unknown, options?: FetchOptions) =>
-    request<T>(endpoint, {
+  patch: <T>(endpoint: string, body?: unknown, options?: FetchOptions) => {
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+    return request<T>(endpoint, {
       ...options,
       method: "PATCH",
-      body: body ? JSON.stringify(body) : undefined,
-    }),
+      body: isFormData ? (body as FormData) : (body ? JSON.stringify(body) : undefined),
+    });
+  },
 
   delete: <T>(endpoint: string, options?: FetchOptions) =>
     request<T>(endpoint, { ...options, method: "DELETE" }),

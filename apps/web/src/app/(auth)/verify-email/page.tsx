@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Store, Loader2, CheckCircle2, Mail, ArrowRight, XCircle } from "lucide-react";
 
 function VerifyEmailContent() {
@@ -56,17 +55,17 @@ function VerifyEmailContent() {
       <div className="min-h-screen flex flex-col">
         <div className="flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
             <span>Saasifyy</span>
           </Link>
-          <ThemeToggle />
+          
         </div>
         <div className="flex-1 flex items-center justify-center px-4 pb-12">
           <div className="w-full max-w-md animate-fade-in text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-lg font-medium">Verifying your email...</p>
+            <Loader2 className="h-12 w-12 animate-spin text-neutral-900 mx-auto mb-4" />
+            <p className="text-lg font-semibold tracking-tight">Verifying your email...</p>
           </div>
         </div>
       </div>
@@ -79,19 +78,19 @@ function VerifyEmailContent() {
       <div className="min-h-screen flex flex-col">
         <div className="flex items-center justify-between px-6 py-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
               <Store className="h-4 w-4" />
             </div>
             <span>Saasifyy</span>
           </Link>
-          <ThemeToggle />
+          
         </div>
 
         <div className="flex-1 flex items-center justify-center px-4 pb-12">
           <div className="w-full max-w-md animate-fade-in">
-            <Card className="shadow-xl border-0 shadow-black/5 dark:shadow-black/30">
+            <Card className="shadow-sm border-0 shadow-black/5 dark:shadow-black/30">
               <CardHeader className="text-center pb-2">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-green-500/10">
                   <CheckCircle2 className="h-8 w-8 text-green-500" />
                 </div>
                 <CardTitle className="text-2xl font-bold">Email verified</CardTitle>
@@ -101,7 +100,7 @@ function VerifyEmailContent() {
               </CardHeader>
               <CardFooter className="flex flex-col gap-4">
                 <Link href="/login" className="w-full">
-                  <Button className="w-full h-11 shadow-md shadow-primary/20">
+                  <Button className="w-full h-11 shadow-sm shadow-primary/20">
                     Go to login <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -118,21 +117,21 @@ function VerifyEmailContent() {
     <div className="min-h-screen flex flex-col">
       <div className="flex items-center justify-between px-6 py-4">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-primary-foreground">
             <Store className="h-4 w-4" />
           </div>
           <span>Saasifyy</span>
         </Link>
-        <ThemeToggle />
+        
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 pb-12">
         <div className="w-full max-w-md animate-fade-in">
-          <Card className="shadow-xl border-0 shadow-black/5 dark:shadow-black/30">
+          <Card className="shadow-sm border-0 shadow-black/5 dark:shadow-black/30">
             <CardHeader className="text-center pb-2">
               {error ? (
                 <>
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-destructive/10">
                     <XCircle className="h-8 w-8 text-destructive" />
                   </div>
                   <CardTitle className="text-2xl font-bold">Verification failed</CardTitle>
@@ -140,8 +139,8 @@ function VerifyEmailContent() {
                 </>
               ) : (
                 <>
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                    <Mail className="h-8 w-8 text-primary" />
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-sm bg-gray-100">
+                    <Mail className="h-8 w-8 text-neutral-900" />
                   </div>
                   <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
                   <CardDescription>
@@ -154,15 +153,15 @@ function VerifyEmailContent() {
             </CardHeader>
             <CardContent>
               {!error && (
-                <p className="text-sm text-muted-foreground text-center">
+                <p className="text-sm text-gray-500 text-center">
                   Click the link in your email to verify your account. Check your spam folder if you don&apos;t see it.
                 </p>
               )}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-500">
                 Already verified?{" "}
-                <Link href="/login" className="text-primary font-medium hover:underline">
+                <Link href="/login" className="text-neutral-900 font-semibold tracking-tight hover:underline">
                   Sign in
                 </Link>
               </p>
@@ -176,7 +175,7 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-900" /></div>}>
       <VerifyEmailContent />
     </Suspense>
   );

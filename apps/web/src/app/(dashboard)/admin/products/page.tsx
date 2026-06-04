@@ -71,6 +71,8 @@ export default function AdminProductsPage() {
   const [error, setError] = useState("");
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [featuringId, setFeaturingId] = useState<string | null>(null);
+  const [successFeaturedIds, setSuccessFeaturedIds] = useState<Set<string>>(new Set());
   const limit = 20;
 
   const fetchProducts = useCallback(async () => {
@@ -97,17 +99,26 @@ export default function AdminProductsPage() {
   }, [fetchProducts]);
 
   async function handleToggleFeatured(productId: string) {
+    setFeaturingId(productId);
     try {
-      const res = await api.post<{ data: { id: string; isFeatured: boolean } }>(
+      const res = await api.post<{ data: boolean }>(
         `/admin/products/${productId}/feature`,
         {},
         { token: accessToken! }
       );
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, isFeatured: res.data.isFeatured } : p))
-      );
+      
+      if (res.data === true) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === productId ? { ...p, isFeatured: !p.isFeatured } : p))
+        );
+        setSuccessFeaturedIds(prev => new Set(prev).add(productId));
+      } else {
+        alert("Failed to update featured status: Operation returned false");
+      }
     } catch {
       setError("Failed to toggle featured status");
+    } finally {
+      setFeaturingId(null);
     }
   }
 
@@ -130,12 +141,12 @@ export default function AdminProductsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Manage Products</h1>
-      <p className="text-muted-foreground mt-1">
+      <p className="text-gray-500 mt-1">
         View all products, manage featured listings ({total} products)
       </p>
 
       {error && (
-        <div className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="mt-4 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
       )}
 
       <div className="mt-4">
@@ -160,9 +171,9 @@ export default function AdminProductsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-muted-foreground">Loading...</div>
+            <div className="py-8 text-center text-gray-500">Loading...</div>
           ) : products.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+            <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No products found
             </div>
           ) : (
@@ -183,11 +194,11 @@ export default function AdminProductsPage() {
                 <TableBody>
                   {products.map((product) => (
                     <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell className="font-semibold tracking-tight">{product.name}</TableCell>
                       <TableCell>
                         <div>
                           <p className="text-sm">{product.developer.user.fullName}</p>
-                          <p className="text-xs text-muted-foreground">{product.developer.user.email}</p>
+                          <p className="text-xs text-gray-500">{product.developer.user.email}</p>
                         </div>
                       </TableCell>
                       <TableCell><Badge variant="outline">{product.category}</Badge></TableCell>
@@ -200,7 +211,7 @@ export default function AdminProductsPage() {
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm">{product.avgRating.toFixed(1)}</span>
-                          <span className="text-xs text-muted-foreground">({product._count.reviews})</span>
+                          <span className="text-xs text-gray-500">({product._count.reviews})</span>
                         </div>
                       </TableCell>
                       <TableCell>{product._count.subscriptions}</TableCell>
@@ -209,9 +220,16 @@ export default function AdminProductsPage() {
                           size="sm"
                           variant={product.isFeatured ? "default" : "ghost"}
                           onClick={() => handleToggleFeatured(product.id)}
-                          disabled={product.status !== "PUBLISHED"}
+                          disabled={product.status !== "PUBLISHED" || featuringId === product.id}
+                          className={`cursor-pointer transition-all duration-200 ${
+                            successFeaturedIds.has(product.id) ? "!bg-black !text-white" : ""
+                          }`}
                         >
-                          <Sparkles className={`h-4 w-4 ${product.isFeatured ? "text-yellow-300" : ""}`} />
+                          {featuringId === product.id ? (
+                            <Sparkles className="h-4 w-4 animate-spin opacity-50" />
+                          ) : (
+                            <Sparkles className={`h-4 w-4 ${product.isFeatured ? "text-yellow-300" : ""}`} />
+                          )}
                         </Button>
                       </TableCell>
                       <TableCell className="text-right">
@@ -230,7 +248,7 @@ export default function AdminProductsPage() {
 
               {totalPages > 1 && (
                 <div className="mt-4 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p>
+                  <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
                     <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
