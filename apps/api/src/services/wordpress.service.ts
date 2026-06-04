@@ -1,4 +1,4 @@
-import { prisma } from "../config/database.js";
+// import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -227,17 +227,21 @@ export async function provisionSite(
 }
 
 export async function getDeveloperSites(developerId: string) {
-  return prisma.developerSite.findMany({
-    where: { developerId },
-    orderBy: { createdAt: "desc" },
-  });
+  const {data: sites, error} = await supabase.from("developer_sites").select("*").eq("developerId", developerId).order("createdAt", { ascending: false });
+  if (error) {
+    throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+  }
+  return sites;
 }
 
 export async function getSiteById(siteId: string, developerId: string) {
-  const site = await prisma.developerSite.findUnique({
-    where: { id: siteId },
-  });
-
+  // const site = await prisma.developerSite.findUnique({
+  //   where: { id: siteId },
+  // });
+  const {data: site, error: siteError} = await supabase.from("developer_sites").select("*").eq("id", siteId).maybeSingle();
+  if (siteError) {
+    throw new AppError(500, siteError.message || "Database operation failed", "SUPABASE_ERROR");
+  }
   if (!site) {
     throw new AppError(404, "Site not found", "SITE_NOT_FOUND");
   }
@@ -249,18 +253,18 @@ export async function getSiteById(siteId: string, developerId: string) {
   return site;
 }
 
-export async function suspendSite(siteId: string) {
-  const site = await prisma.developerSite.findUnique({ where: { id: siteId } });
+// export async function suspendSite(siteId: string) {
+//   const site = await prisma.developerSite.findUnique({ where: { id: siteId } });
 
-  if (!site) {
-    throw new AppError(404, "Site not found", "SITE_NOT_FOUND");
-  }
+//   if (!site) {
+//     throw new AppError(404, "Site not found", "SITE_NOT_FOUND");
+//   }
 
-  return prisma.developerSite.update({
-    where: { id: siteId },
-    data: { status: "SUSPENDED" },
-  });
-}
+//   return prisma.developerSite.update({
+//     where: { id: siteId },
+//     data: { status: "SUSPENDED" },
+//   });
+// }
 
 export async function deleteWPSite(site: any) {
   try {
@@ -281,41 +285,52 @@ export async function checkSubscriptionAccess(
   siteSubdomain: string
 ) {
   // Find the site
-  const site = await prisma.developerSite.findUnique({
-    where: { subdomain: siteSubdomain },
-    include: { products: { where: { status: "PUBLISHED" } } },
-  });
-
+  // const site = await prisma.developerSite.findUnique({
+  //   where: { subdomain: siteSubdomain },
+  //   include: { products: { where: { status: "PUBLISHED" } } },
+  // });
+  const {data: site, error: siteError} = await supabase.from("developer_sites").select("*").eq("subdomain", siteSubdomain).maybeSingle();
+  if (siteError) {
+    throw new AppError(500, siteError.message || "Database operation failed", "SUPABASE_ERROR");
+  }
   if (!site || site.status !== "ACTIVE") {
     return { hasAccess: false, plan: null };
   }
 
   // Find the user
-  const user = await prisma.user.findUnique({
-    where: { email: userEmail },
-  });
+  // const user = await prisma.user.findUnique({
+  //   where: { email: userEmail },
+  // });
 
+  const {data: user, error: userError} = await supabase.from("users").select("*").eq("email", userEmail).maybeSingle();
+  if (userError) {
+    throw new AppError(500, userError.message || "Database operation failed", "SUPABASE_ERROR");
+  }
   if (!user) {
     return { hasAccess: false, plan: null };
   }
 
   // Check if user has active subscription to any product on this site
-  const productIds = site.products.map((p) => p.id);
+  const productIds = site.products.map((p: any) => p.id);
   if (productIds.length === 0) {
     return { hasAccess: false, plan: null };
   }
 
-  const subscription = await prisma.subscription.findFirst({
-    where: {
-      customerId: user.id,
-      productId: { in: productIds },
-      status: { in: ["ACTIVE", "TRIALING"] },
-    },
-    include: {
-      pricingPlan: true,
-    },
-  });
+  // const subscription = await prisma.subscription.findFirst({
+  //   where: {
+  //     customerId: user.id,
+  //     productId: { in: productIds },
+  //     status: { in: ["ACTIVE", "TRIALING"] },
+  //   },
+  //   include: {
+  //     pricingPlan: true,
+  //   },
+  // });
 
+  const {data: subscription, error: subscriptionError} = await supabase.from("subscriptions").select("*").eq("customer_id", user.id).in("product_id", productIds).in("status", ["ACTIVE", "TRIALING"]).maybeSingle();
+  if (subscriptionError) {
+    throw new AppError(500, subscriptionError.message || "Database operation failed", "SUPABASE_ERROR");
+  }
   if (!subscription) {
     return { hasAccess: false, plan: null };
   }

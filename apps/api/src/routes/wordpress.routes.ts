@@ -104,11 +104,16 @@ router.post("/launch-token", async (req: AuthRequest, res: Response, next: NextF
       res.status(400).json({ error: { message: "siteSlug is required" } });
       return;
     }
-    const { prisma } = await import("../config/database.js");
-    const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    // const { prisma } = await import("../config/database.js");
+    // const user = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+    const {data: user, error: userError  } = await supabase.from("users").select("*").eq("id", req.user!.userId).maybeSingle();
+    
+    if (userError) {
+      throw new AppError(500, userError.message || "Database operation failed", "SUPABASE_ERROR");
+    }
+    
     if (!user) {
-      res.status(404).json({ error: { message: "User not found" } });
-      return;
+      throw new AppError(404, "User not found", "USER_NOT_FOUND");
     }
     const token = wordpressService.generateLaunchToken(user.email, siteSlug);
     res.json({ data: { token } });

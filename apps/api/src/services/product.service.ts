@@ -1,7 +1,7 @@
-import { prisma } from "../config/database.js";
+// import { prisma } from "../config/database.js";
 import { AppError } from "../middleware/error-handler.js";
 import { createNotification } from "./notification.service.js";
-
+import { supabase } from "../config/supabase.js";
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
@@ -122,36 +122,55 @@ function generateSlug(name: string): string {
 // }
 
 export async function unpublishProduct(productId: string, developerId: string) {
-  const product = await getOwnedProduct(productId, developerId);
+  // const product = await getOwnedProduct(productId, developerId);
+  const {data: product, error: productError} = await supabase.from("products").select("*").eq("id", productId).single();
+  if (productError) {
+    throw new AppError(500, productError.message || "Database operation failed", "SUPABASE_ERROR");
+  }
+  if(!product) {
+    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+  }
+  const {data: developer, error: developerError} = await supabase.from("developer_profiles").select("*").eq("id", product.developerId).single();
+  if (developerError) {
+    throw new AppError(500, developerError.message || "Database operation failed", "SUPABASE_ERROR");
+  }
+  if(!developer) {
+    throw new AppError(404, "Developer not found", "DEVELOPER_NOT_FOUND");
+  }
+  if(developer.userId !== developerId) {
+    throw new AppError(403, "You do not own this product", "FORBIDDEN");
+  }
 
   if (product.status !== "PUBLISHED") {
     throw new AppError(400, "Only published products can be unpublished", "INVALID_STATUS");
   }
 
-  return prisma.product.update({
-    where: { id: productId },
-    data: { status: "UNPUBLISHED" },
-    include: {
-      pricingPlans: true,
-      site: true,
-      _count: { select: { subscriptions: true, reviews: true } },
-    },
-  });
+  return supabase.from("products").update({ status: "UNPUBLISHED" }).eq("id", productId).select("*").single();
 }
 
 export async function adminDeleteProduct(productId: string) {
-  const product = await prisma.product.findUnique({ where: { id: productId } });
+  const product = await supabase.from("products").select("*").eq("id", productId).single();
   if (!product) {
     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
   }
 
-  await prisma.$transaction(async (tx: any) => {
-    await tx.review.deleteMany({ where: { productId } });
-    await tx.transaction.deleteMany({ where: { subscription: { productId } } });
-    await tx.subscription.deleteMany({ where: { productId } });
-    await tx.pricingPlan.deleteMany({ where: { productId } });
-    await tx.product.delete({ where: { id: productId } });
-  });
+  // await prisma.$transaction(async (tx: any) => {
+  //   await tx.review.deleteMany({ where: { productId } });
+  //   await tx.transaction.deleteMany({ where: { subscription: { productId } } });
+  //   await tx.subscription.deleteMany({ where: { productId } });
+  //   await tx.pricingPlan.deleteMany({ where: { productId } });
+  //   await tx.product.delete({ where: { id: productId } });
+  // });
+  const { error } = await supabase.from("products").delete().eq("id", productId);
+  if (error) throw error;
+  const { error: error2 } = await supabase.from("pricing_plans").delete().eq("product_id", productId);
+  if (error2) throw error2;
+  const { error: error3 } = await supabase.from("reviews").delete().eq("product_id", productId);
+  if (error3) throw error3;
+  const { error: error4 } = await supabase.from("subscriptions").delete().eq("product_id", productId);
+  if (error4) throw error4;
+  const { error: error5 } = await supabase.from("transactions").delete().eq("product_id", productId);
+  if (error5) throw error5;
 
   return { deleted: true };
 }
@@ -179,37 +198,37 @@ export async function adminDeleteProduct(productId: string) {
 //   });
 // }
 
-export async function getProductBySlug(slug: string) {
-  const product = await prisma.product.findUnique({
-    where: { slug },
-    include: {
-      developer: {
-        include: {
-          user: { select: { id: true, fullName: true, avatarUrl: true } },
-        },
-      },
-      pricingPlans: {
-        where: { isActive: true },
-        orderBy: { sortOrder: "asc" },
-      },
-      site: true,
-      reviews: {
-        include: {
-          customer: { select: { id: true, fullName: true, avatarUrl: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      },
-      _count: { select: { subscriptions: true, reviews: true } },
-    },
-  });
+// export async function getProductBySlug(slug: string) {
+//   const product = await prisma.product.findUnique({
+//     where: { slug },
+//     include: {
+//       developer: {
+//         include: {
+//           user: { select: { id: true, fullName: true, avatarUrl: true } },
+//         },
+//       },
+//       pricingPlans: {
+//         where: { isActive: true },
+//         orderBy: { sortOrder: "asc" },
+//       },
+//       site: true,
+//       reviews: {
+//         include: {
+//           customer: { select: { id: true, fullName: true, avatarUrl: true } },
+//         },
+//         orderBy: { createdAt: "desc" },
+//         take: 10,
+//       },
+//       _count: { select: { subscriptions: true, reviews: true } },
+//     },
+//   });
 
-  if (!product) {
-    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
-  }
+//   if (!product) {
+//     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+//   }
 
-  return product;
-}
+//   return product;
+// }
 
 // export async function getProductById(productId: string) {
 //   const product = await prisma.product.findUnique({
@@ -262,233 +281,233 @@ export async function getProductBySlug(slug: string) {
 //   return { products, total };
 // }
 
-export async function listMarketplaceProducts(params: {
-  page: number;
-  limit: number;
-  search?: string;
-  category?: string;
-  tag?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  sortBy?: string;
-}) {
-  const { page, limit, search, category, tag, minPrice, maxPrice, sortBy } = params;
+// export async function listMarketplaceProducts(params: {
+//   page: number;
+//   limit: number;
+//   search?: string;
+//   category?: string;
+//   tag?: string;
+//   minPrice?: number;
+//   maxPrice?: number;
+//   sortBy?: string;
+// }) {
+//   const { page, limit, search, category, tag, minPrice, maxPrice, sortBy } = params;
 
-  const where: any = { status: "PUBLISHED" };
+//   const where: any = { status: "PUBLISHED" };
 
-  if (category) {
-    where.category = category;
-  }
+//   if (category) {
+//     where.category = category;
+//   }
 
-  if (tag) {
-    where.tags = { has: tag };
-  }
+//   if (tag) {
+//     where.tags = { has: tag };
+//   }
 
-  if (minPrice !== undefined || maxPrice !== undefined) {
-    where.pricingPlans = {
-      some: {
-        isActive: true,
-        ...(minPrice !== undefined ? { priceMonthly: { gte: minPrice } } : {}),
-        ...(maxPrice !== undefined ? { priceMonthly: { lte: maxPrice } } : {}),
-      },
-    };
-  }
+//   if (minPrice !== undefined || maxPrice !== undefined) {
+//     where.pricingPlans = {
+//       some: {
+//         isActive: true,
+//         ...(minPrice !== undefined ? { priceMonthly: { gte: minPrice } } : {}),
+//         ...(maxPrice !== undefined ? { priceMonthly: { lte: maxPrice } } : {}),
+//       },
+//     };
+//   }
 
-  if (search) {
-    where.OR = [
-      { name: { contains: search, mode: "insensitive" } },
-      { shortDescription: { contains: search, mode: "insensitive" } },
-      { description: { contains: search, mode: "insensitive" } },
-    ];
-  }
+//   if (search) {
+//     where.OR = [
+//       { name: { contains: search, mode: "insensitive" } },
+//       { shortDescription: { contains: search, mode: "insensitive" } },
+//       { description: { contains: search, mode: "insensitive" } },
+//     ];
+//   }
 
-  let orderBy: any = { createdAt: "desc" };
-  if (sortBy === "popular") orderBy = { totalSubscribers: "desc" };
-  else if (sortBy === "rating") orderBy = { avgRating: "desc" };
-  else if (sortBy === "name") orderBy = { name: "asc" };
+//   let orderBy: any = { createdAt: "desc" };
+//   if (sortBy === "popular") orderBy = { totalSubscribers: "desc" };
+//   else if (sortBy === "rating") orderBy = { avgRating: "desc" };
+//   else if (sortBy === "name") orderBy = { name: "asc" };
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        developer: {
-          include: {
-            user: { select: { fullName: true, avatarUrl: true } },
-          },
-        },
-        pricingPlans: {
-          where: { isActive: true },
-          orderBy: { priceMonthly: "asc" },
-          take: 1,
-        },
-        _count: { select: { reviews: true } },
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy,
-    }),
-    prisma.product.count({ where }),
-  ]);
+//   const [products, total] = await Promise.all([
+//     prisma.product.findMany({
+//       where,
+//       include: {
+//         developer: {
+//           include: {
+//             user: { select: { fullName: true, avatarUrl: true } },
+//           },
+//         },
+//         pricingPlans: {
+//           where: { isActive: true },
+//           orderBy: { priceMonthly: "asc" },
+//           take: 1,
+//         },
+//         _count: { select: { reviews: true } },
+//       },
+//       skip: (page - 1) * limit,
+//       take: limit,
+//       orderBy,
+//     }),
+//     prisma.product.count({ where }),
+//   ]);
 
-  return { products, total };
-}
+//   return { products, total };
+// }
 
 // Admin moderation
-export async function listPendingProducts(page: number, limit: number) {
-  const where = { status: "PENDING_REVIEW" as const };
+// export async function listPendingProducts(page: number, limit: number) {
+//   const where = { status: "PENDING_REVIEW" as const };
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        developer: {
-          include: {
-            user: { select: { id: true, fullName: true, email: true } },
-          },
-        },
-        pricingPlans: true,
-        site: true,
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.count({ where }),
-  ]);
+//   const [products, total] = await Promise.all([
+//     prisma.product.findMany({
+//       where,
+//       include: {
+//         developer: {
+//           include: {
+//             user: { select: { id: true, fullName: true, email: true } },
+//           },
+//         },
+//         pricingPlans: true,
+//         site: true,
+//       },
+//       skip: (page - 1) * limit,
+//       take: limit,
+//       orderBy: { createdAt: "desc" },
+//     }),
+//     prisma.product.count({ where }),
+//   ]);
 
-  return { products, total };
-}
+//   return { products, total };
+// }
 
-export async function reviewProduct(
-  productId: string,
-  adminUserId: string,
-  decision: { status: "PUBLISHED" | "REJECTED"; rejectionReason?: string }
-) {
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: { developer: { include: { user: true } } },
-  });
+// export async function reviewProduct(
+//   productId: string,
+//   adminUserId: string,
+//   decision: { status: "PUBLISHED" | "REJECTED"; rejectionReason?: string }
+// ) {
+//   const product = await prisma.product.findUnique({
+//     where: { id: productId },
+//     include: { developer: { include: { user: true } } },
+//   });
 
-  if (!product) {
-    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
-  }
+//   if (!product) {
+//     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+//   }
 
-  if (product.status !== "PENDING_REVIEW") {
-    throw new AppError(400, "Product is not pending review", "NOT_PENDING");
-  }
+//   if (product.status !== "PENDING_REVIEW") {
+//     throw new AppError(400, "Product is not pending review", "NOT_PENDING");
+//   }
 
-  const updated = await prisma.$transaction(async (tx: any) => {
-    const updatedProduct = await tx.product.update({
-      where: { id: productId },
-      data: {
-        status: decision.status,
-        rejectionReason: decision.status === "REJECTED" ? decision.rejectionReason : null,
-        publishedAt: decision.status === "PUBLISHED" ? new Date() : null,
-      },
-      include: {
-        developer: {
-          include: { user: { select: { id: true, fullName: true } } },
-        },
-      },
-    });
+//   const updated = await prisma.$transaction(async (tx: any) => {
+//     const updatedProduct = await tx.product.update({
+//       where: { id: productId },
+//       data: {
+//         status: decision.status,
+//         rejectionReason: decision.status === "REJECTED" ? decision.rejectionReason : null,
+//         publishedAt: decision.status === "PUBLISHED" ? new Date() : null,
+//       },
+//       include: {
+//         developer: {
+//           include: { user: { select: { id: true, fullName: true } } },
+//         },
+//       },
+//     });
 
-    await tx.auditLog.create({
-      data: {
-        userId: adminUserId,
-        action: `PRODUCT_${decision.status}`,
-        entityType: "Product",
-        entityId: productId,
-        details: {
-          productName: product.name,
-          decision: decision.status,
-          reason: decision.rejectionReason ?? null,
-        },
-      },
-    });
+//     await tx.auditLog.create({
+//       data: {
+//         userId: adminUserId,
+//         action: `PRODUCT_${decision.status}`,
+//         entityType: "Product",
+//         entityId: productId,
+//         details: {
+//           productName: product.name,
+//           decision: decision.status,
+//           reason: decision.rejectionReason ?? null,
+//         },
+//       },
+//     });
 
-    return updatedProduct;
-  });
+//     return updatedProduct;
+//   });
 
-  // Notify developer
-  const devUserId = product.developer.userId;
-  if (decision.status === "PUBLISHED") {
-    createNotification({
-      userId: devUserId,
-      type: "PRODUCT_APPROVED",
-      title: "Product approved!",
-      message: `Your product "${product.name}" has been approved and is now live on the marketplace.`,
-      link: `/marketplace/${product.slug}`,
-    }).catch(() => { });
-  } else {
-    createNotification({
-      userId: devUserId,
-      type: "PRODUCT_REJECTED",
-      title: "Product needs changes",
-      message: `Your product "${product.name}" was not approved. Reason: ${decision.rejectionReason ?? "No reason provided"}`,
-      link: `/developer/products`,
-    }).catch(() => { });
-  }
+//   // Notify developer
+//   const devUserId = product.developer.userId;
+//   if (decision.status === "PUBLISHED") {
+//     createNotification({
+//       userId: devUserId,
+//       type: "PRODUCT_APPROVED",
+//       title: "Product approved!",
+//       message: `Your product "${product.name}" has been approved and is now live on the marketplace.`,
+//       link: `/marketplace/${product.slug}`,
+//     }).catch(() => { });
+//   } else {
+//     createNotification({
+//       userId: devUserId,
+//       type: "PRODUCT_REJECTED",
+//       title: "Product needs changes",
+//       message: `Your product "${product.name}" was not approved. Reason: ${decision.rejectionReason ?? "No reason provided"}`,
+//       link: `/developer/products`,
+//     }).catch(() => { });
+//   }
 
-  return updated;
-}
+//   return updated;
+// }
 
-export async function listAllProducts(page: number, limit: number, status?: string) {
-  const where: any = {};
-  if (status) where.status = status;
+// export async function listAllProducts(page: number, limit: number, status?: string) {
+//   const where: any = {};
+//   if (status) where.status = status;
 
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        developer: {
-          include: { user: { select: { fullName: true, email: true } } },
-        },
-        _count: { select: { subscriptions: true, reviews: true } },
-      },
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.count({ where }),
-  ]);
+//   const [products, total] = await Promise.all([
+//     prisma.product.findMany({
+//       where,
+//       include: {
+//         developer: {
+//           include: { user: { select: { fullName: true, email: true } } },
+//         },
+//         _count: { select: { subscriptions: true, reviews: true } },
+//       },
+//       skip: (page - 1) * limit,
+//       take: limit,
+//       orderBy: { createdAt: "desc" },
+//     }),
+//     prisma.product.count({ where }),
+//   ]);
 
-  return { products, total };
-}
+//   return { products, total };
+// }
 
-export async function toggleFeatured(productId: string) {
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) {
-    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
-  }
+// export async function toggleFeatured(productId: string) {
+//   const product = await prisma.product.findUnique({ where: { id: productId } });
+//   if (!product) {
+//     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+//   }
 
-  return prisma.product.update({
-    where: { id: productId },
-    data: { isFeatured: !product.isFeatured },
-    select: { id: true, name: true, isFeatured: true },
-  });
-}
+//   return prisma.product.update({
+//     where: { id: productId },
+//     data: { isFeatured: !product.isFeatured },
+//     select: { id: true, name: true, isFeatured: true },
+//   });
+// }
 
-// Helper: verify product ownership
-async function getOwnedProduct(productId: string, developerId: string) {
-  const profile = await prisma.developerProfile.findUnique({
-    where: { userId: developerId },
-  });
+// // Helper: verify product ownership
+// async function getOwnedProduct(productId: string, developerId: string) {
+//   const profile = await prisma.developerProfile.findUnique({
+//     where: { userId: developerId },
+//   });
 
-  if (!profile) {
-    throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
-  }
+//   if (!profile) {
+//     throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+//   }
 
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-  });
+//   const product = await prisma.product.findUnique({
+//     where: { id: productId },
+//   });
 
-  if (!product) {
-    throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
-  }
+//   if (!product) {
+//     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
+//   }
 
-  if (product.developerId !== profile.id) {
-    throw new AppError(403, "You do not own this product", "FORBIDDEN");
-  }
+//   if (product.developerId !== profile.id) {
+//     throw new AppError(403, "You do not own this product", "FORBIDDEN");
+//   }
 
-  return product;
-}
+//   return product;
+// }

@@ -216,7 +216,7 @@ export async function updateProduct(req: AuthRequest, res: Response, next: NextF
     // verify ownership
     const { data: product, error: fetchError } = await supabase
       .from("products")
-      .select("id, developer_id, isdeleted")
+      .select("id, developer_id, isdeleted, logo_url")
       .eq("id", id)
       .single();
 
