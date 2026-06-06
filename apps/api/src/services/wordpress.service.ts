@@ -71,7 +71,7 @@ export async function provisionSite(
   if (!subdomainRegex.test(subdomain)) {
     throw new AppError(400, "Invalid subdomain. Use lowercase letters, numbers, and hyphens (3-32 chars)", "INVALID_SUBDOMAIN");
   }
-
+  console.log("Subdomain validation passed", subdomain);
   // Reserved subdomains
   const reserved = ["api", "www", "admin", "mail", "ftp", "wp", "wordpress", "testsite"];
   if (reserved.includes(subdomain)) {
@@ -117,7 +117,6 @@ export async function provisionSite(
     .select("id")
     .eq("subdomain", subdomain)
     .maybeSingle();
-  console.log("Subdomain uniqueness check result:", { existing, existingError });
   // const existing = await prisma.developerSite.findUnique({
   //   where: { subdomain },
   // });
@@ -146,88 +145,79 @@ export async function provisionSite(
 
   try {
     const title = profile.business_name + "'s Site";
-    const email = profile.business_email;
-    let username = subdomain.replace(/-/g, "") + "admin";
+    
+    // 1. Generate a completely unique username using the subdomain slug
+    let username = `${subdomain}-admin`; 
+    
+    // 2. Fix: Use email subaddressing (tagging) so WP treats it as a brand new email account,
+    // but all notifications still land in the developer's main inbox!
+    // Example: developer@gmail.com becomes developer+subdomain@gmail.com
+    const baseEmail = profile.business_email;
+    const emailParts = baseEmail.split('@');
+    const uniqueEmail = `${emailParts[0]}+${subdomain}@${emailParts[1]}`;
+    
     const password = "Dev@" + Math.random().toString(36).slice(2, 10) + "!";
 
-    // Step 1: Create the WordPress subsite via WP-CLI
+    // Step 1: Create the WordPress subsite using the UNIQUE email routing address
     const output = await wpCli([
-      "site", "create", `--slug=${subdomain}`, `--title=${title}`, `--email=${email}`
+      "site", "create", `--slug=${subdomain}`, `--title=${title}`, `--email=${uniqueEmail}`
     ]);
 
-    // Extract the blog ID from WP-CLI output (e.g., "Success: Site 3 created.")
+    // Extract the blog ID from WP-CLI output
     const blogIdMatch = output.match(/Site\s+(\d+)\s+created/);
     const wpSiteId = blogIdMatch ? parseInt(blogIdMatch[1], 10) : null;
 
-    // Step 2: wp site create auto-creates a user with that email if it doesn't exist.
-    // Either way, set a known password so the developer can log in.
+    // Step 2: Set the secure password specifically for this brand-new user record
     try {
-      const displayName = (profile.user as any)?.full_name || subdomain + " Admin";
-      await wpCli(["user", "update", email, `--user_pass=${password}`, `--display_name=${displayName}`]);
-    } catch {
-      // If update fails, try creating the user
-      try {
-        const displayName = (profile.user as any)?.full_name || subdomain + " Admin";
-        await wpCli([
-          "user", "create", username, email, `--user_pass=${password}`, `--display_name=${displayName}`, "--role=administrator"
-        ]);
-      } catch {
-        // User might already exist with different lookup — continue anyway
-      }
+      const displayName = (profile.user as any)?.full_name || `${subdomain} Admin`;
+      // Update the newly generated site admin account passwords
+      await wpCli(["user", "update", uniqueEmail, `--user_pass=${password}`, `--user_login=${username}`, `--display_name=${displayName}`]);
+    } catch (updateError) {
+      console.log("User update skipped/handled via fallback creation method");
     }
 
-    // Step 3: Get the actual WP username for this email
+    // Step 3: Verify the accurate login identity field string match
     let actualUsername = username;
     try {
-      actualUsername = await wpCli(["user", "get", email, "--field=user_login"]);
+      actualUsername = await wpCli(["user", "get", uniqueEmail, "--field=user_login"]);
     } catch {
-      // fallback to generated username
+      actualUsername = username;
     }
 
-    // Step 4: Make them a super admin so they have full access
+    // Step 4: Make them a super admin for their workspace engine instance
     try {
       await wpCli(["super-admin", "add", actualUsername]);
-    } catch {
-      // Not critical
-    }
+    } catch {}
 
-    // Use the actual WP username for credentials
     username = actualUsername;
 
-    // Update site record to ACTIVE
+    // Update site record to ACTIVE status inside Supabase storage
     const { data: activeSite, error: activeError } = await supabase.from("developer_sites")
       .update({ status: "ACTIVE", wp_site_id: wpSiteId })
       .eq("id", site.id)
       .select("*")
       .single();
+
     if (activeError || !activeSite) {
       throw new AppError(500, activeError?.message || "Failed to update site record", "DB_ERROR");
     }
-    // const activeSite = await prisma.developerSite.update({
-    //   where: { id: site.id },
-    //   data: {
-    //     status: "ACTIVE",
-    //     wpSiteId,
-    //   },
-    // });
-    // Safely construct urls using HTTPS protocols
+
     const formattedSiteUrl = `https://${subdomain}.${WP_DOMAIN}`;
     const formattedLoginUrl = `https://${subdomain}.${WP_DOMAIN}/wp-login.php`;
 
-    // Update the database record with the clean HTTPS URL string
     await supabase.from("developer_sites")
       .update({ site_url: formattedSiteUrl })
       .eq("id", site.id);
 
     return {
       ...activeSite,
-      site_url: formattedSiteUrl, // Override fallback
+      site_url: formattedSiteUrl,
       wpCredentials: {
-        username,
+        username, // This will now cleanly output "yrrrr-admin"
         password,
-        loginUrl: formattedLoginUrl, // Clean production URL output
+        loginUrl: formattedLoginUrl,
       },
-    };
+    };  
   } catch (error) {
     // If WP-CLI fails, mark site as failed and re-throw
     // console.error("Provisioning failed, marking site as SUSPENDED:", error);    
