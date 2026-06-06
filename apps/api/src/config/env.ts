@@ -46,8 +46,9 @@ const envSchema = z.object({
   SUPABASE_SERVICE_KEY: z.string().optional(),
 
   // WordPress Multisite
+  INTERNAL_WP_SECRET: z.string(),
   WP_CLI_PATH: z.string().default("/usr/local/bin/wp"),
-  WP_SITE_URL: z.string().url().default("http://localhost:8080"),
+  WP_SITE_URL: z.string().url().default("https://saasifyy.tech"),
 
   // Frontend URL (for CORS and email links)
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),

@@ -8,7 +8,10 @@ import { supabase } from "../config/supabase.js";
 
 const execFileAsync = promisify(execFile);
 
-const WP_DOMAIN = new URL(env.WP_SITE_URL).hostname;
+const WP_DOMAIN = process.env.NODE_ENV === "development" || process.platform === "win32"
+  ? "saasifyy.tech"
+  : (env.WP_SITE_URL ? new URL(env.WP_SITE_URL).hostname : "saasifyy.tech");
+
 const WP_CLI_PATH = env.WP_CLI_PATH;
 const WP_PATH = "/var/www/wordpress";
 
@@ -17,27 +20,35 @@ const WP_PATH = "/var/www/wordpress";
  * Uses execFile (no shell) to prevent command injection.
  */
 async function wpCli(args: string[]): Promise<string> {
-  // Mock mode for local development on Windows
-  if (process.platform === "win32") {
-    console.log("MOCK WP-CLI (Windows detected):", args.join(" "));
-    
-    // Simulate specific WP-CLI responses to keep the logic flowing
-    if (args.includes("create") && args.includes("site")) {
-      return "Success: Site 99 created."; // Simulation of a blog ID
+  // IF LOCAL DEVELOPMENT: Route commands through the live production Azure API bridge
+  if (process.env.NODE_ENV === "development" || process.platform === "win32") {
+    console.log("⚡ Local Dev Detected: Routing WP-CLI over secure bridge connection...");
+    try {
+      const response = await fetch(
+        "https://api.saasifyy.tech/api/v1/internal/wp-cli-bridge",
+        {
+          body: JSON.stringify({ args }),
+          method: "POST",
+          headers: {
+            "x-internal-secret": env.INTERNAL_WP_SECRET,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+      const body = (await response.json()) as { output: string };
+
+      return body.output;
+    } catch (error: any) {
+      console.error("❌ Remote WP-CLI Bridge Failed:", error.message);
+      throw new AppError(500, `Remote WordPress compilation failed: ${error.message}`, "WP_BRIDGE_ERROR");
     }
-    if (args.includes("get") && args.includes("user")) {
-      return "mock_admin";
-    }
-    if (args.includes("get") && args.includes("user_login")) {
-      return "mock_admin";
-    }
-    return "Success: Mocked WP-CLI operation";
   }
 
+  // IF PRODUCTION: Execute directly on the local machine bash terminal
   try {
     const { stdout } = await execFileAsync(
       "sudo",
-      ["-u", "www-data", WP_CLI_PATH, ...args, `--path=${WP_PATH}`],
+      ["-u", "www-data", env.WP_CLI_PATH, ...args, `--path=${WP_PATH}`],
       { timeout: 30000 }
     );
     return stdout.trim();
@@ -199,13 +210,22 @@ export async function provisionSite(
     //     wpSiteId,
     //   },
     // });
+    // Safely construct urls using HTTPS protocols
+    const formattedSiteUrl = `https://${subdomain}.${WP_DOMAIN}`;
+    const formattedLoginUrl = `https://${subdomain}.${WP_DOMAIN}/wp-login.php`;
+
+    // Update the database record with the clean HTTPS URL string
+    await supabase.from("developer_sites")
+      .update({ site_url: formattedSiteUrl })
+      .eq("id", site.id);
 
     return {
       ...activeSite,
+      site_url: formattedSiteUrl, // Override fallback
       wpCredentials: {
         username,
         password,
-        loginUrl: `https://${subdomain}.${WP_DOMAIN}/wp-login.php`,
+        loginUrl: formattedLoginUrl, // Clean production URL output
       },
     };
   } catch (error) {
