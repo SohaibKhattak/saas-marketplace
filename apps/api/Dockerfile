@@ -8,18 +8,23 @@ RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
 
 WORKDIR /app
 
+# Copy root workspace files
 COPY package*.json ./
 
-# Install ALL dependencies including devDependencies (needed for tsc)
+# Copy the api workspace package.json so npm knows about its dependencies
+COPY apps/api/package*.json ./apps/api/
+
+# Install ALL dependencies including devDependencies (typescript, tsx etc)
 RUN npm install --include=dev
 
+# Copy full source code
 COPY . .
 
+# Build the api
 RUN npm run build --workspace=apps/api
 
-# Remove devDependencies after build to keep image lean
+# Remove devDependencies after build
 RUN npm prune --omit=dev
 
 EXPOSE 4000
-
 CMD ["node", "apps/api/dist/index.js"]
