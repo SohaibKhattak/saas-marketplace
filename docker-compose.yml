@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # 1. Database Engine for WordPress
+  wp-db:
+    image: mariadb:10.11
+    container_name: saasifyy-wp-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secret_root_pass
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wp_user
+      MYSQL_PASSWORD: w3Ar3th3Ch@np1@ns
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - saasifyy-network
+
+  # 2. WordPress Multisite Core (PHP-FPM for speed behind Nginx)
+  wordpress:
+    depends_on:
+      - wp-db
+    image: wordpress:6.4-fpm
+    container_name: saasifyy-wordpress
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: wp-db
+      WORDPRESS_DB_USER: wp_user
+      WORDPRESS_DB_PASSWORD: w3Ar3th3Ch@np1@ns
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - saasifyy-network
+
+  # 3. Your Node.js / Express Backend API
+  saasifyy-api:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    container_name: saasifyy-backend-api
+    restart: always
+    env_file:
+      - ./apps/api/.env
+    volumes:
+      - wp_data:/var/www/wordpress # Mounts WP files into API for WP-CLI control
+    networks:
+      - saasifyy-network
+
+  # 4. Nginx Reverse Proxy (The Entryway Router)
+  nginx:
+    depends_on:
+      - wordpress
+      - saasifyy-api
+    build:
+      context: ./nginx
+    container_name: saasifyy-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "444:443" # Map standard SSL ports (Certbot handles host-level hooks)
+    volumes:
+      - wp_data:/var/www/html # Shared static files access for styling assets
+      - /etc/letsencrypt:/etc/letsencrypt:ro # Direct access to SSL certificates from VM
+    networks:
+      - saasifyy-network
+
+volumes:
+  db_data:
+  wp_data:
+
+networks:
+  saasifyy-network:
+    driver: bridge

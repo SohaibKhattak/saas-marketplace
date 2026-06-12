@@ -1,0 +1,36 @@
+# .github/workflows/deploy.yml
+name: CD - Auto-Deploy to Azure VM Cluster
+
+on:
+  push:
+    branches:
+      - main # Triggers only when you push or merge a pull request into main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Execute Remote SSH Commands for Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST_IP }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            # Navigate to your actual project folder on the VM
+            cd ~/saasifyy
+            
+            # Pull down the absolute latest state from the main branch
+            git reset --hard origin/main
+            git pull origin main
+            
+            # Rebuild and safely reload your application containers
+            # Swap 'web-app' out for 'saasifyy-api' if you changed the container service name inside docker-compose.yml
+            docker compose up -d --build web-app nginx
+            
+            # Clean up dangling images to prevent your VM SSD from filling up over time
+            docker image prune -f
