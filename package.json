@@ -8,13 +8,14 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false turbo lint",
+    "lint": "ccross-env ESLINT_USE_FLAT_CONFIG=false eslint src/",
     "test": "turbo test",
     "db:migrate": "npm run migrate --workspace=apps/api",
     "db:seed": "npm run seed --workspace=apps/api",
     "db:studio": "npm run studio --workspace=apps/api"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "turbo": "^2.4.0"
   },
   "packageManager": "npm@10.9.2",
