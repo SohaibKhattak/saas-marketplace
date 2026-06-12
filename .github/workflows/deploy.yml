@@ -25,7 +25,10 @@ jobs:
             cd ~/saas-marketplace
             git reset --hard origin/main
             git pull origin main
-            
+
+            # 🔐 Inject production keys from GitHub Secrets directly into the app workspace
+            echo "${{ secrets.API_ENV_FILE }}" > ./apps/api/.env
+
             # Rebuild and safely reload your entire multi-tenant stack
             docker compose up -d --build
           
