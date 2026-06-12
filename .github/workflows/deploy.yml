@@ -20,6 +20,7 @@ jobs:
           host: ${{ secrets.VM_HOST_IP }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          envs: API_ENV_FILE
           script: |
             cd ~/saas-marketplace
             git reset --hard origin/main
