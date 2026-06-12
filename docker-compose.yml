@@ -65,6 +65,7 @@ services:
       - wordpress
       - saasifyy-api
       - saasifyy-web
+      - saasifyy-backend-api
     build:
       context: ./nginx
     container_name: saasifyy-nginx
