@@ -22,15 +22,12 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             # Navigate to your actual project folder on the VM
-            cd ~/saasifyy
-            
-            # Pull down the absolute latest state from the main branch
+            cd ~/saas-marketplace
             git reset --hard origin/main
             git pull origin main
             
-            # Rebuild and safely reload your application containers
-            # Swap 'web-app' out for 'saasifyy-api' if you changed the container service name inside docker-compose.yml
-            docker compose up -d --build web-app nginx
-            
+            # Rebuild and safely reload your entire multi-tenant stack
+            docker compose up -d --build
+          
             # Clean up dangling images to prevent your VM SSD from filling up over time
             docker image prune -f
