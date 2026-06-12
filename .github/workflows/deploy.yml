@@ -20,7 +20,7 @@ jobs:
           host: ${{ secrets.VM_HOST_IP }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
-          envs: API_ENV_FILE
+          envs: API_ENV_FILE,FRONTEND_ENV_FILE
           script: |
             cd ~/saas-marketplace
             git reset --hard origin/main
@@ -28,6 +28,8 @@ jobs:
 
             # Write .env safely from environment variable
             printf '%s' "$API_ENV_FILE" > ./apps/api/.env
+            printf '%s' "$FRONTEND_ENV_FILE" > ./apps/web/.env
+
 
             # Verify it was written correctly
             echo ".env line count: $(wc -l < ./apps/api/.env)"
@@ -36,3 +38,4 @@ jobs:
             docker image prune -f
         env:
           API_ENV_FILE: ${{ secrets.API_ENV_FILE }}
+          FRONTEND_ENV_FILE: ${{ secrets.FRONTEND_ENV_FILE }}

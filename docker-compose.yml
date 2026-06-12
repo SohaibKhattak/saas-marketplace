@@ -47,11 +47,24 @@ services:
     networks:
       - saasifyy-network
 
+    # 5. Next.js Frontend
+  saasifyy-web:
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    container_name: saasifyy-frontend
+    restart: always
+    env_file:
+      - ./apps/web/.env
+    networks:
+      - saasifyy-network
+
   # 4. Nginx Reverse Proxy (The Entryway Router)
   nginx:
     depends_on:
       - wordpress
       - saasifyy-api
+      - saasifyy-web
     build:
       context: ./nginx
     container_name: saasifyy-nginx
@@ -72,4 +85,3 @@ volumes:
 networks:
   saasifyy-network:
     driver: bridge
-    
