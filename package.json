@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false turbo lint",
     "test": "turbo test",
     "db:migrate": "npm run migrate --workspace=apps/api",
     "db:seed": "npm run seed --workspace=apps/api",
