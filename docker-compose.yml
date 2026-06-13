@@ -71,7 +71,7 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "444:443" # Map standard SSL ports (Certbot handles host-level hooks)
+      - "443:443" # Map standard SSL ports (Certbot handles host-level hooks)
     volumes:
       - wp_data:/var/www/html # Shared static files access for styling assets
       - /etc/letsencrypt:/etc/letsencrypt:ro # Direct access to SSL certificates from VM
