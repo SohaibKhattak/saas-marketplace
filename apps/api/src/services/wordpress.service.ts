@@ -47,9 +47,9 @@ async function wpCli(args: string[]): Promise<string> {
   // IF PRODUCTION: Execute directly on the local machine bash terminal
   try {
     const { stdout } = await execFileAsync(
-      "sudo",
-      ["-u", "www-data", env.WP_CLI_PATH, ...args, `--path=${WP_PATH}`],
-      { timeout: 30000 }
+    WP_CLI_PATH,
+    ["--allow-root", ...args, `--path=${WP_PATH}`],
+    { timeout: 30000 }
     );
     return stdout.trim();
   } catch (error: any) {
