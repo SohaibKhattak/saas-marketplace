@@ -1,6 +1,7 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache sudo bash php83 php83-phar php83-iconv php83-mysqli php83-json php83-curl
+RUN apk add --no-cache sudo bash php83 php83-phar php83-iconv php83-mysqli php83-json php83-curl \
+    && ln -s /usr/bin/php83 /usr/local/bin/php
 
 RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
     && chmod +x wp-cli.phar \
