@@ -43,17 +43,17 @@ export async function sendVerificationEmail(to: string, verifyUrl: string) {
   //   html: htmlContent,
   // });
 
-  /*
+  
   // --- Resend Implementation ---
-  // if (resend) {
-  //   await resend.emails.send({
-  //     from: FROM_EMAIL,
-  //     to,
-  //     subject: "Verify your Saasifyy account",
-  //     html: htmlContent,
-  //   });
-  // }
-  */
+  if (resend) {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: "Verify your Saasifyy account",
+      html: htmlContent,
+    });
+  }
+  
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
