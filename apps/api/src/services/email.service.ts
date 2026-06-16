@@ -36,23 +36,23 @@ export async function sendVerificationEmail(to: string, verifyUrl: string) {
   `;
 
   // --- Nodemailer Implementation ---
-  await transporter.sendMail({
-    from: FROM_EMAIL,
-    to,
-    subject: "Verify your Saasifyy account",
-    html: htmlContent,
-  });
+  // await transporter.sendMail({
+  //   from: FROM_EMAIL,
+  //   to,
+  //   subject: "Verify your Saasifyy account",
+  //   html: htmlContent,
+  // });
 
   /*
   // --- Resend Implementation ---
-  if (resend) {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to,
-      subject: "Verify your Saasifyy account",
-      html: htmlContent,
-    });
-  }
+  // if (resend) {
+  //   await resend.emails.send({
+  //     from: FROM_EMAIL,
+  //     to,
+  //     subject: "Verify your Saasifyy account",
+  //     html: htmlContent,
+  //   });
+  // }
   */
 }
 
