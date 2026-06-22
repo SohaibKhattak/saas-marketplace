@@ -133,13 +133,13 @@ export default function DeveloperProfilePage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await api.get<{ data: { totalProducts: number; activeSubscribers: number; totalRevenue: number } }>(
+      const res = await api.get<{ data: { totalProducts: number; totalSubscribers: number; totalRevenue: number } }>(
         "/developers/analytics",
         { token: accessToken! }
       );
       setStats({
         products: res.data.totalProducts ?? 0,
-        subscribers: res.data.activeSubscribers ?? 0,
+        subscribers: res.data.totalSubscribers ?? 0,
         revenue: res.data.totalRevenue ?? 0,
       });
     } catch {
@@ -295,11 +295,10 @@ export default function DeveloperProfilePage() {
       {/* Status Messages */}
       {profileMessage && (
         <div
-          className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${
-            profileMessage.type === "success"
+          className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${profileMessage.type === "success"
               ? "bg-green-500/10 text-green-700 dark:text-green-400"
               : "bg-red-50 text-red-700 border border-red-200 shadow-sm rounded-sm"
-          }`}
+            }`}
         >
           {profileMessage.type === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
           {profileMessage.text}
@@ -427,9 +426,9 @@ export default function DeveloperProfilePage() {
               </div>
             </div>
           </div>
-          
+
           <Separator className="my-8" />
-          
+
           <div className="space-y-1 mb-6">
             <h3 className="text-lg font-semibold tracking-tight text-neutral-900 flex items-center gap-2">
               <Building2 className="h-5 w-5 text-black" />
@@ -514,7 +513,7 @@ export default function DeveloperProfilePage() {
               <p className="text-sm font-semibold tracking-tight text-neutral-900">Password</p>
               <p className="text-sm text-gray-500">Change your password to keep your account secure.</p>
             </div>
-            
+
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger
@@ -523,8 +522,8 @@ export default function DeveloperProfilePage() {
                       <Dialog>
                         <DialogTrigger
                           render={
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               disabled={user?.authProvider === 'GOOGLE'}
                               className="border-gray-300 hover:bg-gray-50 text-neutral-900 font-semibold tracking-tight transition-all duration-200"
                             >
@@ -534,107 +533,106 @@ export default function DeveloperProfilePage() {
                         />
                         {user?.authProvider !== 'GOOGLE' && (
                           <DialogContent className="sm:max-w-106.25 rounded-sm">
-                          <DialogHeader>
-                            <DialogTitle>Change Password</DialogTitle>
-                            <DialogDescription>
-                              Enter your current password and a new one to update your security credentials.
-                            </DialogDescription>
-                          </DialogHeader>
-                          
-                          {pwMessage && (
-                            <div className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${
-                              pwMessage.type === 'success'
-                                ? 'bg-green-50 text-green-700 border border-green-200'
-                                : 'bg-red-50 text-red-700 border border-red-200'
-                            }`}>
-                              {pwMessage.type === 'success' ? (
-                                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                              ) : (
-                                <AlertCircle className="h-4 w-4 shrink-0" />
-                              )}
-                              {pwMessage.text}
-                            </div>
-                          )}
+                            <DialogHeader>
+                              <DialogTitle>Change Password</DialogTitle>
+                              <DialogDescription>
+                                Enter your current password and a new one to update your security credentials.
+                              </DialogDescription>
+                            </DialogHeader>
 
-                          <form onSubmit={handlePasswordChange} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="currentPassword">Current Password</Label>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                                <Input
-                                  id="currentPassword"
-                                  type={showCurrentPw ? "text" : "password"}
-                                  value={currentPassword}
-                                  onChange={(e) => setCurrentPassword(e.target.value)}
-                                  required
-                                  placeholder="Enter current password"
-                                  className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowCurrentPw(!showCurrentPw)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
-                                >
-                                  {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="newPassword">New Password</Label>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                                <Input
-                                  id="newPassword"
-                                  type={showNewPw ? "text" : "password"}
-                                  value={newPassword}
-                                  onChange={(e) => setNewPassword(e.target.value)}
-                                  required
-                                  minLength={8}
-                                  placeholder="Min 8 characters"
-                                  className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowNewPw(!showNewPw)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
-                                >
-                                  {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                              <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                                <Input
-                                  id="confirmNewPassword"
-                                  type={showConfirmPw ? "text" : "password"}
-                                  value={confirmPassword}
-                                  onChange={(e) => setConfirmPassword(e.target.value)}
-                                  required
-                                  minLength={8}
-                                  placeholder="Confirm new password"
-                                  className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowConfirmPw(!showConfirmPw)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
-                                >
-                                  {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="flex justify-end pt-4">
-                              <Button type="submit" className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all duration-200" disabled={pwSaving}>
-                                {pwSaving ? (
-                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
+                            {pwMessage && (
+                              <div className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${pwMessage.type === 'success'
+                                  ? 'bg-green-50 text-green-700 border border-green-200'
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                {pwMessage.type === 'success' ? (
+                                  <CheckCircle2 className="h-4 w-4 shrink-0" />
                                 ) : (
-                                  <><Lock className="mr-2 h-4 w-4" /> Save Password</>
+                                  <AlertCircle className="h-4 w-4 shrink-0" />
                                 )}
-                              </Button>
-                            </div>
-                          </form>
+                                {pwMessage.text}
+                              </div>
+                            )}
+
+                            <form onSubmit={handlePasswordChange} className="space-y-4 mt-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="currentPassword">Current Password</Label>
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                  <Input
+                                    id="currentPassword"
+                                    type={showCurrentPw ? "text" : "password"}
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    required
+                                    placeholder="Enter current password"
+                                    className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowCurrentPw(!showCurrentPw)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
+                                  >
+                                    {showCurrentPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="newPassword">New Password</Label>
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                  <Input
+                                    id="newPassword"
+                                    type={showNewPw ? "text" : "password"}
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required
+                                    minLength={8}
+                                    placeholder="Min 8 characters"
+                                    className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowNewPw(!showNewPw)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
+                                  >
+                                    {showNewPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                  <Input
+                                    id="confirmNewPassword"
+                                    type={showConfirmPw ? "text" : "password"}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    minLength={8}
+                                    placeholder="Confirm new password"
+                                    className="h-11 pl-10 pr-10 border-gray-300 rounded-sm focus:border-black focus:ring-1 focus:ring-black transition-all duration-200"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPw(!showConfirmPw)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-neutral-900 transition-colors"
+                                  >
+                                    {showConfirmPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex justify-end pt-4">
+                                <Button type="submit" className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all duration-200" disabled={pwSaving}>
+                                  {pwSaving ? (
+                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
+                                  ) : (
+                                    <><Lock className="mr-2 h-4 w-4" /> Save Password</>
+                                  )}
+                                </Button>
+                              </div>
+                            </form>
                           </DialogContent>
                         )}
                       </Dialog>
