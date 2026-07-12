@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Store, Loader2, Users, Code } from "lucide-react";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { Loader } from "@/components/ui/loader";
 import { FormError } from "@/components/ui/form-error";
 
 type RoleOption = "CUSTOMER" | "DEVELOPER";

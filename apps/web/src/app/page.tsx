@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { MarketingFooter } from "@/components/layout/marketing-footer";
+import { GlobalFooter } from "@/components/layout/global-footer";
 import {
   ArrowRight,
   Zap,
@@ -296,7 +296,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <MarketingFooter />
+      <GlobalFooter />
     </div>
   );
 }

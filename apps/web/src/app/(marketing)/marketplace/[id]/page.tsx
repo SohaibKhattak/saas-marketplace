@@ -21,6 +21,8 @@ import { PricingSection } from '@/components/marketplace/pricing-section';
 import { ImageCarousel } from '@/components/marketplace/image-carousel';
 import { ReviewCard } from '@/components/marketplace/review-card';
 import { cn } from '@/lib/utils';
+import { Loader } from '@/components/ui/loader';
+import { MarketingHeader } from '@/components/layout/marketing-header';
 
 interface PricingPlan {
   id: string;
@@ -109,7 +111,7 @@ export default function ProductPage() {
       .then((res) => {
         if (res.data) setUserReview(res.data);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setReviewLoaded(true));
   }, [product, user, accessToken]);
 
@@ -161,9 +163,9 @@ export default function ProductPage() {
       setProduct((prev) =>
         prev
           ? {
-              ...prev,
-              _count: { ...prev._count, reviews: (prev._count?.reviews || 0) + 1 },
-            }
+            ...prev,
+            _count: { ...prev._count, reviews: (prev._count?.reviews || 0) + 1 },
+          }
           : prev
       );
       setReviewComment('');
@@ -184,9 +186,9 @@ export default function ProductPage() {
       setProduct((prev) =>
         prev
           ? {
-              ...prev,
-              _count: { ...prev._count, reviews: Math.max(0, prev._count.reviews - 1) },
-            }
+            ...prev,
+            _count: { ...prev._count, reviews: Math.max(0, prev._count.reviews - 1) },
+          }
           : prev
       );
       if (userReview?.id === idToDelete) {
@@ -244,14 +246,14 @@ export default function ProductPage() {
   }
 
   const [currentPage, setCurrentPage] = useState(1);
-  const reviewsPerPage = 6;
+  const reviewsPerPage = 4;
   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
   const paginatedReviews = reviews.slice((currentPage - 1) * reviewsPerPage, currentPage * reviewsPerPage);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <Loader />
       </div>
     );
   }
@@ -270,35 +272,7 @@ export default function ProductPage() {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tighter">
-            <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black text-white">S</div>
-            <span className="text-gray-900">Marketplace</span>
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/marketplace" className="text-sm font-medium text-gray-600 hover:text-black transition-colors">
-              All Products
-            </Link>
-            <div className="h-4 w-px bg-gray-200" />
-            {user ? (
-              <Link href={user.role === 'ADMIN' ? '/admin/analytics' : user.role === 'DEVELOPER' ? '/developer/products' : '/customer/subscriptions'}>
-                <Button size="sm" variant="ghost" className="font-semibold">
-                  Dashboard
-                </Button>
-              </Link>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm" className="font-medium">
-                    Sign in
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </nav>
-        </div>
-      </header>
+      <MarketingHeader />
 
       <main className="flex-1">
         <div className="container mx-auto px-4 py-12 max-w-6xl">
@@ -308,97 +282,100 @@ export default function ProductPage() {
             Back to Products
           </Link>
 
-          <div className="space-y-20">
-            {/* Product Header */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-              {/* Left: Logo & Info */}
-              <div className="space-y-8">
-                {/* Logo */}
-                {product.logoUrl ? (
-                  <div className="h-32 w-32 rounded-2xl border-2 border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-4 flex items-center justify-center shadow-sm">
-                    <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain" />
-                  </div>
-                ) : (
-                  <div className="flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50">
-                    <Package className="h-10 w-10 text-gray-300" />
-                  </div>
-                )}
+          <div className="space-y-24">
+            {/* Product Header (Logo & Info) */}
+            <div className="flex flex-col-reverse lg:flex-row gap-12 items-center justify-between">
+              {/* Left: Info */}
+              <div className="space-y-6 flex-1 w-full text-center lg:text-left">
+                <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+                  <Badge className="px-5 py-2 text-xs font-black uppercase tracking-wider bg-gray-900 text-white border-none rounded-full shadow-md">
+                    {product.category}
+                  </Badge>
+                </div>
 
-                {/* Metadata */}
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <Badge className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider bg-gray-900 text-white border-none">
-                      {product.category}
-                    </Badge>
-                  </div>
-
-                  <div>
-                    <h1 className="text-5xl font-black text-gray-900 leading-tight mb-3">
-                      {product.name}
-                    </h1>
-                    <p className="text-lg text-gray-600 font-medium">
-                      By <span className="font-bold text-gray-900">{product.developer?.user?.full_name || 'Developer'}</span>
-                    </p>
-                  </div>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-4 pt-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={cn(
-                              'h-5 w-5',
-                              s <= Math.round(product.avgRating) ? 'fill-gray-900 text-gray-900' : 'text-gray-300'
-                            )}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-lg font-bold text-gray-900">
-                        {(product.avgRating || 0).toFixed(1)}{' '}
-                        <span className="text-sm text-gray-500 font-normal ml-1">({product._count?.reviews || 0} reviews)</span>
-                      </span>
-                    </div>
-
-                    {product._count?.subscriptions > 0 && (
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg border border-gray-200">
-                        <span className="text-sm font-bold text-gray-600">{(product._count?.subscriptions || 0).toLocaleString()}+ users</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-gray-600 text-lg leading-relaxed font-medium mt-6">
-                    {product.shortDescription || product.description}
+                <div>
+                  <h1 className="text-5xl sm:text-6xl font-black text-gray-900 leading-tight mb-4 tracking-tight">
+                    {product.name}
+                  </h1>
+                  <p className="text-lg text-gray-600 font-semibold">
+                    By <span className="font-bold text-gray-900 border-b-2 border-gray-200 pb-0.5">{product.developer?.user?.full_name || 'Developer'}</span>
                   </p>
+                </div>
 
-                  {product.site && (
-                    <div className="pt-4">
-                      <a
-                        href={product.site.site_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white font-bold rounded-lg hover:bg-black transition-colors shadow-lg group"
-                      >
-                        Visit Official Site
-                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </a>
+                {/* Rating & Users */}
+                <div className="flex items-center justify-center lg:justify-start gap-5 pt-2">
+                  <div className="flex items-center gap-3 py-2">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={cn(
+                            'h-5 w-5',
+                            s <= Math.round(product.avgRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-lg font-black text-gray-900">
+                      {(product.avgRating || 0).toFixed(1)}{' '}
+                      <span className="text-sm text-gray-500 font-semibold ml-1">({product._count?.reviews || 0} reviews)</span>
+                    </span>
+                  </div>
+
+                  {product._count?.subscriptions > 0 && (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full border-[0.1px]">
+                      <span className="text-sm font-semibold">{(product._count?.subscriptions || 0).toLocaleString()} Subsribers</span>
                     </div>
                   )}
                 </div>
+
+                {product.site && (
+                  <div className="pt-6 flex justify-center lg:justify-start">
+                    <a
+                      href={product.site.site_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-4 h-14 bg-black text-white font-semibold text-base border-2 border-black rounded-full hover:bg-gray-900 transition-all group"
+                    >
+                      Visit Official Site
+                      <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
+                    </a>
+                  </div>
+                )}
               </div>
 
-              {/* Right: Carousel */}
-              {product.screenshots && product.screenshots.length > 0 && (
-                <div className="sticky top-24">
-                  <ImageCarousel images={product.screenshots} alt={product.name} />
-                </div>
-              )}
+              {/* Right: Big Logo */}
+              <div className="shrink-0 lg:w-5/12 flex justify-center lg:justify-end">
+                {product.logoUrl ? (
+                  <div className="h-56 w-56 sm:h-72 sm:w-72 rounded-[3rem] border border-gray-100 bg-white p-8 shadow-2xl flex items-center justify-center transform transition-transform hover:scale-105 duration-500 relative">
+                    <div className="absolute inset-0 bg-linear-to-br from-gray-100/50 to-transparent rounded-[3rem] pointer-events-none" />
+                    <img src={product.logoUrl} alt={product.name} className="h-full w-full object-contain relative z-10" />
+                  </div>
+                ) : (
+                  <div className="h-56 w-56 sm:h-72 sm:w-72 rounded-[3rem] border-2 border-dashed border-gray-200 bg-gray-50 flex items-center justify-center shadow-xl">
+                    <Package className="h-20 w-20 text-gray-300" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Carousel Section */}
+            {product.screenshots && product.screenshots.length > 0 && (
+              <div className="w-full">
+                <ImageCarousel images={product.screenshots} alt={product.name} />
+              </div>
+            )}
+
+            {/* About / Description Section */}
+            <div className="max-w-4xl mx-auto text-center space-y-8">
+              <h2 className="text-4xl font-black text-gray-900 tracking-tight">About {product.name}</h2>
+              <div className="text-xl text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                {product.description || product.shortDescription}
+              </div>
             </div>
 
             {/* Pricing Section */}
-            <div id="pricing" className="pt-8 border-t-2 border-gray-200">
+            <div id="pricing" className="pt-12 border-t border-gray-200">
               <div className="space-y-12">
                 <div className="text-center max-w-2xl mx-auto space-y-4">
                   <h2 className="text-4xl font-black text-gray-900">Choose your plan</h2>
@@ -416,43 +393,16 @@ export default function ProductPage() {
               </div>
             </div>
 
-            {/* About Section */}
-            <div className="pt-8 border-t-2 border-gray-200">
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-4xl font-black text-gray-900 mb-6">About {product.name}</h2>
-                  <div className="text-lg text-gray-600 leading-relaxed whitespace-pre-wrap font-medium">
-                    {product.description}
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Reviews Section */}
             <div id="reviews" className="pt-8 border-t-2 border-gray-200">
               <div className="max-w-4xl mx-auto space-y-12">
                 {/* Section Header */}
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                  <div className="space-y-2">
-                    <h2 className="text-4xl font-black text-gray-900">Customer Reviews</h2>
-                    <p className="text-gray-600 font-medium">Real feedback from {product.name} users</p>
-                  </div>
-                  <div className="flex items-center gap-8 bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                    <div className="text-center">
-                      <div className="text-3xl font-black text-gray-900">{(product.avgRating || 0).toFixed(1)}</div>
-                      <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Overall Rating</div>
-                    </div>
-                    <div className="w-px h-12 bg-gray-200" />
-                    <div className="text-center">
-                      <div className="text-3xl font-black text-gray-900">{product._count?.reviews || 0}</div>
-                      <div className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-1">Total Reviews</div>
-                    </div>
-                  </div>
-                </div>
+                <h2 className="text-4xl text-center font-black text-gray-900">Customer Reviews</h2>
+
 
                 {/* Write Review Form */}
                 {user && user.role === 'CUSTOMER' && reviewLoaded && !userReview && (
-                  <div className="p-8 rounded-2xl border-2 border-gray-200 bg-gray-50">
+                  <div className="p-8 rounded-2xl border-[.1px]">
                     {product.isSubscribed ? (
                       <div className="space-y-8">
                         <div>
@@ -477,8 +427,8 @@ export default function ProductPage() {
                                   className={cn(
                                     'h-8 w-8 transition-colors',
                                     star <= (hoverRating || reviewRating)
-                                      ? 'fill-gray-900 text-gray-900'
-                                      : 'text-gray-300 hover:text-gray-400'
+                                      ? 'fill-yellow-500 text-yellow-500'
+                                      : 'text-yellow-300 hover:text-yellow-400'
                                   )}
                                 />
                               </button>
@@ -493,7 +443,7 @@ export default function ProductPage() {
                             placeholder="What was your experience like? What features did you love most?"
                             value={reviewComment}
                             onChange={(e) => setReviewComment(e.target.value)}
-                            className="min-h-[120px] p-4 rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-base font-medium"
+                            className="min-h-30 p-4 rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-base font-medium"
                           />
                         </div>
 
@@ -530,8 +480,8 @@ export default function ProductPage() {
                           <p className="text-sm text-gray-600 font-medium mt-1">Only active subscribers can leave reviews.</p>
                         </div>
                         <Button
-                          variant="outline"
-                          className="rounded-lg border-gray-300 font-bold text-xs uppercase tracking-wider"
+                          variant="default"
+                          className="rounded-md border-gray-300 font-bold text-xs uppercase tracking-wider"
                           onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
                         >
                           View Pricing
@@ -543,7 +493,7 @@ export default function ProductPage() {
 
                 {/* User's Review */}
                 {userReview && (
-                  <Card className="border-2 border-gray-300 bg-gradient-to-br from-gray-50 to-white">
+                  <Card className="border-[0.1px] ">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="space-y-1">
@@ -582,8 +532,8 @@ export default function ProductPage() {
                                 className={cn(
                                   'h-4 w-4',
                                   i < userReview.rating
-                                    ? 'fill-gray-900 text-gray-900'
-                                    : 'text-gray-300'
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-yellow-300'
                                 )}
                               />
                             ))}
@@ -605,8 +555,8 @@ export default function ProductPage() {
                                   className={cn(
                                     'h-5 w-5',
                                     star <= editUserRating
-                                      ? 'fill-gray-900 text-gray-900'
-                                      : 'text-gray-300'
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-yellow-300'
                                   )}
                                 />
                               </button>
@@ -615,7 +565,7 @@ export default function ProductPage() {
                           <Textarea
                             value={editUserComment}
                             onChange={(e) => setEditUserComment(e.target.value)}
-                            className="min-h-[100px] p-3 rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-sm"
+                            className="min-h-25 p-3 rounded-lg border-gray-200 focus-visible:ring-gray-200 resize-none text-sm"
                           />
                           <div className="flex justify-end gap-2">
                             <Button
@@ -648,9 +598,26 @@ export default function ProductPage() {
                     </CardContent>
                   </Card>
                 )}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          className={cn(
+                            'h-6 w-6',
+                            s <= Math.round(product.avgRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'
+                          )}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900">{(product.avgRating || 0).toFixed(1)}</div>
 
+                    <div className="text-gray-500 font-semibold ml-2">({product._count?.reviews || 0} {product._count?.reviews === 1 ? 'review' : 'reviews'})</div>
+                  </div>
+                </div>
                 {/* Review Tabs */}
-                <div className="flex items-center gap-2 p-1.5 bg-gray-100 rounded-xl w-fit">
+                <div className="flex items-center gap-3 w-fit">
                   {[
                     { id: 'all', label: 'All Reviews' },
                     { id: 'positive', label: 'Positive' },
@@ -663,10 +630,10 @@ export default function ProductPage() {
                         setCurrentPage(1);
                       }}
                       className={cn(
-                        'px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all',
+                        "h-10 px-6 rounded-full border flex items-center justify-center transition-all duration-300 text-sm font-semibold",
                         activeTab === tab.id
-                          ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                          ? "border-black shadow-md ring-2 ring-black/5 bg-white text-black"
+                          : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:shadow-sm"
                       )}
                     >
                       {tab.label}

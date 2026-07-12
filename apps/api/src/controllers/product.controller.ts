@@ -681,23 +681,24 @@ export async function getProductById(
       if (isOwner || isAdmin) {
         showSite = true;
       } else if (req.user.role === "CUSTOMER") {
-        // 2. Check for active/trialing subscription for Customers
-        const { data: subscription } = await supabase
+        // 2. Check for active/trialing/valid canceled subscription for Customers
+        const { data: subscriptions } = await supabase
           .from("subscriptions")
           .select("id, pricing_plan_id, current_period_end, status")
           .eq("product_id", product.id)
-          .eq("customer_id", req.user.userId)
-          .in("status", ["ACTIVE", "TRIALING"])
-          .maybeSingle();
+          .eq("customer_id", req.user.userId);
 
-        if (subscription) {
+        if (subscriptions && subscriptions.length > 0) {
           const now = new Date();
-          const periodEnd = subscription.current_period_end ? new Date(subscription.current_period_end) : null;
+          const validSub = subscriptions.find(sub => {
+            if (["ACTIVE", "TRIALING"].includes(sub.status)) return true;
+            if (sub.status === "CANCELED" && sub.current_period_end && new Date(sub.current_period_end) > now) return true;
+            return false;
+          });
 
-          // Subscription is valid if no period end is set (infinite) or it's in the future
-          if (!periodEnd || periodEnd > now) {
+          if (validSub) {
             isSubscribed = true;
-            activePlanId = subscription.pricing_plan_id;
+            activePlanId = validSub.pricing_plan_id;
             showSite = true;
           }
         }
@@ -1036,6 +1037,7 @@ export async function listAllProducts(req: AuthRequest, res: Response, next: Nex
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = (page - 1) * limit;
     const status = req.query.status as string | undefined;
+    const search = req.query.search as string | undefined;
 
     const conditions: string[] = ["p.isdeleted = false"];
     const values: any[] = [];
@@ -1045,9 +1047,14 @@ export async function listAllProducts(req: AuthRequest, res: Response, next: Nex
       conditions.push(`p.status = $${values.length}`);
     }
 
+    if (search) {
+      values.push(`%${search}%`);
+      conditions.push(`(p.name ILIKE $${values.length} OR p.description ILIKE $${values.length} OR u.full_name ILIKE $${values.length})`);
+    }
+
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    const countQuery = `SELECT COUNT(*) FROM products p ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) FROM products p LEFT JOIN users u ON p.developer_id = u.id ${whereClause}`;
     const dataQuery = `
       SELECT 
         p.*,

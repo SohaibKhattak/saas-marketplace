@@ -8,13 +8,13 @@ import {
   Upload,
   Rocket,
   Settings,
-  Loader2,
   GitBranch,
   Undo2,
   Redo2,
   Search,
-  Command,
+  Command
 } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 
 interface ToolbarProps {
   projectName: string;
@@ -46,10 +46,10 @@ export function Toolbar({
       {/* Left: Project info */}
       <div className="flex items-center gap-2 mr-4">
         <div className="flex items-center gap-1.5">
-          <div className="h-5 w-5 rounded bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+          <div className="h-5 w-5 rounded bg-linear-to-br from-primary to-primary/60 flex items-center justify-center">
             <Command className="h-3 w-3 text-primary-foreground" />
           </div>
-          <span className="text-sm font-semibold truncate max-w-[150px]">
+          <span className="text-sm font-semibold truncate max-w-37.5">
             {projectName}
           </span>
         </div>
@@ -91,8 +91,7 @@ export function Toolbar({
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-sm text-gray-500 hover:bg-accent hover:text-foreground transition-colors disabled:opacity-50"
         >
           {isSaving ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
+            <Loader className="w-5 mr-2" />) : (
             <Save className="h-3.5 w-3.5" />
           )}
           <span className="hidden sm:inline">{isSaving ? "Saving..." : "Save"}</span>
@@ -128,8 +127,7 @@ export function Toolbar({
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-sm font-semibold tracking-tight bg-black text-primary-foreground hover:bg-gray-100 transition-colors shadow-sm disabled:opacity-50"
         >
           {isDeploying ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
+            <Loader className="w-5 mr-2" />) : (
             <Rocket className="h-3.5 w-3.5" />
           )}
           <span className="hidden sm:inline">
@@ -138,7 +136,7 @@ export function Toolbar({
         </button>
 
         <div className="w-px h-6 bg-border mx-1" />
-        
+
       </div>
     </div>
   );

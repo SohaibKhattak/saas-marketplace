@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { Loader } from '@/components/ui/loader';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +33,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Camera,
-  Loader2,
   ChevronRight,
   ImagePlus,
-  X,
-} from "lucide-react";
+  X} from "lucide-react";
 
 export default function ProfilePage() {
   const { user, accessToken, fetchUser, updateUser } = useAuthStore();
@@ -234,8 +233,7 @@ export default function ProfilePage() {
                 <Avatar className="h-28 w-28 border-2 border-gray-200">
                   {saving && avatarFile ? (
                     <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                      <Loader2 className="h-8 w-8 text-black animate-spin" />
-                    </div>
+                      <Loader /></div>
                   ) : avatarPreview ? (
                     <AvatarImage src={avatarPreview} alt="Profile photo" className="object-cover" />
                   ) : (
@@ -534,7 +532,7 @@ export default function ProfilePage() {
                             <div className="flex justify-end pt-4">
                               <Button type="submit" className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all duration-200" disabled={pwSaving}>
                                 {pwSaving ? (
-                                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
+                                  <><Loader className="w-5 mr-2" /></>
                                 ) : (
                                   <><Lock className="mr-2 h-4 w-4" /> Save Password</>
                                 )}
@@ -578,7 +576,7 @@ export default function ProfilePage() {
           </Button>
           <Button onClick={handleProfileSave} className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all" disabled={saving || !isProfileDirty}>
             {saving ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+              <><Loader className="w-5 mr-2" /></>
             ) : (
               <><Save className="mr-2 h-4 w-4" /> Save Changes</>
             )}

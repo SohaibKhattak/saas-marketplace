@@ -24,14 +24,13 @@ import {
   Sun,
   ChevronRight,
   Save,
-  Loader2,
   CheckCircle2,
   Trash2,
   AlertTriangle,
   Mail,
   CreditCard,
   Package,
-  Megaphone,
+  Megaphone
 } from "lucide-react";
 import {
   Dialog,
@@ -41,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Loader } from "@/components/ui/loader";
 
 
 interface ToggleProps {
@@ -53,14 +53,12 @@ function Toggle({ enabled, onChange }: ToggleProps) {
     <button
       type="button"
       onClick={() => onChange(!enabled)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-sm transition-colors ${
-        enabled ? "bg-black" : "bg-muted-foreground/30"
-      }`}
+      className={`relative inline-flex h-6 w-11 items-center rounded-sm transition-colors ${enabled ? "bg-black" : "bg-muted-foreground/30"
+        }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-sm bg-white transition-transform ${
-          enabled ? "translate-x-6" : "translate-x-1"
-        }`}
+        className={`inline-block h-4 w-4 transform rounded-sm bg-white transition-transform ${enabled ? "translate-x-6" : "translate-x-1"
+          }`}
       />
     </button>
   );
@@ -283,7 +281,7 @@ export default function SettingsPage() {
           <Button variant="outline">Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+              <><Loader className="w-5 mr-2" /></>
             ) : (
               <><Save className="mr-2 h-4 w-4" /> Save Changes</>
             )}

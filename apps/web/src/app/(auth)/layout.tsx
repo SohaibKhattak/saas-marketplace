@@ -3,7 +3,7 @@
 import { useAuthStore } from "@/stores/auth-store";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { accessToken, user, hasHydrated } = useAuthStore();
@@ -32,8 +32,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   if (!hasHydrated || (accessToken && isAuthPage)) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-black" />
-      </div>
+        <Loader /></div>
     );
   }
 

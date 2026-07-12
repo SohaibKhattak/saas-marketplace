@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -126,7 +127,7 @@ export function PricingSection({
                 {billingCycle === "YEARLY" && plan.price_monthly && plan.price_yearly && (
                   <div className="flex items-center gap-2 mt-4">
                     <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                      <Check className="h-3 w-3 text-emerald-600 stroke-[3]" />
+                      <Check className="h-3 w-3 text-emerald-600 stroke-3" />
                     </div>
                     <p className="text-xs font-bold text-emerald-600">
                       Saving ${(plan.price_monthly * 12 - plan.price_yearly).toFixed(0)} per year
@@ -141,7 +142,7 @@ export function PricingSection({
                   {(plan.features as string[]).map((feature, i) => (
                     <li key={i} className="flex items-start gap-3.5 text-sm text-slate-600">
                       <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                        <Check className="h-2.5 w-2.5 stroke-[4]" />
+                        <Check className="h-2.5 w-2.5 stroke-4" />
                       </div>
                       <span className="leading-normal font-semibold">{feature}</span>
                     </li>
@@ -153,23 +154,23 @@ export function PricingSection({
                 <Button
                   className={cn(
                     "w-full h-11 text-sm font-semibold transition-all duration-300 rounded-xl",
-                    plan.id === activePlanId 
-                      ? "bg-emerald-500 text-white cursor-default hover:bg-emerald-500" 
+                    plan.id === activePlanId
+                      ? "bg-emerald-500 text-white cursor-default hover:bg-emerald-500"
                       : isRecommended
                         ? "bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/10 hover:shadow-primary/20"
                         : "bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/5 hover:shadow-slate-900/10"
                   )}
                   onClick={() => !isOwner && plan.id !== activePlanId && onSubscribe(plan.id, billingCycle)}
                   disabled={
-                    subscribingPlanId === plan.id || 
+                    subscribingPlanId === plan.id ||
                     (billingCycle === "YEARLY" && !isYearlyPossible) ||
-                    isOwner || 
+                    isOwner ||
                     plan.id === activePlanId ||
                     (isLoggedIn && userRole === 'DEVELOPER' && !isOwner)
                   }
                 >
                   {subscribingPlanId === plan.id ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                    <><Loader className="w-5 mr-2" /></>
                   ) : plan.id === activePlanId ? (
                     "Active Subscription"
                   ) : isOwner ? (

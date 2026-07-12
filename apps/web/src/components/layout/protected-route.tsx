@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
-import { Loader2 } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -55,8 +55,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   if (!isHydrated || isRestoring) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 text-black animate-spin" />
-      </div>
+        <Loader /></div>
     );
   }
 

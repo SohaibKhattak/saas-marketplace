@@ -1,4 +1,5 @@
 "use client";
+import { Loader } from '@/components/ui/loader';
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
@@ -31,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Suspense } from "react";
-import { ExternalLink, Check } from "lucide-react";
+import { ExternalLink, Check, Calendar, DollarSign, PackageIcon, AlertCircle } from "lucide-react";
 
 interface PlanOption {
   id: string;
@@ -203,11 +204,15 @@ function SubscriptionsContent() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold tracking-tight">My Subscriptions</h1>
-      <p className="text-gray-500 mt-1">
-        Manage your active SaaS subscriptions ({total} total)
-      </p>
+    <div className="mx-auto max-w-5xl py-8 animate-fade-in">
+      <div className="mb-8 space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          My <span className="bg-linear-to-r from-gray-900 to-gray-500 bg-clip-text text-transparent">Subscriptions</span>
+        </h1>
+        <p className="text-lg text-gray-500">
+          Manage your active SaaS subscriptions ({total} total)
+        </p>
+      </div>
 
       {fetchError && <div className="mt-4 rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{fetchError}</div>}
 
@@ -220,21 +225,21 @@ function SubscriptionsContent() {
       )}
 
       {loading ? (
-        <div className="mt-8 py-12 text-center text-gray-500">Loading...</div>
+        <div className="mt-8 py-20 flex justify-center items-center text-gray-500"><Loader /></div>
       ) : subscriptions.length === 0 ? (
         <div className="mt-8 rounded-sm border border-dashed p-12 text-center text-gray-500">
           <p className="text-lg font-semibold tracking-tight">No subscriptions yet</p>
           <p className="mt-1 text-sm">Browse the marketplace to find SaaS products</p>
           <Link href="/marketplace">
-            <Button className="mt-4" variant="outline">Browse Marketplace</Button>
+            <Button className="mt-4 rounded-md shadow-sm hover:shadow transition-all px-6" variant="outline">Browse Marketplace</Button>
           </Link>
         </div>
       ) : (
-        <div className="mt-6 grid gap-4">
+        <div className="mt-6 grid gap-6">
           {subscriptions.map((sub) => {
             if (!sub.product || !sub.currentPricingPlan) return null;
             return (
-              <Card key={sub.id}>
+              <Card key={sub.id} className="border-0 shadow-lg ring-1 ring-gray-200/50 overflow-hidden transition-all hover:shadow-xl">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -285,29 +290,30 @@ function SubscriptionsContent() {
                   {/* State Indicators */}
                   {sub.canceledAt && sub.currentPeriodEnd && (
                     <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
                       <span>Scheduled to cancel on <strong>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</strong> (You retain access until then)</span>
                     </div>
                   )}
 
                   {sub.status === "TRIALING" && sub.currentPeriodEnd && !sub.canceledAt && (
                     <div className="mt-4 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
                       <span>Trial active until <strong>{new Date(sub.currentPeriodEnd).toLocaleDateString()}</strong> (Will renew to active paid plan then)</span>
                     </div>
                   )}
 
                   {sub.status === "PAST_DUE" && (
                     <div className="mt-4 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-destructive animate-pulse flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-destructive animate-pulse shrink-0" />
                       <span>Payment failed &middot; Past due! Please check your billing details to avoid losing service.</span>
                     </div>
                   )}
                 </CardContent>
-                <CardFooter className="flex gap-2 flex-wrap">
+                <CardFooter className="flex gap-3 flex-wrap bg-gray-50/50 pt-4 border-t">
                   {sub.product.site && (sub.flags.isActive || sub.flags.isTrialing) && (
                     <Button
                       size="sm"
+                      className="rounded-md shadow-sm hover:shadow transition-all"
                       onClick={() => handleLaunchApp(sub.product.site!.siteUrl, sub.product.site!.subdomain)}
                       disabled={launchingSlug === sub.product.site.subdomain}
                     >
@@ -316,10 +322,10 @@ function SubscriptionsContent() {
                     </Button>
                   )}
                   <Link href={`/marketplace/${sub.product.slug}`}>
-                    <Button size="sm" variant="outline">View Product</Button>
+                    <Button size="sm" variant="outline" className="rounded-md shadow-sm hover:shadow transition-all hover:bg-gray-50">View Product</Button>
                   </Link>
                   {sub.allowedActions.canChangePlan && (
-                    <Button size="sm" variant="outline" onClick={() => openSwitchDialog(sub)}>
+                    <Button size="sm" variant="outline" className="rounded-md shadow-sm hover:shadow transition-all hover:bg-gray-50" onClick={() => openSwitchDialog(sub)}>
                       Manage Subscription
                     </Button>
                   )}
@@ -355,149 +361,115 @@ function SubscriptionsContent() {
             <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCancelingSub(null)}>Keep Subscription</Button>
-            <Button variant="destructive" onClick={handleCancel} disabled={canceling}>
+            <Button variant="outline" className="rounded-md hover:bg-gray-50" onClick={() => setCancelingSub(null)}>Keep Subscription</Button>
+            <Button
+              className="rounded-md bg-red-50 text-red-600 border border-transparent hover:bg-transparent hover:border-red-600 hover:text-red-700 transition-all font-semibold shadow-none"
+              onClick={handleCancel}
+              disabled={canceling}
+            >
               {canceling ? "Canceling..." : "Cancel Subscription"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Switch Plan Dialog */}
+      {/* Manage Subscription Dialog */}
       <Dialog
         open={!!switchingSub}
         onOpenChange={(open) => { if (!open) { setSwitchingSub(null); setSwitchError(""); } }}
       >
-        <DialogContent className="sm:max-w-[750px] p-0 overflow-hidden border-none shadow-2xl">
-          <div className="bg-gradient-to-br from-primary/10 via-background to-background p-6 border-b border-border/50">
+        <DialogContent className="sm:max-w-125 p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-linear-to-br from-primary/10 via-background to-background p-6 border-b border-border/50">
             <div className="flex items-center gap-4">
-              {switchingSub?.product.logoUrl && (
-                <div className="h-16 w-16 rounded-2xl border-2 border-background shadow-lg overflow-hidden bg-background">
+              {switchingSub?.product.logoUrl ? (
+                <div className="h-16 w-16 rounded-2xl border-2 border-background shadow-lg overflow-hidden bg-background shrink-0">
                   <img src={switchingSub.product.logoUrl} alt="" className="h-full w-full object-cover" />
                 </div>
+              ) : (
+                <div className="h-16 w-16 rounded-2xl border-2 border-background shadow-lg overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                  <PackageIcon className="h-8 w-8 text-primary" />
+                </div>
               )}
-              <div className="flex-grow">
+              <div className="grow">
                 <DialogTitle className="text-2xl font-bold tracking-tight">
                   {switchingSub?.product.name}
                 </DialogTitle>
                 <DialogDescription className="text-base">
-                  Manage your subscription & explore available plans
+                  Manage your subscription
                 </DialogDescription>
-              </div>
-              <div className="text-right hidden sm:block">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400">Member Since</p>
-                <p className="text-sm font-medium">{switchingSub && new Date(switchingSub.createdAt).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
 
           <div className="p-6">
             {switchError && (
-              <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20 flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+              <div className="mb-6 rounded-lg bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
                 {switchError}
               </div>
             )}
 
             {switchingSub?.canceledAt && (
-              <div className="mb-6 rounded-lg bg-amber-500/10 p-4 text-sm text-amber-700 dark:text-amber-400 border border-amber-500/20 flex items-start gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-2 animate-pulse flex-shrink-0" />
-                <p>
-                  <strong>Subscription Cancelled:</strong> You can continue using this product and all its features until your current {switchingSub.status === "TRIALING" ? "trial" : "billing"} period ends on <strong>{switchingSub.currentPeriodEnd ? new Date(switchingSub.currentPeriodEnd).toLocaleDateString() : ""}</strong>.
-                </p>
+              <div className="mb-6 rounded-lg bg-amber-50 p-4 text-sm text-amber-800 border border-amber-200 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">Subscription Cancelled</p>
+                  <p className="mt-1">
+                    You can continue using this product until your current {switchingSub.status === "TRIALING" ? "trial" : "billing"} period ends on <strong>{switchingSub.currentPeriodEnd ? new Date(switchingSub.currentPeriodEnd).toLocaleDateString() : ""}</strong>.
+                  </p>
+                </div>
               </div>
             )}
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              {availablePlans.map((plan) => {
-                const isCurrent = plan.id === switchingSub?.currentPricingPlan.id;
-                const price = switchingSub?.billingCycle === "YEARLY" && plan.priceYearly
-                  ? plan.priceYearly
-                  : plan.priceMonthly;
-
-                return (
-                  <Card
-                    key={plan.id}
-                    className={`group relative flex flex-col transition-all duration-300 border-2 overflow-hidden ${isCurrent
-                        ? "border-primary shadow-xl shadow-primary/10 bg-primary/5"
-                        : "border-border/50 hover:border-primary/30 hover:shadow-lg bg-card/50"
-                      }`}
-                  >
-                    {isCurrent && (
-                      <div className="absolute top-0 right-0">
-                        <div className="bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                          Active Plan
-                        </div>
-                      </div>
-                    )}
-
-                    <CardHeader className="pb-4">
-                      <div className="flex justify-between items-start mb-1">
-                        <CardTitle className="text-lg font-bold">{plan.name}</CardTitle>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black tracking-tight">${price}</span>
-                        <span className="text-sm text-gray-500 font-medium lowercase">
-                          /{switchingSub?.billingCycle === "YEARLY" ? "Year" : "Month"}
-                        </span>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="flex-grow pb-6">
-                      <div className="space-y-3">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">What's included</p>
-                        <ul className="space-y-2.5 text-sm text-gray-600 dark:text-gray-400">
-                          {plan.features?.slice(0, 4).map((f, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <div className="mt-1 flex-shrink-0 h-4 w-4 rounded-full bg-green-500/10 flex items-center justify-center">
-                                <Check className="h-2.5 w-2.5 text-green-600" />
-                              </div>
-                              <span className="leading-tight">{f}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </CardContent>
-
-                    <CardFooter className="pt-0 pb-6 px-6">
-                      <Button
-                        className={`w-full font-bold transition-all ${isCurrent
-                            ? "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                            : "bg-background hover:bg-accent"
-                          }`}
-                        variant={isCurrent ? "outline" : "secondary"}
-                        disabled={!isCurrent}
-                      >
-                        {isCurrent ? "Currently Subscribed" : "Upgrade Plan"}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
+            <div className="space-y-4">
+              <div className="rounded-xl border bg-gray-50/50 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <PackageIcon className="h-4 w-4" /> Current Plan
+                  </span>
+                  <span className="text-sm font-semibold">{switchingSub?.currentPricingPlan.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" /> Price
+                  </span>
+                  <span className="text-sm font-semibold">
+                    ${switchingSub?.billingCycle === "YEARLY" && switchingSub?.currentPricingPlan.priceYearly
+                      ? switchingSub.currentPricingPlan.priceYearly
+                      : switchingSub?.currentPricingPlan.priceMonthly}
+                    /{switchingSub?.billingCycle === "YEARLY" ? "year" : "month"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" /> {switchingSub?.flags.isCanceled ? "Ends on" : "Renews on"}
+                  </span>
+                  <span className="text-sm font-semibold">
+                    {switchingSub?.currentPeriodEnd ? new Date(switchingSub.currentPeriodEnd).toLocaleDateString() : "N/A"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="bg-gray-50 dark:bg-white/5 p-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between items-center">
+          <DialogFooter className="bg-gray-50 dark:bg-white/5 p-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between items-center border-t">
             <Button
-              variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 font-semibold text-xs transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              className="bg-red-50 text-red-600 border border-transparent hover:bg-transparent hover:border-red-600 hover:text-red-700 transition-all font-semibold rounded-md w-full sm:w-auto shadow-none disabled:opacity-50 disabled:pointer-events-none"
               onClick={() => {
                 setCancelingSub(switchingSub);
                 setSwitchingSub(null);
               }}
               disabled={!!switchingSub?.canceledAt}
             >
-              Cancel Subscription
+              {switchingSub?.canceledAt ? "Already Cancelled" : "Cancel Subscription"}
             </Button>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto px-8 font-semibold"
-                onClick={() => setSwitchingSub(null)}
-              >
-                Close
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto px-8 font-semibold rounded-md hover:bg-gray-50 transition-all"
+              onClick={() => setSwitchingSub(null)}
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

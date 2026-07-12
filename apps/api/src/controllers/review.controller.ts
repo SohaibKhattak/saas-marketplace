@@ -45,15 +45,24 @@ export async function createReview(req: AuthRequest, res: Response, next: NextFu
       throw new Error("Product not found or not published");
     }
 
-    const { data: subscription } = await supabase
+    const { data: subscriptions, error: subError } = await supabase
       .from("subscriptions")
-      .select("*")
+      .select("status, current_period_end")
       .eq("customer_id", req.user!.userId)
-      .eq("product_id", productId)
-      .eq("status", "ACTIVE")
-      .maybeSingle();
+      .eq("product_id", productId);
 
-    if (!subscription) {
+    if (subError || !subscriptions) {
+      throw new Error("Failed to verify subscription status");
+    }
+
+    const now = new Date();
+    const hasValidSubscription = subscriptions.some(sub => {
+      if (["ACTIVE", "TRIALING"].includes(sub.status)) return true;
+      if (sub.status === "CANCELED" && sub.current_period_end && new Date(sub.current_period_end) > now) return true;
+      return false;
+    });
+
+    if (!hasValidSubscription) {
       throw new Error("You must be subscribed to this product to post a review");
     }
 

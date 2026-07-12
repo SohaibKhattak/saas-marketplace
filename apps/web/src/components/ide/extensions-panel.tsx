@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Loader } from '@/components/ui/loader';
 import {
   Search,
   Star,
@@ -10,9 +11,8 @@ import {
   Blocks,
   ChevronDown,
   ChevronRight,
-  Loader2,
   ToggleLeft,
-  ToggleRight,
+  ToggleRight
 } from "lucide-react";
 import {
   extensions,
@@ -36,9 +36,8 @@ function StarRating({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`h-3 w-3 ${
-            i <= full ? "fill-yellow-400 text-yellow-400" : "text-gray-500/30"
-          }`}
+          className={`h-3 w-3 ${i <= full ? "fill-yellow-400 text-yellow-400" : "text-gray-500/30"
+            }`}
         />
       ))}
       <span className="text-[10px] text-gray-500 ml-1">{rating.toFixed(1)}</span>
@@ -60,11 +59,10 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
 
   return (
     <div
-      className={`group border rounded-sm p-3 transition-all hover:shadow-sm ${
-        state.installed
-          ? "border-gray-200 bg-black/[0.02] dark:bg-black/[0.04]"
-          : "border-border hover:border-border/80"
-      }`}
+      className={`group border rounded-sm p-3 transition-all hover:shadow-sm ${state.installed
+        ? "border-gray-200 bg-black/2 dark:bg-black/4"
+        : "border-border hover:border-border/80"
+        }`}
     >
       {/* Top row */}
       <div className="flex items-start gap-3">
@@ -90,8 +88,7 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
         <div className="shrink-0">
           {state.loading ? (
             <div className="h-7 w-16 flex items-center justify-center">
-              <Loader2 className="h-4 w-4 animate-spin text-neutral-900" />
-            </div>
+              <Loader className="w-5 mr-2" /></div>
           ) : state.installed ? (
             <button
               onClick={() => onUninstall(ext.id)}
@@ -116,9 +113,8 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
         className="mt-2 w-full text-left"
       >
         <p
-          className={`text-xs text-gray-500 ${
-            expanded ? "" : "line-clamp-1"
-          }`}
+          className={`text-xs text-gray-500 ${expanded ? "" : "line-clamp-1"
+            }`}
         >
           {ext.description}
         </p>
@@ -138,9 +134,8 @@ function ExtensionCard({ ext, state, onInstall, onUninstall, onToggle }: Extensi
         {state.installed && (
           <button
             onClick={() => onToggle(ext.id)}
-            className={`flex items-center gap-1 text-[10px] font-semibold tracking-tight transition-colors ${
-              state.enabled ? "text-green-500" : "text-gray-500"
-            }`}
+            className={`flex items-center gap-1 text-[10px] font-semibold tracking-tight transition-colors ${state.enabled ? "text-green-500" : "text-gray-500"
+              }`}
             title={state.enabled ? "Disable extension" : "Enable extension"}
           >
             {state.enabled ? (
@@ -294,11 +289,10 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
       <div className="flex items-center gap-1 px-3 py-2 border-b border-border overflow-x-auto scrollbar-thin">
         <button
           onClick={() => setSelectedCategory("all")}
-          className={`px-2 py-0.5 text-[10px] rounded-sm whitespace-nowrap transition-colors ${
-            selectedCategory === "all"
-              ? "bg-black text-primary-foreground"
-              : "bg-muted text-gray-500 hover:bg-accent"
-          }`}
+          className={`px-2 py-0.5 text-[10px] rounded-sm whitespace-nowrap transition-colors ${selectedCategory === "all"
+            ? "bg-black text-primary-foreground"
+            : "bg-muted text-gray-500 hover:bg-accent"
+            }`}
         >
           All
         </button>
@@ -306,12 +300,10 @@ export function ExtensionsPanel({ onConsoleMessage }: ExtensionsPanelProps) {
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`px-2 py-0.5 text-[10px] rounded-sm whitespace-nowrap transition-colors ${
-              selectedCategory === cat
-                ? "bg-black text-primary-foreground"
-                : "bg-muted text-gray-500 hover:bg-accent"
-            }`}
-          >
+            className={`px-2 py-0.5 text-[10px] rounded-sm whitespace-nowrap transition-colors ${selectedCategory === cat
+              ? "bg-black text-primary-foreground"
+              : "bg-muted text-gray-500 hover:bg-accent"
+              }`}>
             {categoryLabels[cat]}
           </button>
         ))}

@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Store, Loader2, CheckCircle2, Mail, ArrowRight, XCircle } from "lucide-react";
+import { Store, CheckCircle2, Mail, ArrowRight, XCircle } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -64,8 +65,7 @@ function VerifyEmailContent() {
         </div>
         <div className="flex-1 flex items-center justify-center px-4 pb-12">
           <div className="w-full max-w-md animate-fade-in text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-neutral-900 mx-auto mb-4" />
-            <p className="text-lg font-semibold tracking-tight">Verifying your email...</p>
+            <Loader /><p className="text-lg font-semibold tracking-tight">Verifying your email...</p>
           </div>
         </div>
       </div>
@@ -175,7 +175,7 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-900" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader /></div>}>
       <VerifyEmailContent />
     </Suspense>
   );

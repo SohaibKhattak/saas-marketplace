@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight, X } from "lucide-react";
+import { Search, Star, Store, Package, Loader2, ArrowLeft, ArrowRight, X, ListFilter } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/loader";
+import { MarketingHeader } from "@/components/layout/marketing-header";
 
 const CATEGORIES = [
   "CRM", "Project Management", "Marketing", "Analytics", "E-Commerce",
@@ -63,11 +63,10 @@ function StarRating({ rating, count }: { rating: number; count: number }) {
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            className={`h-3.5 w-3.5 ${
-              star <= Math.round(rating)
-                ? "fill-black text-black"
-                : "fill-gray-200 text-gray-200"
-            }`}
+            className={`h-3.5 w-3.5 ${star <= Math.round(rating)
+              ? "fill-black text-black"
+              : "fill-gray-200 text-gray-200"
+              }`}
           />
         ))}
       </div>
@@ -91,6 +90,8 @@ export default function MarketplacePage() {
   const [priceRange, setPriceRange] = useState("Any price");
   const [error, setError] = useState("");
   const limit = 12;
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -131,43 +132,14 @@ export default function MarketplacePage() {
 
   const totalPages = Math.ceil(total / limit);
 
-  const content = (
+  return (
     <div className="flex min-h-screen flex-col w-full bg-white">
       {/* Header */}
-      {!user ? (
-        <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
-          <div className="container mx-auto flex h-16 items-center justify-between px-4">
-            <Link href="/" className="flex items-center gap-2 font-bold">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-black text-white">
-                <Store className="h-4 w-4" />
-              </div>
-              <span className="text-gray-900">Saasifyy</span>
-            </Link>
-            <nav className="flex items-center gap-3">
-              <Link href="/marketplace" className="hidden sm:inline-flex px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900">
-                Marketplace
-              </Link>
-
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-gray-700 hover:text-gray-900">Sign in</Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm" className="bg-black text-white hover:bg-gray-900">Get started</Button>
-              </Link>
-            </nav>
-          </div>
-        </header>
-      ) : (
-        <header className="sticky top-0 z-50 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4">
-          <SidebarTrigger />
-          <div className="h-6 w-px bg-gray-200" />
-          <span className="font-semibold text-gray-900">Marketplace</span>
-        </header>
-      )}
+      <MarketingHeader />
 
       <main className="flex-1">
         {/* Hero Banner */}
-        <div className="relative border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white px-4 py-16 sm:py-24">
+        <div className="relative border-b border-gray-200 bg-linear-to-b from-gray-50 to-white px-4 py-16 sm:py-24">
           <div className="container mx-auto max-w-6xl text-center">
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-4">
               Discover Premium SaaS Tools
@@ -179,76 +151,81 @@ export default function MarketplacePage() {
         </div>
 
         <div className="container mx-auto max-w-6xl px-4 py-10">
-          {/* Filters Section */}
-          <div className="mb-12">
-            <form onSubmit={handleSearch} className="space-y-6">
+          {/* Filters & Search Section */}
+          <div className="mb-12 relative z-20 max-w-4xl mx-auto">
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+
               {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <div className="relative flex-1 rounded-full bg-white border border-gray-300 group focus-within:border-gray-500 focus-within:shadow-[0_0_0_2px_rgba(0,0,0,0.05)] transition-all duration-300 overflow-hidden h-12 flex items-center">
+                {/* Animated Background Overlay */}
+                <div className="absolute inset-0 bg-black/10 origin-left scale-x-0 transition-transform duration-300 ease-in-out group-focus-within:scale-x-100 pointer-events-none" />
+
+                <Search className="absolute left-4 h-5 w-5 text-gray-500 pointer-events-none z-10 transition-colors duration-300 group-focus-within:text-black" />
+
                 <Input
                   placeholder="Search products, categories, features..."
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  className="pl-12 h-12 border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus-visible:ring-black/10 focus-visible:border-gray-500 font-medium text-base"
+                  className="w-full h-full pl-12 pr-4 bg-transparent border-none text-gray-900 placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 relative z-10 font-medium text-base shadow-none"
                 />
               </div>
 
-              {/* Filter Controls Grid */}
-              <div className="grid gap-6 sm:grid-cols-3">
+              {/* Filter Button */}
+              <button
+                type="button"
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className={cn(
+                  "h-12 w-12 sm:w-auto sm:px-6 rounded-full border bg-white flex items-center justify-center gap-2 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-black/10 shrink-0",
+                  isFilterOpen ? "border-black shadow-md ring-2 ring-black/5" : "border-gray-300 hover:border-gray-400 hover:shadow-sm"
+                )}
+              >
+                <ListFilter className="h-5 w-5 text-gray-700" />
+                <span className="hidden sm:inline font-medium text-gray-700">Filter</span>
+              </button>
+            </form>
+
+            {/* Filter Options (Inline below, aligned right) */}
+            {isFilterOpen && (
+              <div className="flex flex-wrap items-center justify-end gap-3 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
                 {/* Category Filter */}
-                <div className="space-y-2.5">
-                  <label className="block text-sm font-semibold text-gray-900">
-                    Category
-                  </label>
-                  <Select value={category} onValueChange={(val) => { setCategory(val ?? "All"); setPage(1); }}>
-                    <SelectTrigger className="h-11 border-gray-300 rounded-lg bg-white text-gray-900 text-sm hover:border-gray-400 focus:border-gray-500 transition-colors data-[placeholder]:text-gray-500">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg border-gray-300">
-                      <SelectItem value="All" className="text-sm">All Categories</SelectItem>
-                      {CATEGORIES.map((cat) => (
-                        <SelectItem key={cat} value={cat} className="text-sm">{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={category} onValueChange={(val) => { setCategory(val ?? "All"); setPage(1); }}>
+                  <SelectTrigger className="w-40 h-10 border-gray-300 rounded-full bg-white text-gray-900 text-sm hover:border-gray-400 transition-colors focus:ring-black/10">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                    <SelectItem value="All" className="text-sm">All Categories</SelectItem>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat} className="text-sm">{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Price Range Filter */}
-                <div className="space-y-2.5">
-                  <label className="block text-sm font-semibold text-gray-900">
-                    Price Range
-                  </label>
-                  <Select value={priceRange} onValueChange={(val) => { setPriceRange(val ?? "Any price"); setPage(1); }}>
-                    <SelectTrigger className="h-11 border-gray-300 rounded-lg bg-white text-gray-900 text-sm hover:border-gray-400 focus:border-gray-500 transition-colors data-[placeholder]:text-gray-500">
-                      <SelectValue placeholder="Any price" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg border-gray-300">
-                      {PRICE_RANGES.map((range) => (
-                        <SelectItem key={range.label} value={range.label} className="text-sm">{range.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={priceRange} onValueChange={(val) => { setPriceRange(val ?? "Any price"); setPage(1); }}>
+                  <SelectTrigger className="w-40 h-10 border-gray-300 rounded-full bg-white text-gray-900 text-sm hover:border-gray-400 transition-colors focus:ring-black/10">
+                    <SelectValue placeholder="Price Range" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                    {PRICE_RANGES.map((range) => (
+                      <SelectItem key={range.label} value={range.label} className="text-sm">{range.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Sort By Filter */}
-                <div className="space-y-2.5">
-                  <label className="block text-sm font-semibold text-gray-900">
-                    Sort By
-                  </label>
-                  <Select value={sortBy} onValueChange={(val) => { setSortBy(val ?? "latest"); setPage(1); }}>
-                    <SelectTrigger className="h-11 border-gray-300 rounded-lg bg-white text-gray-900 text-sm hover:border-gray-400 focus:border-gray-500 transition-colors data-[placeholder]:text-gray-500">
-                      <SelectValue placeholder="Latest Arrival" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-lg border-gray-300">
-                      <SelectItem value="latest" className="text-sm">Latest Arrival</SelectItem>
-                      <SelectItem value="popular" className="text-sm">Most Popular</SelectItem>
-                      <SelectItem value="rating" className="text-sm">Top Rated</SelectItem>
-                      <SelectItem value="name" className="text-sm">Alphabetical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={sortBy} onValueChange={(val) => { setSortBy(val ?? "latest"); setPage(1); }}>
+                  <SelectTrigger className="w-40 h-10 border-gray-300 rounded-full bg-white text-gray-900 text-sm hover:border-gray-400 transition-colors focus:ring-black/10">
+                    <SelectValue placeholder="Sort By" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-gray-200 shadow-lg">
+                    <SelectItem value="latest" className="text-sm">Latest Arrival</SelectItem>
+                    <SelectItem value="popular" className="text-sm">Most Popular</SelectItem>
+                    <SelectItem value="rating" className="text-sm">Top Rated</SelectItem>
+                    <SelectItem value="name" className="text-sm">Alphabetical</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </form>
+            )}
           </div>
 
           {/* Results Info */}
@@ -267,9 +244,10 @@ export default function MarketplacePage() {
 
           {/* Product Grid */}
           {loading ? (
-            <div className="py-20 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-400" />
-              <p className="mt-4 text-gray-600">Loading products...</p>
+            <div className="py-20 flex justify-center items-center">
+              <Loader />
+              {/* <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-400" />
+              <p className="mt-4 text-gray-600">Loading products...</p> */}
             </div>
           ) : products.length === 0 ? (
             <div className="rounded-lg border border-gray-200 bg-gray-50 py-16 text-center">
@@ -278,68 +256,75 @@ export default function MarketplacePage() {
               <p className="mt-2 text-sm text-gray-600">Try adjusting your search or filters</p>
             </div>
           ) : (
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 mb-12">
+            <div className="grid gap-6 lg:grid-cols-2 mb-12">
               {products.map((product) => (
                 <Link key={product.id} href={`/marketplace/${product.id}`}>
-                  <Card className="h-full group border border-gray-200 rounded-xl bg-white overflow-hidden transition-all duration-300 hover:border-gray-400 hover:shadow-xl">
-                    {/* Image/Logo Area - Larger and Dominant */}
-                    <div className="relative w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100 border-b border-gray-200 flex items-center justify-center overflow-hidden group-hover:from-gray-100 group-hover:to-gray-200 transition-colors">
+                  <Card className="py-0 h-40 group border border-gray-200 rounded-xl bg-white overflow-hidden transition-all duration-300 hover:border-gray-400 hover:shadow-lg flex flex-row items-stretch">
+                    {/* Left: Image/Logo Area completely covered */}
+                    <div className="relative w-1/3 min-w-35 max-w-45 bg-gray-50 border-r border-gray-200 flex shrink-0 overflow-hidden">
                       {product.logoUrl ? (
-                        <img 
-                          src={product.logoUrl} 
-                          alt={product.name} 
-                          className="h-20 w-20 object-contain transition-transform duration-300 group-hover:scale-110"
+                        <img
+                          src={product.logoUrl}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <Package className="h-16 w-16 text-gray-300 group-hover:text-gray-400 transition-colors" />
+                        <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100">
+                          <Package className="h-10 w-10 text-gray-300 transition-transform duration-500 group-hover:scale-110" />
+                        </div>
                       )}
-                      
-                      {/* Badges - Positioned on Image */}
-                      <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
-                        {product.isFeatured && (
-                          <Badge className="text-xs font-semibold px-2.5 py-1 rounded-md bg-black text-white border-none shadow-sm">
-                            Featured
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs font-medium text-gray-700 border-gray-300 bg-white shadow-sm">
-                          {product.category}
-                        </Badge>
-                      </div>
                     </div>
 
-                    {/* Content Area */}
-                    <div className="flex flex-col h-full">
-                      <div className="flex-1 space-y-4 p-6">
-                        {/* Title */}
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900 group-hover:text-black transition-colors line-clamp-2 leading-tight">
+                    {/* Right: Content Area */}
+                    <div className="flex flex-col flex-1 p-4 justify-between min-w-0">
+                      <div className="space-y-1">
+                        {/* Title & Rating */}
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="text-base font-bold text-gray-900 truncate">
                             {product.name}
                           </h3>
-                          <p className="text-sm text-gray-600 mt-1.5">
-                            By <span className="font-semibold text-gray-800">{product.developer.user.fullName}</span>
-                          </p>
+
+                          {/* Rating - Single yellow star (No background hover) */}
+                          <div
+                            className="flex items-center gap-1 px-1 py-0.5 cursor-help shrink-0"
+                            title={`${product._count.reviews} reviews`}
+                          >
+                            <Star className="h-3.5 w-3.5 text-gray-300 fill-transparent transition-all duration-500 group-hover:text-yellow-500 group-hover:fill-yellow-400 group-hover:transform-[rotateY(180deg)]" />
+                            <span className="text-xs font-bold text-gray-600">
+                              {product.avgRating ? product.avgRating.toFixed(1) : "0.0"}
+                            </span>
+                          </div>
                         </div>
 
+                        <p className="text-[11px] text-gray-500 truncate">
+                          By <span className="font-semibold text-gray-900">{product.developer.user.fullName}</span>
+                        </p>
+
                         {/* Description */}
-                        <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2 mt-1.5">
                           {product.shortDescription ?? product.name}
                         </p>
                       </div>
 
-                      {/* Footer with Rating and Price */}
-                      <div className="border-t border-gray-200 px-6 py-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <StarRating rating={product.avgRating} count={product._count.reviews} />
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs font-medium text-gray-500 mb-0.5">Starting at</div>
-                            <div className="font-bold text-lg text-gray-900">
-                              {product.pricingPlans.length > 0
-                                ? `$${product.pricingPlans[0].price_monthly}`
-                                : "Free"}
-                              <span className="text-xs text-gray-500 font-normal ml-1">/mo</span>
-                            </div>
+                      {/* Badges & Price */}
+                      <div className="mt-2 flex items-end justify-between border-t border-gray-100 pt-2.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {product.isFeatured && (
+                            <Badge className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0 rounded-sm bg-black text-white border-none shadow-sm">
+                              Featured
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-[9px] font-medium text-gray-600 bg-gray-50 border-gray-200 px-1.5 py-0">
+                            {product.category}
+                          </Badge>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="font-bold text-base text-gray-900">
+                            {product.pricingPlans.length > 0
+                              ? `$${product.pricingPlans[0].price_monthly}`
+                              : "Free"}
+                            <span className="text-[10px] text-gray-500 font-normal ml-0.5">/mo</span>
                           </div>
                         </div>
                       </div>
@@ -400,25 +385,7 @@ export default function MarketplacePage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-8">
-        <div className="container mx-auto max-w-6xl px-4 text-center text-sm text-gray-600">
-          <p>Saasifyy - Multi-Tenant SaaS Platform</p>
-        </div>
-      </footer>
+
     </div>
   );
-
-  if (user) {
-    return (
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          {content}
-        </SidebarInset>
-      </SidebarProvider>
-    );
-  }
-
-  return content;
 }

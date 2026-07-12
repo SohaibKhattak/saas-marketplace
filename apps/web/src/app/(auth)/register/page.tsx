@@ -5,7 +5,8 @@ import { FormError } from "@/components/ui/form-error";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
-import { Store, Users, Code, Loader2, Check, Eye, EyeOff } from "lucide-react";
+import { Store, Users, Code, Check, Eye, EyeOff } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 type RoleOption = "customer" | "developer";
 
@@ -251,7 +252,7 @@ function RegisterForm() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...</>
+                <><Loader className="w-5 mr-2" /></>
               ) : (
                 "Register"
               )}
@@ -281,7 +282,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-black" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center"><Loader className="w-5 mr-2" /></div>}>
       <RegisterForm />
     </Suspense>
   );

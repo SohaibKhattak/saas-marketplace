@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { MarketingFooter } from "@/components/layout/marketing-footer";
+
 
 export const metadata = {
   title: "Terms of Service - Saasifyy",
@@ -143,7 +143,7 @@ export default function TermsPage() {
         </div>
       </main>
 
-      <MarketingFooter />
+
     </div>
   );
 }

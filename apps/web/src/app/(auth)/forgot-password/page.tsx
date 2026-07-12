@@ -5,7 +5,8 @@ import { FormError } from "@/components/ui/form-error";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api-client";
 
-import { Store, Loader2, Mail, KeyRound, ArrowRight } from "lucide-react";
+import { Store, Mail, KeyRound, ArrowRight } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -80,7 +81,7 @@ export default function ForgotPasswordPage() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</>
+                <><Loader className="w-5 mr-2" /></>
               ) : (
                 <>
                   Send reset link

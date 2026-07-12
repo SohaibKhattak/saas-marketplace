@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { Loader } from '@/components/ui/loader';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,12 +31,10 @@ import {
   ExternalLink,
   Settings,
   ChevronRight,
-  Loader2,
   CheckCircle2,
   AlertCircle,
   Rocket,
-  Trash2,
-} from "lucide-react";
+  Trash2} from "lucide-react";
 
 interface Site {
   id: string;
@@ -215,8 +214,7 @@ export default function SitesPage() {
                 <Button type="submit" disabled={creating || subdomain.length < 3}>
                   {creating ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Site...
+                      <Loader className="w-5 mr-2" /> Site...
                     </>
                   ) : (
                     <>
@@ -290,8 +288,7 @@ export default function SitesPage() {
       {/* Sites Grid */}
       {loading ? (
         <div className="py-16 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-gray-500" />
-          <p className="mt-4 text-gray-500">Loading your sites...</p>
+          <Loader /><p className="mt-4 text-gray-500">Loading your sites...</p>
         </div>
       ) : sites.length === 0 ? (
         <Card>
@@ -371,7 +368,7 @@ export default function SitesPage() {
                         disabled={deletingId === site.id}
                       >
                         {deletingId === site.id ? (
-                          <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting...</>
+                          <><Loader className="w-5 mr-2" /></>
                         ) : (
                           <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete Site</>
                         )}
@@ -381,8 +378,7 @@ export default function SitesPage() {
 
                   {site.status === "PROVISIONING" && (
                     <div className="flex items-center gap-2 text-sm text-gray-500 bg-muted/50 rounded-sm p-3">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Setting up your WordPress site...</span>
+                      <Loader className="w-5 mr-2" /><span>Setting up your WordPress site...</span>
                     </div>
                   )}
 
@@ -400,7 +396,7 @@ export default function SitesPage() {
                         disabled={deletingId === site.id}
                       >
                         {deletingId === site.id ? (
-                          <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting...</>
+                          <><Loader className="w-5 mr-2" /></>
                         ) : (
                           <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Remove</>
                         )}
@@ -451,7 +447,7 @@ export default function SitesPage() {
               disabled={deletingId !== null}
             >
               {deletingId ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Deleting...</>
+                <><Loader className="w-5 mr-2" /></>
               ) : (
                 <><Trash2 className="mr-2 h-4 w-4" />Delete Site</>
               )}

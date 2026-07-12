@@ -7,9 +7,7 @@ import {
   ExternalLink,
   Smartphone,
   Monitor,
-  Tablet,
-  Loader2,
-} from "lucide-react";
+  Tablet} from "lucide-react";
 
 type DeviceSize = "mobile" | "tablet" | "desktop";
 

@@ -2,6 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Playfair_Display } from "next/font/google";
+import Image from "next/image";
+
+const classicFont = Playfair_Display({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+
 import {
   Sidebar,
   SidebarContent,
@@ -95,28 +100,31 @@ export function AppSidebar() {
     menuItems.push(...adminNav);
   }
 
-  // Add global shortcuts
   if (user.role === "CUSTOMER") {
     menuItems.push({ label: "Become a Developer", href: "/developer/onboarding", icon: Rocket });
   }
-  menuItems.push({ label: "Marketplace", href: "/marketplace", icon: Search });
 
   const isExpanded = state === "expanded";
 
   return (
     <Sidebar className="border-r border-border/40 bg-white" collapsible="icon">
       {isExpanded ? (
-        <SidebarHeader className="border-b border-border/40 px-4 py-4 flex flex-row items-center justify-between">
+        <SidebarHeader className="border-b border-border/40 px-4 py-2 flex flex-row items-center justify-between">
           <Link
-            href="/marketplace"
+            href="/"
             className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
           >
-            <div className="flex h-9 w-9 items-center justify-center bg-black text-white text-lg font-bold select-none rounded-none shrink-0">
+            {/* <div className="flex h-9 w-9 items-center justify-center bg-black text-white text-lg font-bold select-none rounded-none shrink-0">
               S
-            </div>
-            <span className="text-base font-bold tracking-tight text-black font-sans">
-              Saasifyy
-            </span>
+            </div> */}
+            <Image
+              src="/logo-1.png"
+              alt="saasifyy"
+              width={36}
+              height={36}
+              className="object-contain"
+            />
+            <span className={`text-2xl tracking-tighter ${classicFont.className}`}>Saasifyy</span>
           </Link>
           <button
             onClick={toggleSidebar}
@@ -129,10 +137,14 @@ export function AppSidebar() {
       ) : (
         <>
           <SidebarHeader className="px-2 py-4 flex items-center justify-center">
-            <Link href="/marketplace" className="transition-opacity hover:opacity-80">
-              <div className="flex h-8 w-8 items-center justify-center bg-black text-white text-base font-bold select-none rounded-none shrink-0">
-                S
-              </div>
+            <Link href="/" className="transition-opacity hover:opacity-80">
+              <Image
+                src="/logo-1.png"
+                alt="saasifyy"
+                width={36}
+                height={36}
+                className="object-contain"
+              />
             </Link>
           </SidebarHeader>
           {!isMobile && (
@@ -153,30 +165,28 @@ export function AppSidebar() {
         </>
       )}
 
-      <SidebarContent className="py-4 px-2">
+      <SidebarContent className="py-4 px-3">
         <SidebarGroup className="p-0">
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
+            <SidebarMenu className="gap-1.5">
               {menuItems.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       isActive={isActive}
-                      className={`h-9.5 px-3 gap-2.5 transition-all duration-150 rounded-none text-sm font-sans font-medium ${
-                        isActive
-                          ? "bg-black! text-white! hover:bg-black! hover:text-white!"
-                          : "text-[#8B95A5] hover:text-black hover:bg-gray-50/50"
-                      } group-data-[collapsible=icon]:p-1.5!`}
+                      className={`h-10 px-3 gap-3 transition-all duration-200 rounded-md text-sm tracking-tight font-medium ${isActive
+                        ? "bg-black! text-white! shadow-md hover:bg-black/90! hover:text-white!"
+                        : "text-gray-600 hover:text-black hover:bg-gray-100/80"
+                        } group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10`}
                       render={<Link href={item.href} />}
                       tooltip={item.label}
                     >
                       <item.icon
-                        className={`h-5 w-5 shrink-0 transition-colors ${
-                          isActive ? "text-white!" : "text-[#8B95A5] group-hover/menu-button:text-black"
-                        }`}
+                        className={`h-5 w-5 shrink-0 transition-colors ${isActive ? "text-white!" : "text-gray-500 group-hover/menu-button:text-black"
+                          }`}
                       />
-                      <span>{item.label}</span>
+                      <span className={`${isActive ? "font-semibold" : ""}`}>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -187,7 +197,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2.5 border-t border-border/40 bg-white">
+      <SidebarFooter className="p-3 border-t border-border/40 bg-white">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -195,42 +205,42 @@ export function AppSidebar() {
                 render={
                   <SidebarMenuButton
                     size="lg"
-                    className="w-full h-12 px-2.5 transition-all duration-150 rounded-none text-left flex items-center gap-3 text-sm font-sans font-medium text-black hover:bg-gray-50/50 cursor-pointer group-data-[collapsible=icon]:h-8! group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:p-0!"
+                    className="w-full h-12 px-2.5 transition-all duration-200 rounded-md text-left flex items-center gap-3 text-sm font-medium text-gray-700 hover:bg-gray-100/80 cursor-pointer group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                   />
                 }
               >
-                <Avatar className="h-8 w-8 rounded-full shrink-0">
+                <Avatar className="h-8 w-8 rounded-full shrink-0 ring-1 ring-gray-200">
                   <AvatarImage src={user.avatarUrl || undefined} alt={user.fullName} />
                   <AvatarFallback className="bg-black text-white text-xs font-bold rounded-full">
                     {user.fullName ? user.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                  <span className="truncate text-sm font-bold text-black font-sans leading-none mb-1">
+                  <span className="truncate text-sm font-semibold tracking-tight text-gray-900 leading-none mb-1.5">
                     {user.fullName}
                   </span>
-                  <span className="truncate text-xs text-[#8B95A5] font-sans leading-none">
+                  <span className="truncate text-xs text-gray-500 font-medium tracking-tight leading-none">
                     {user.email}
                   </span>
                 </div>
-                <ChevronsUpDown className="h-4 w-4 text-[#8B95A5] shrink-0 group-data-[collapsible=icon]:hidden" />
+                <ChevronsUpDown className="h-4 w-4 text-gray-400 shrink-0 group-data-[collapsible=icon]:hidden" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
                 align="end"
-                className="w-56 mb-2 rounded-none border border-border/40 bg-white p-1.5 shadow-md font-sans"
+                className="w-60 mb-2 rounded-xl border border-gray-200 bg-white p-2 shadow-xl font-sans"
               >
-                <div className="px-2 py-1.5 border-b border-border/40 mb-1">
-                  <p className="text-xs text-[#8B95A5] font-medium leading-none">Logged in as</p>
-                  <p className="text-sm font-bold text-black truncate mt-1">{user.fullName}</p>
-                  <p className="text-xs text-[#8B95A5] truncate mt-0.5">{user.email}</p>
+                <div className="px-2 py-2 border-b border-gray-100 mb-2">
+                  <p className="text-[10px] uppercase tracking-wider text-gray-500 font-bold leading-none mb-2">Account</p>
+                  <p className="text-sm font-semibold tracking-tight text-gray-900 truncate">{user.fullName}</p>
+                  <p className="text-xs text-gray-500 truncate mt-0.5">{user.email}</p>
                 </div>
                 <DropdownMenuItem
                   onClick={() => logout()}
-                  className="flex items-center gap-2 px-2.5 py-2 text-sm text-[#8B95A5] hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded-none"
+                  className="flex items-center gap-2 px-2.5 py-2 text-sm font-medium text-red-600 hover:text-red-700 focus:text-red-700 focus:bg-red-50 cursor-pointer rounded-md transition-colors"
                 >
                   <LogOut className="h-4 w-4 shrink-0" />
-                  <span>Logout</span>
+                  <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

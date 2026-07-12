@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Package, Users, DollarSign, CreditCard } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 
 interface DevAnalytics {
   totalProducts: number;
@@ -52,21 +53,17 @@ export default function AnalyticsPage() {
     load();
   }, [accessToken]);
 
-  if (loading) {
-    return <div className="py-12 text-center text-gray-500">Loading analytics...</div>;
-  }
-
   if (error) {
     return <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>;
   }
 
-  const kpiCards = analytics ? [
-    { label: "Total Products", value: analytics.totalProducts, icon: Package },
-    { label: "Published", value: analytics.publishedProducts, icon: Package },
-    { label: "Active Subscribers", value: analytics.totalSubscribers, icon: Users },
-    { label: "Total Revenue", value: `$${analytics.totalRevenue.toFixed(2)}`, icon: DollarSign },
-    { label: "Transactions", value: analytics.totalTransactions, icon: CreditCard },
-  ] : [];
+  const kpiCards = [
+    { label: "Total Products", value: analytics?.totalProducts ?? 0, icon: Package },
+    { label: "Published", value: analytics?.publishedProducts ?? 0, icon: Package },
+    { label: "Active Subscribers", value: analytics?.totalSubscribers ?? 0, icon: Users },
+    { label: "Total Revenue", value: `$${(analytics?.totalRevenue ?? 0).toFixed(2)}`, icon: DollarSign },
+    { label: "Transactions", value: analytics?.totalTransactions ?? 0, icon: CreditCard },
+  ];
 
   return (
     <div className="space-y-6">
@@ -84,7 +81,13 @@ export default function AnalyticsPage() {
               <kpi.icon className="h-4 w-4 text-gray-500" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{kpi.value}</p>
+              {loading ? (
+                <div className="h-8 flex items-center">
+                  <Loader className="w-5 h-5" />
+                </div>
+              ) : (
+                <p className="text-2xl font-bold">{kpi.value}</p>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -97,7 +100,11 @@ export default function AnalyticsPage() {
           <CardDescription>Your net revenue after platform fees (15%)</CardDescription>
         </CardHeader>
         <CardContent>
-          {revenueData.length === 0 ? (
+          {loading ? (
+            <div className="h-80 flex justify-center items-center">
+              <Loader />
+            </div>
+          ) : revenueData.length === 0 ? (
             <p className="py-8 text-center text-gray-500">No revenue data yet</p>
           ) : (
             <div className="h-80">

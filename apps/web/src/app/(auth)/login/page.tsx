@@ -5,7 +5,8 @@ import { FormError } from "@/components/ui/form-error";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
-import { Store, Loader2, Eye, EyeOff } from "lucide-react";
+import { Store, Eye, EyeOff } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 function LoginForm() {
   const router = useRouter();
@@ -121,7 +122,7 @@ function LoginForm() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Authenticating...</>
+                <><Loader className="w-5 mr-2" /></>
               ) : (
                 "Log In"
               )}
@@ -144,7 +145,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center lg:p-0"><Loader2 className="h-6 w-6 animate-spin text-black" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center lg:p-0"><Loader className="w-5 mr-2" /></div>}>
       <LoginForm />
     </Suspense>
   );

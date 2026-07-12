@@ -37,10 +37,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        
           <AuthInitializer />
-          <TooltipProvider>{children}</TooltipProvider>
-        
+          <TooltipProvider>
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+          </TooltipProvider>
       </body>
     </html>
   );

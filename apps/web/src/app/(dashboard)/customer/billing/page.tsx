@@ -1,4 +1,5 @@
 "use client";
+import { Loader } from '@/components/ui/loader';
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
@@ -28,10 +29,10 @@ interface Transaction {
   platformFee: number;
   status: string;
   type: string;
-  createdAt: string;
+  created_at: string;
   subscription: {
     product: { name: string; slug: string };
-    pricingPlan: { name: string };
+    pricing_plan: { name: string };
   } | null;
 }
 
@@ -88,7 +89,7 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-gray-500">Loading...</div>
+            <div className="py-8 flex justify-center items-center text-gray-500"><Loader /></div>
           ) : transactions.length === 0 ? (
             <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No billing history yet
@@ -110,13 +111,13 @@ export default function BillingPage() {
                   {transactions.map((tx) => (
                     <TableRow key={tx.id}>
                       <TableCell>
-                        {new Date(tx.createdAt).toLocaleDateString()}
+                        {new Date(tx.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         {tx.subscription?.product.name ?? "—"}
                       </TableCell>
                       <TableCell>
-                        {tx.subscription?.pricingPlan.name ?? "—"}
+                        {tx.subscription?.pricing_plan.name ?? "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{tx.type}</Badge>

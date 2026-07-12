@@ -8,7 +8,8 @@ import { api, ApiError } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, Loader2, Eye, EyeOff } from "lucide-react";
+import { Store, Eye, EyeOff } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -152,7 +153,7 @@ function ResetPasswordContent() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting...</>
+                <><Loader className="w-5 mr-2" /></>
               ) : (
                 "Reset Password"
               )}
@@ -174,7 +175,7 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-neutral-900" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader /></div>}>
       <ResetPasswordContent />
     </Suspense>
   );

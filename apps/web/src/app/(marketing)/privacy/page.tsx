@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { MarketingFooter } from "@/components/layout/marketing-footer";
+
 
 export const metadata = {
   title: "Privacy Policy - Saasifyy",
@@ -165,7 +165,7 @@ export default function PrivacyPage() {
         </div>
       </main>
 
-      <MarketingFooter />
+
     </div>
   );
 }

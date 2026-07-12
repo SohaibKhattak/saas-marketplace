@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { api, ApiError } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -11,7 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Clock, XCircle, Loader2 } from "lucide-react";
+import { Clock, XCircle } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 interface DeveloperProfile {
   applicationStatus: "PENDING" | "APPROVED" | "REJECTED";
@@ -22,15 +22,18 @@ interface DeveloperProfile {
 
 export function DeveloperGate({ children }: { children: React.ReactNode }) {
   const { user, accessToken } = useAuthStore();
-  const [status, setStatus] = useState<"loading" | "approved" | "pending" | "rejected">("loading");
+  const [status, setStatus] = useState<"loading" | "approved" | "pending" | "rejected">(
+    user?.role === "DEVELOPER" ? "approved" : "loading"
+  );
   const [profile, setProfile] = useState<DeveloperProfile | null>(null);
 
   useEffect(() => {
     if (user?.role !== "DEVELOPER" || !accessToken) {
-      setStatus("approved"); // Non-developers skip this gate
+      setStatus((prev) => prev !== "approved" ? "approved" : prev); // Non-developers skip this gate
       return;
     }
 
+    // Always fetch profile to know the actual status, but we don't block if already developer
     api.get<{ data: DeveloperProfile }>("/developers/me", { token: accessToken })
       .then((res) => {
         setProfile(res.data);
@@ -38,7 +41,7 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => {
         if (err instanceof ApiError && err.code === "PROFILE_NOT_FOUND") {
-          setStatus("pending"); // No profile found — shouldn't happen with new flow but handle gracefully
+          setStatus("pending"); // No profile found
         } else {
           setStatus("approved"); // On error, let through to avoid blocking
         }
@@ -48,7 +51,7 @@ export function DeveloperGate({ children }: { children: React.ReactNode }) {
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-neutral-900" />
+        <Loader />
       </div>
     );
   }

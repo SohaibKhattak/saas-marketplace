@@ -20,6 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Loader } from "@/components/ui/loader";
+import { DollarSign, Wallet, AlertTriangle } from "lucide-react";
 
 interface PayoutSummary {
   developerId: string;
@@ -96,6 +98,7 @@ export default function PayoutsPage() {
     try {
       await api.patch(`/admin/payouts/${payoutId}/status`, { status }, { token: accessToken! });
       fetchPayouts();
+      fetchPayouts(); // refresh list
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to update");
     }
@@ -104,115 +107,135 @@ export default function PayoutsPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Payouts</h1>
-        <p className="text-gray-500 mt-1">Manage developer payout schedules</p>
+    <div className="max-w-7xl mx-auto py-8 animate-fade-in space-y-8">
+      <div className="mb-8 space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          Manage <span className="bg-linear-to-r from-gray-900 to-gray-500 bg-clip-text text-transparent">Payouts</span>
+        </h1>
+        <p className="text-lg text-gray-500">
+          Manage developer earnings, balances, and payout schedules
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-sm bg-destructive/10 p-3 text-sm text-destructive">{error}</div>
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {error}
+        </div>
       )}
 
       {/* Developer Balances */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Developer Balances</CardTitle>
+      <Card className="border-0 shadow-lg ring-1 ring-gray-200/50 overflow-hidden transition-all">
+        <CardHeader className="bg-gray-50/50 border-b px-6 py-5">
+          <CardTitle className="text-xl flex items-center gap-2"><DollarSign className="h-5 w-5 text-gray-500" /> Developer Balances</CardTitle>
           <CardDescription>Outstanding amounts owed to developers</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {loadingSummary ? (
-            <div className="py-8 text-center text-gray-500">Loading...</div>
+            <div className="py-16 flex justify-center items-center"><Loader /></div>
           ) : summary.length === 0 ? (
-            <p className="py-8 text-center text-gray-500">No developer earnings yet</p>
+            <div className="rounded-xl border border-dashed border-gray-300 p-16 text-center text-gray-500 bg-gray-50/50">
+              <p className="text-lg font-semibold tracking-tight text-gray-900">No developer earnings yet</p>
+              <p className="text-sm mt-1">Earnings will appear here once developers make sales.</p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Developer</TableHead>
-                  <TableHead className="text-right">Total Earned</TableHead>
-                  <TableHead className="text-right">Total Paid</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {summary.map((dev) => (
-                  <TableRow key={dev.developerId}>
-                    <TableCell>
-                      <div>
-                        <p className="font-semibold tracking-tight">{dev.developerName}</p>
-                        <p className="text-xs text-gray-500">{dev.developerEmail}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">${dev.totalEarned.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">${dev.totalPaid.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-semibold tracking-tight">
-                      ${dev.balance.toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Payout History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payout History</CardTitle>
-          <CardDescription>{total} payout records</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingPayouts ? (
-            <div className="py-8 text-center text-gray-500">Loading...</div>
-          ) : payouts.length === 0 ? (
-            <p className="py-8 text-center text-gray-500">No payouts recorded yet</p>
-          ) : (
-            <>
+            <div className="overflow-x-auto rounded-lg border">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Developer</TableHead>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                <TableHeader className="bg-gray-50/50">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold text-gray-500">Developer</TableHead>
+                    <TableHead className="text-right font-semibold text-gray-500">Total Earned</TableHead>
+                    <TableHead className="text-right font-semibold text-gray-500">Total Paid</TableHead>
+                    <TableHead className="text-right font-semibold text-gray-500">Balance</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {payouts.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>{p.developer.user.fullName}</TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(p.periodStart).toLocaleDateString()} — {new Date(p.periodEnd).toLocaleDateString()}
-                      </TableCell>
+                  {summary.map((dev) => (
+                    <TableRow key={dev.developerId} className="hover:bg-gray-50/50 transition-colors">
                       <TableCell>
-                        <Badge variant={statusVariant[p.status] ?? "secondary"}>{p.status}</Badge>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{dev.developerName}</p>
+                          <p className="text-xs text-gray-500">{dev.developerEmail}</p>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right font-semibold tracking-tight">${p.amount.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">
-                        {p.status === "PENDING" && (
-                          <Button size="sm" variant="outline" onClick={() => handleMarkStatus(p.id, "COMPLETED")}>
-                            Mark Paid
-                          </Button>
-                        )}
-                        {p.status === "PROCESSING" && (
-                          <Button size="sm" variant="outline" onClick={() => handleMarkStatus(p.id, "COMPLETED")}>
-                            Complete
-                          </Button>
-                        )}
+                      <TableCell className="text-right font-medium text-gray-600">${dev.totalEarned.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-medium text-gray-600">${dev.totalPaid.toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-semibold tracking-tight text-gray-900">
+                        ${dev.balance.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Payout History */}
+      <Card className="border-0 shadow-lg ring-1 ring-gray-200/50 overflow-hidden transition-all">
+        <CardHeader className="bg-gray-50/50 border-b px-6 py-5">
+          <CardTitle className="text-xl flex items-center gap-2"><Wallet className="h-5 w-5 text-gray-500" /> Payout History</CardTitle>
+          <CardDescription>{total} payout records</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {loadingPayouts ? (
+            <div className="py-16 flex justify-center items-center"><Loader /></div>
+          ) : payouts.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 p-16 text-center text-gray-500 bg-gray-50/50">
+              <p className="text-lg font-semibold tracking-tight text-gray-900">No payouts recorded yet</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-lg border">
+                <Table>
+                  <TableHeader className="bg-gray-50/50">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="font-semibold text-gray-500">Developer</TableHead>
+                      <TableHead className="font-semibold text-gray-500">Period</TableHead>
+                      <TableHead className="font-semibold text-gray-500">Status</TableHead>
+                      <TableHead className="text-right font-semibold text-gray-500">Amount</TableHead>
+                      {/* <TableHead className="text-right font-semibold text-gray-500">Actions</TableHead> */}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payouts.map((p) => (
+                      <TableRow key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                        <TableCell className="font-semibold tracking-tight text-gray-900">{p.developer.user.fullName}</TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {new Date(p.periodStart).toLocaleDateString()} — {new Date(p.periodEnd).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusVariant[p.status] ?? "secondary"} className="shadow-none rounded-md px-2.5">
+                            {p.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-gray-900">${p.amount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          {p.status === "PENDING" && (
+                            <Button size="sm" variant="outline" className="rounded-md shadow-sm hover:shadow transition-all font-medium h-8" onClick={() => handleMarkStatus(p.id, "COMPLETED")}>
+                              Mark Paid
+                            </Button>
+                          )}
+                          {p.status === "PROCESSING" && (
+                            <Button size="sm" variant="outline" className="rounded-md shadow-sm hover:shadow transition-all font-medium h-8" onClick={() => handleMarkStatus(p.id, "COMPLETED")}>
+                              Complete
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
               {totalPages > 1 && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
-                  <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
-                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                <div className="mt-6 flex items-center justify-between border-t pt-4">
+                  <p className="text-sm font-medium text-gray-500">Page {page} of {totalPages}</p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="rounded-md shadow-sm hover:shadow transition-all" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
+                    <Button variant="outline" size="sm" className="rounded-md shadow-sm hover:shadow transition-all" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next</Button>
+                  </div>
                 </div>
               )}
             </>

@@ -32,7 +32,7 @@ export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
   return (
     <div className="space-y-6">
       {/* Main Image Display */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border-2 border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 aspect-video w-full group">
+      <div className="relative overflow-hidden rounded-[2.5rem] border-2 border-gray-200 bg-linear-to-br from-gray-50 to-gray-100 aspect-video w-full group">
         {/* Image */}
         <img
           src={images[currentIndex]}
@@ -82,7 +82,7 @@ export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
               key={index}
               onClick={() => goToSlide(index)}
               className={cn(
-                'relative flex-shrink-0 h-20 w-28 rounded-lg overflow-hidden border-2 transition-all duration-200 active:scale-95',
+                'relative shrink-0 h-20 w-28 rounded-lg overflow-hidden border-2 transition-all duration-200 active:scale-95',
                 currentIndex === index
                   ? 'border-gray-900 ring-2 ring-gray-900 ring-offset-2'
                   : 'border-gray-200 hover:border-gray-300'
@@ -102,11 +102,11 @@ export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
       )}
 
       {isLightboxOpen && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300"
+        <div
+          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300"
           onClick={() => setIsLightboxOpen(false)}
         >
-          <button 
+          <button
             className="absolute top-6 right-6 text-white hover:text-gray-300 p-2.5 bg-black/40 hover:bg-black/60 rounded-full transition-all cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
@@ -115,10 +115,10 @@ export function ImageCarousel({ images, alt = 'Product' }: ImageCarouselProps) {
           >
             <X className="h-6 w-6" />
           </button>
-          <img 
-            src={images[currentIndex]} 
-            alt={`${alt} full view`} 
-            className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl transition-all scale-100" 
+          <img
+            src={images[currentIndex]}
+            alt={`${alt} full view`}
+            className="max-h-[90vh] max-w-[90vw] object-contain rounded-xl shadow-2xl transition-all scale-100"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

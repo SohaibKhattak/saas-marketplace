@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, Store, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { Store, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 
@@ -115,8 +116,7 @@ function CallbackHandler() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Email Verified!</h1>
           <p className="text-sm text-gray-500 mb-8">Successfully verified your email. Redirecting you to your dashboard...</p>
           <div className="flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-black opacity-20" />
-          </div>
+            <Loader className="w-5 mr-2" /></div>
         </div>
       </div>
     );
@@ -131,8 +131,7 @@ function CallbackHandler() {
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Verifying account</h1>
       <p className="text-sm text-gray-500 mb-8">Please wait while we complete your verification...</p>
       <div className="flex justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-black opacity-20" />
-      </div>
+        <Loader /></div>
     </div>
   );
 }
@@ -142,8 +141,7 @@ export default function AuthCallbackPage() {
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
       <Suspense fallback={
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-black" />
-          <p className="text-gray-500">Initializing...</p>
+          <Loader /><p className="text-gray-500">Initializing...</p>
         </div>
       }>
         <CallbackHandler />

@@ -1,4 +1,5 @@
 "use client";
+import { Loader } from '@/components/ui/loader';
 
 import { useState, useEffect, useCallback } from "react";
 import { api } from "@/lib/api-client";
@@ -83,7 +84,7 @@ export default function RevenuePage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-8 text-center text-gray-500">Loading...</div>
+            <div className="py-8 flex justify-center items-center text-gray-500"><Loader /></div>
           ) : transactions.length === 0 ? (
             <div className="rounded-sm border border-dashed p-12 text-center text-gray-500">
               No transactions yet. Revenue will appear here once you have paying subscribers.

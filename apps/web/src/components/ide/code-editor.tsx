@@ -2,7 +2,7 @@
 
 import { useRef, useCallback } from "react";
 import Editor, { OnMount, OnChange } from "@monaco-editor/react";
-import { Loader2 } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 interface CodeEditorProps {
   value: string;
@@ -41,8 +41,7 @@ export function CodeEditor({ value, language, onChange, path }: CodeEditorProps)
         path={path}
         loading={
           <div className="flex items-center justify-center h-full gap-2 text-gray-500">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading editor...</span>
+            <Loader className="w-5 mr-2" /><span>Loading editor...</span>
           </div>
         }
         options={{

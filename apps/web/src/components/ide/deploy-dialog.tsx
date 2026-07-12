@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Rocket, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Rocket, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 const CATEGORIES = [
   "CRM",
@@ -278,8 +279,7 @@ export function DeployDialog({
             </DialogHeader>
             <div className="flex flex-col items-center gap-6 mt-6">
               <div className="relative">
-                <Loader2 className="h-16 w-16 animate-spin text-neutral-900" />
-                <Rocket className="h-6 w-6 text-neutral-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <Loader className="w-5 mr-2" /><Rocket className="h-6 w-6 text-neutral-900 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
 
               {/* Progress bar */}

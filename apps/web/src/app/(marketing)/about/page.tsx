@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { MarketingFooter } from "@/components/layout/marketing-footer";
+
 import {
   ArrowRight,
   Users,
@@ -166,7 +166,7 @@ export default function AboutPage() {
         </section>
       </main>
 
-      <MarketingFooter />
+
     </div>
   );
 }

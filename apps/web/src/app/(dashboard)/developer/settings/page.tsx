@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/stores/auth-store";
+import { Loader } from "@/components/ui/loader";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -24,15 +25,13 @@ import {
   Sun,
   ChevronRight,
   Save,
-  Loader2,
   CheckCircle2,
   Trash2,
   AlertTriangle,
   Mail,
   DollarSign,
   Package,
-  Megaphone,
-} from "lucide-react";
+  Megaphone} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -329,7 +328,7 @@ export default function DeveloperSettingsPage() {
           <Button variant="outline">Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+              <><Loader className="w-5 mr-2" /></>
             ) : (
               <><Save className="mr-2 h-4 w-4" /> Save Changes</>
             )}

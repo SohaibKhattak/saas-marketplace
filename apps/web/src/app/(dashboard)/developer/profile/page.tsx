@@ -32,7 +32,6 @@ import {
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
-  Loader2,
   ChevronRight,
   ImagePlus,
   X,
@@ -42,7 +41,9 @@ import {
   Package,
   DollarSign,
   Users,
+  Loader2
 } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 
 interface DeveloperProfile {
   id: string;
@@ -296,8 +297,8 @@ export default function DeveloperProfilePage() {
       {profileMessage && (
         <div
           className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${profileMessage.type === "success"
-              ? "bg-green-500/10 text-green-700 dark:text-green-400"
-              : "bg-red-50 text-red-700 border border-red-200 shadow-sm rounded-sm"
+            ? "bg-green-500/10 text-green-700 dark:text-green-400"
+            : "bg-red-50 text-red-700 border border-red-200 shadow-sm rounded-sm"
             }`}
         >
           {profileMessage.type === "success" ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
@@ -361,8 +362,7 @@ export default function DeveloperProfilePage() {
                 <Avatar className="h-28 w-28 border-4 border-muted">
                   {saving && avatarFile ? (
                     <div className="flex h-full w-full items-center justify-center bg-gray-100">
-                      <Loader2 className="h-8 w-8 text-black animate-spin" />
-                    </div>
+                      <Loader /></div>
                   ) : avatarPreview ? (
                     <AvatarImage src={avatarPreview} alt="Profile photo" className="object-cover" />
                   ) : (
@@ -440,7 +440,7 @@ export default function DeveloperProfilePage() {
           </div>
           {devLoading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+              <Loader />
             </div>
           ) : (
             <>
@@ -542,8 +542,8 @@ export default function DeveloperProfilePage() {
 
                             {pwMessage && (
                               <div className={`flex items-center gap-2 rounded-sm p-3 text-sm animate-fade-in ${pwMessage.type === 'success'
-                                  ? 'bg-green-50 text-green-700 border border-green-200'
-                                  : 'bg-red-50 text-red-700 border border-red-200'
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-red-50 text-red-700 border border-red-200'
                                 }`}>
                                 {pwMessage.type === 'success' ? (
                                   <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -626,7 +626,7 @@ export default function DeveloperProfilePage() {
                               <div className="flex justify-end pt-4">
                                 <Button type="submit" className="bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 transition-all duration-200" disabled={pwSaving}>
                                   {pwSaving ? (
-                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Updating...</>
+                                    <><Loader2 className="w-5 mr-2" /></>
                                   ) : (
                                     <><Lock className="mr-2 h-4 w-4" /> Save Password</>
                                   )}
@@ -693,18 +693,17 @@ export default function DeveloperProfilePage() {
           )}
 
           {devLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : !stripeAccountId ? (
-            <div className="rounded-sm border border-primary/20 bg-primary/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                <p className="font-semibold tracking-tight text-primary-900">Setup Stripe Connect</p>
-                <p className="text-sm text-gray-600 mt-1">To get paid instantly for your subscriptions, you need to connect your Stripe account.</p>
+            <Loader className="w-5 mr-2" />) : !stripeAccountId ? (
+              <div className="rounded-sm border border-primary/20 bg-primary/5 p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <p className="font-semibold tracking-tight text-primary-900">Setup Stripe Connect</p>
+                  <p className="text-sm text-gray-600 mt-1">To get paid instantly for your subscriptions, you need to connect your Stripe account.</p>
+                </div>
+                <Button onClick={handleConnectStripe} disabled={stripeLoading}>
+                  {stripeLoading ? "Connecting..." : "Set up Stripe Payouts"}
+                </Button>
               </div>
-              <Button onClick={handleConnectStripe} disabled={stripeLoading}>
-                {stripeLoading ? "Connecting..." : "Set up Stripe Payouts"}
-              </Button>
-            </div>
-          ) : (
+            ) : (
             <div className="rounded-sm border border-green-500/20 bg-green-500/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <p className="font-semibold tracking-tight text-green-900 dark:text-green-400">Stripe Account Connected</p>
@@ -728,7 +727,7 @@ export default function DeveloperProfilePage() {
             Cancel
           </Button>
           <Button onClick={handleProfileSave} disabled={saving || !isProfileDirty}>
-            {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : <><Save className="mr-2 h-4 w-4" /> Save Changes</>}
+            {saving ? <><Loader2 className="w-5 mr-2" /></> : <><Save className="mr-2 h-4 w-4" /> Save Changes</>}
           </Button>
         </div>
       </div>

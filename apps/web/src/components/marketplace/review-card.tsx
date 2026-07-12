@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Star, Pencil, Trash2 } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -70,7 +71,7 @@ export function ReviewCard({
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-4 flex-1">
           {/* Avatar */}
-          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center flex-shrink-0 border border-gray-300">
+          <div className="h-12 w-12 rounded-full bg-linear-to-br from-gray-200 to-gray-300 flex items-center justify-center shrink-0 border border-gray-300">
             <span className="font-bold text-gray-700 text-sm">
               {review?.customer?.fullName?.charAt(0)?.toUpperCase() || '?'}
             </span>
@@ -106,8 +107,7 @@ export function ReviewCard({
               title="Delete review"
             >
               {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
+                <Loader className="w-5 mr-2" />) : (
                 <Trash2 className="h-4 w-4" />
               )}
             </button>
@@ -165,7 +165,7 @@ export function ReviewCard({
             value={editComment}
             onChange={(e) => setEditComment(e.target.value)}
             placeholder="Share your updated thoughts..."
-            className="min-h-[100px] rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-sm"
+            className="min-h-25 rounded-lg border-gray-200 focus-visible:ring-gray-400 resize-none text-sm"
           />
 
           {/* Action Buttons */}
@@ -190,8 +190,7 @@ export function ReviewCard({
             >
               {isUpdating ? (
                 <>
-                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                  Saving...
+                  <Loader className="w-5 mr-2" />
                 </>
               ) : (
                 'Save Changes'

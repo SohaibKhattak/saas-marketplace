@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MarketingHeader } from "@/components/layout/marketing-header";
-import { MarketingFooter } from "@/components/layout/marketing-footer";
+
 import {
   Mail,
   MapPin,
@@ -152,7 +152,7 @@ export default function ContactPage() {
         </section>
       </main>
 
-      <MarketingFooter />
+
     </div>
   );
 }

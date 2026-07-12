@@ -6,7 +6,8 @@ import { api } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bell, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, CheckCheck} from "lucide-react";
+import { Loader } from '@/components/ui/loader';
 
 interface Notification {
   id: string;
@@ -90,8 +91,7 @@ export function NotificationList() {
 
       {loading ? (
         <div className="mt-8 py-12 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-neutral-900" />
-        </div>
+          <Loader /></div>
       ) : notifications.length === 0 ? (
         <div className="mt-8 rounded-sm border border-dashed p-12 text-center text-gray-500">
           <Bell className="mx-auto h-12 w-12 text-gray-500/40" />

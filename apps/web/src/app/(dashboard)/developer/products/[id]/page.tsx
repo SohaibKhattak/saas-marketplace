@@ -46,16 +46,16 @@ import {
   Send,
   Globe,
   Pencil,
-  Loader2,
   Calendar,
   ArrowLeft,
   Users,
   MessageSquare,
   Sparkles,
-  X,
+  X
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ImageCarousel } from "@/components/marketplace/image-carousel";
+import { Loader } from "@/components/ui/loader";
 
 const CATEGORIES = [
   "CRM", "Project Management", "Marketing", "Analytics", "E-Commerce",
@@ -302,16 +302,15 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-gray-500">Loading product details...</p>
+      <div className="flex min-h-100 flex-col items-center justify-center space-y-4">
+        <Loader /><p className="text-sm text-gray-500">Loading product details...</p>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
+      <div className="flex min-h-100 flex-col items-center justify-center space-y-4">
         <p className="text-lg font-medium text-gray-900">Product not found</p>
         <Button variant="outline" onClick={() => router.push("/developer/products")}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
@@ -357,7 +356,7 @@ export default function ProductDetailPage() {
           {canSubmit && (
             <Button size="sm" onClick={handleSubmitForReview} disabled={reviewing} className="h-9 cursor-pointer">
               <Send className="mr-2 h-4 w-4" />
-              {reviewing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for Review"}
+              {reviewing ? <Loader className="w-5 mr-2" /> : "Submit for Review"}
             </Button>
           )}
           {isPublished && (
@@ -413,9 +412,9 @@ export default function ProductDetailPage() {
       {!isEditing ? (
         <div className="space-y-8">
           {/* Product Logo Section at the Top */}
-          <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-b from-gray-50/50 to-white rounded-3xl border border-gray-150 p-6 shadow-sm">
+          <div className="flex flex-col items-center justify-center py-10 bg-linear-to-b from-gray-50/50 to-white rounded-3xl border border-gray-150 p-6 shadow-sm">
             <div
-              className="relative w-full max-w-3xl h-64 sm:h-80 md:h-[400px] rounded-[2.5rem] border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center cursor-zoom-in hover:scale-[1.01] active:scale-99 transition-all duration-300 group"
+              className="relative w-full max-w-3xl h-64 sm:h-80 md:h-100 rounded-[2.5rem] border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center cursor-zoom-in hover:scale-[1.01] active:scale-99 transition-all duration-300 group"
               onClick={() => product.logoUrl && setActiveLightboxImage(product.logoUrl)}
             >
               {product.logoUrl ? (
@@ -659,8 +658,7 @@ export default function ProductDetailPage() {
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg font-bold text-gray-900">Pricing Plans</CardTitle>
                 {isRefreshing && !loading && (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                )}
+                  <Loader className="w-5 mr-2" />)}
               </div>
               <CardDescription>
                 {product.pricingPlans.length === 0
@@ -676,8 +674,7 @@ export default function ProductDetailPage() {
         <CardContent className="relative">
           {isRefreshing && !loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-b-lg">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
+              <Loader /></div>
           )}
           {product.pricingPlans.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed p-8 text-center text-gray-500 bg-gray-50">
@@ -729,7 +726,7 @@ export default function ProductDetailPage() {
 
       {/* Add Plan Dialog */}
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <form onSubmit={handleAddPlan}>
             <DialogHeader>
               <DialogTitle>Add Pricing Plan</DialogTitle>
@@ -773,7 +770,7 @@ export default function ProductDetailPage() {
 
       {/* Delete Plan Confirm Dialog */}
       <Dialog open={!!planToDelete} onOpenChange={(open) => !open && setPlanToDelete(null)}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <DialogTitle>Delete Pricing Plan</DialogTitle>
             <DialogDescription>
@@ -794,7 +791,7 @@ export default function ProductDetailPage() {
       {/* Lightbox Modal */}
       {activeLightboxImage && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300"
+          className="fixed inset-0 z-9999 flex items-center justify-center bg-black/85 backdrop-blur-md transition-all duration-300"
           onClick={() => setActiveLightboxImage(null)}
         >
           <button
