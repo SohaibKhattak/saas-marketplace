@@ -13,13 +13,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Only run on subsites, not the main site
-if (is_main_site()) {
-    return;
-}
+// Removed is_main_site check because empty($site_slug) already protects the main domain.
 
 // Platform API base URL
-define('SAAS_API_URL', 'https://api.saasifyy.tech/api/v1');
+define('SAAS_API_URL', 'https://saasifyy.tech/api/v1');
 define('SAAS_PLATFORM_URL', 'https://saasifyy.tech');
 define('SAAS_CACHE_TTL', 300); // Cache subscription check for 5 minutes
 
