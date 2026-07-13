@@ -291,63 +291,71 @@ export async function deleteWPSite(site: any) {
 }
 
 export async function checkSubscriptionAccess(
-  userEmail: string,
+  userEmail: string | undefined,
   siteSubdomain: string
 ) {
-  // Find the site
-  // const site = await prisma.developerSite.findUnique({
-  //   where: { subdomain: siteSubdomain },
-  //   include: { products: { where: { status: "PUBLISHED" } } },
-  // });
-  const {data: site, error: siteError} = await supabase.from("developer_sites").select("*").eq("subdomain", siteSubdomain).maybeSingle();
+  // Find the site and its products
+  const {data: site, error: siteError} = await supabase
+    .from("developer_sites")
+    .select("*, products(id, status)")
+    .eq("subdomain", siteSubdomain)
+    .maybeSingle();
+
   if (siteError) {
     throw new AppError(500, siteError.message || "Database operation failed", "SUPABASE_ERROR");
   }
   if (!site || site.status !== "ACTIVE") {
-    return { hasAccess: false, plan: null };
+    return { hasAccess: false, plan: null, productId: null };
+  }
+
+  // Get the published product ID
+  const publishedProducts = (site.products || []).filter((p: any) => p.status === "PUBLISHED");
+  const productId = publishedProducts.length > 0 ? publishedProducts[0].id : null;
+
+  if (!userEmail) {
+    return { hasAccess: false, plan: null, productId };
   }
 
   // Find the user
-  // const user = await prisma.user.findUnique({
-  //   where: { email: userEmail },
-  // });
-
   const {data: user, error: userError} = await supabase.from("users").select("*").eq("email", userEmail).maybeSingle();
   if (userError) {
     throw new AppError(500, userError.message || "Database operation failed", "SUPABASE_ERROR");
   }
   if (!user) {
-    return { hasAccess: false, plan: null };
+    return { hasAccess: false, plan: null, productId };
+  }
+
+  // Check if the user is the developer who owns the site
+  const {data: profile} = await supabase.from("developer_profiles").select("id").eq("user_id", user.id).maybeSingle();
+  if (profile && profile.id === site.developer_id) {
+    return { hasAccess: true, plan: "Owner", productId };
   }
 
   // Check if user has active subscription to any product on this site
-  const productIds = site.products.map((p: any) => p.id);
+  const productIds = publishedProducts.map((p: any) => p.id);
   if (productIds.length === 0) {
-    return { hasAccess: false, plan: null };
+    return { hasAccess: false, plan: null, productId: null };
   }
 
-  // const subscription = await prisma.subscription.findFirst({
-  //   where: {
-  //     customerId: user.id,
-  //     productId: { in: productIds },
-  //     status: { in: ["ACTIVE", "TRIALING"] },
-  //   },
-  //   include: {
-  //     pricingPlan: true,
-  //   },
-  // });
+  const {data: subscription, error: subscriptionError} = await supabase
+    .from("subscriptions")
+    .select("*, pricing_plans(name)")
+    .eq("customer_id", user.id)
+    .in("product_id", productIds)
+    .in("status", ["ACTIVE", "TRIALING"])
+    .maybeSingle();
 
-  const {data: subscription, error: subscriptionError} = await supabase.from("subscriptions").select("*").eq("customer_id", user.id).in("product_id", productIds).in("status", ["ACTIVE", "TRIALING"]).maybeSingle();
   if (subscriptionError) {
     throw new AppError(500, subscriptionError.message || "Database operation failed", "SUPABASE_ERROR");
   }
   if (!subscription) {
-    return { hasAccess: false, plan: null };
+    return { hasAccess: false, plan: null, productId };
   }
 
   return {
     hasAccess: true,
-    plan: subscription.pricingPlan.name,
+    plan: subscription.pricing_plans?.name || subscription.pricingPlan?.name,
+    productId
   };
 }
 

@@ -40,16 +40,19 @@ function saas_get_site_slug() {
  * Results are cached using transients for performance.
  */
 function saas_check_subscription($user_email, $site_slug) {
-    $cache_key = 'saas_access_' . md5($user_email . '_' . $site_slug);
+    $cache_email = empty($user_email) ? 'guest' : $user_email;
+    $cache_key = 'saas_access_' . md5($cache_email . '_' . $site_slug);
     $cached = get_transient($cache_key);
     if ($cached !== false) {
         return $cached;
     }
 
-    $url = SAAS_API_URL . '/wp/check-access?' . http_build_query([
-        'user_email' => $user_email,
-        'site_slug'  => $site_slug,
-    ]);
+    $query_args = ['site_slug' => $site_slug];
+    if (!empty($user_email)) {
+        $query_args['user_email'] = $user_email;
+    }
+
+    $url = SAAS_API_URL . '/wp/check-access?' . http_build_query($query_args);
 
     $response = wp_remote_get($url, [
         'timeout' => 10,
@@ -58,11 +61,11 @@ function saas_check_subscription($user_email, $site_slug) {
 
     if (is_wp_error($response)) {
         // Fail closed: deny access when API is unreachable
-        return ['hasAccess' => false, 'plan' => null];
+        return ['hasAccess' => false, 'plan' => null, 'productId' => null];
     }
 
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    $result = $body['data'] ?? ['hasAccess' => false, 'plan' => null];
+    $result = $body['data'] ?? ['hasAccess' => false, 'plan' => null, 'productId' => null];
 
     set_transient($cache_key, $result, SAAS_CACHE_TTL);
     return $result;
@@ -128,9 +131,13 @@ function saas_get_user_email() {
 /**
  * Render the paywall page for non-subscribers.
  */
-function saas_render_paywall($site_slug) {
+function saas_render_paywall($site_slug, $product_id = null) {
     $site_name = get_bloginfo('name');
-    $marketplace_url = SAAS_PLATFORM_URL . '/marketplace';
+    if (!empty($product_id)) {
+        $marketplace_url = SAAS_PLATFORM_URL . '/marketplace/' . $product_id;
+    } else {
+        $marketplace_url = SAAS_PLATFORM_URL . '/marketplace';
+    }
     $login_url = SAAS_PLATFORM_URL . '/login';
 
     ?>
@@ -321,15 +328,10 @@ function saas_access_control() {
 
     $user_email = saas_get_user_email();
 
-    if (!$user_email) {
-        saas_render_paywall($site_slug);
-        exit;
-    }
-
     $access = saas_check_subscription($user_email, $site_slug);
 
     if (empty($access['hasAccess'])) {
-        saas_render_paywall($site_slug);
+        saas_render_paywall($site_slug, $access['productId'] ?? null);
         exit;
     }
 

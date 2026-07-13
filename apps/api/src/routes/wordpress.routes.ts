@@ -25,12 +25,12 @@ const router = Router();
 router.get("/check-access", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user_email, site_slug } = req.query;
-    if (!user_email || !site_slug) {
-      res.status(400).json({ error: { message: "user_email and site_slug are required" } });
+    if (!site_slug) {
+      res.status(400).json({ error: { message: "site_slug is required" } });
       return;
     }
     const result = await wordpressService.checkSubscriptionAccess(
-      user_email as string,
+      user_email as string | undefined,
       site_slug as string
     );
     res.json({ data: result });
@@ -148,38 +148,63 @@ router.post("/launch-token", async (req: AuthRequest, res: Response, next: NextF
  *       201: { description: Site provisioned }
  *       400: { description: Invalid subdomain or developer not approved }
  */
-router.get("/sites", requireRole("DEVELOPER", "ADMIN"), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get("/sites", async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.userId;
     if(!userId) {
       res.status(400).json({ error: { message: "User ID is required" } });
       return;
     }     
-    const { data: profile, error } = await supabase
+    const { data: profile } = await supabase
       .from("developer_profiles")
       .select("id")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error) {
-      throw new AppError(500, error.message || "Database operation failed", "SUPABASE_ERROR");
+    let ownedSites: any[] = [];
+    if (profile) {
+      const {data:sites, error: sitesError} = await supabase.from("developer_sites")
+        .select("*")
+        .eq("developer_id", profile.id)
+        .order("created_at", { ascending: false });
+
+      if (sitesError) {
+        throw new AppError(500, sitesError.message || "Database operation failed", "SUPABASE_ERROR");
+      }
+      ownedSites = sites || [];
     }
 
-    if (!profile) {
-      throw new AppError(404, "Developer profile not found", "PROFILE_NOT_FOUND");
+    // Fetch sites the user has subscribed to
+    const { data: subs, error: subsError } = await supabase.from("subscriptions")
+      .select("product_id")
+      .eq("customer_id", userId)
+      .in("status", ["ACTIVE", "TRIALING"]);
+
+    let subscribedSites: any[] = [];
+    if (subs && subs.length > 0) {
+      const productIds = subs.map(s => s.product_id);
+      const { data: products } = await supabase.from("products").select("site_id").in("id", productIds);
+      if (products && products.length > 0) {
+        const siteIds = products.map(p => p.site_id).filter(Boolean);
+        if (siteIds.length > 0) {
+          const { data: sites } = await supabase.from("developer_sites").select("*").in("id", siteIds);
+          subscribedSites = sites || [];
+        }
+      }
     }
 
-    // const sites = await wordpressService.getDeveloperSites(profile.id);
-    const {data:sites, error: sitesError} = await supabase.from("developer_sites")
-      .select("*")
-      .eq("developer_id", profile.id)
-      .order("created_at", { ascending: false })
-
-    if (sitesError) {
-      throw new AppError(500, sitesError.message || "Database operation failed", "SUPABASE_ERROR");
+    const allSitesMap = new Map();
+    for (const site of ownedSites) {
+      allSitesMap.set(site.id, { ...site, isOwner: true });
+    }
+    for (const site of subscribedSites) {
+      if (!allSitesMap.has(site.id)) {
+        allSitesMap.set(site.id, { ...site, isOwner: false });
+      }
     }
 
-    res.json({ data: sites });
+    const mergedSites = Array.from(allSitesMap.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    res.json({ data: mergedSites });
   } catch (err) {
     next(err);
   }

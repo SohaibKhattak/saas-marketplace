@@ -43,6 +43,7 @@ interface Site {
   wp_site_id: number | null;
   status: string;
   created_at: string;
+  isOwner?: boolean;
 }
 
 const WP_DOMAIN = "saasifyy.tech";
@@ -323,7 +324,10 @@ export default function SitesPage() {
                         <Globe className="h-5 w-5 text-green-500" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">{site.subdomain}</CardTitle>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          {site.subdomain}
+                          {site.isOwner === false && <Badge variant="secondary" className="text-[10px] uppercase font-semibold tracking-wider">Subscribed</Badge>}
+                        </CardTitle>
                         <CardDescription className="text-xs">.{WP_DOMAIN}</CardDescription>
                       </div>
                     </div>
@@ -353,26 +357,30 @@ export default function SitesPage() {
                             View Site
                           </Button>
                         </a>
-                        <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button size="sm" className="w-full cursor-pointer">
-                            <Settings className="mr-1.5 h-3.5 w-3.5" />
-                            WP Admin
-                          </Button>
-                        </a>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full text-destructive hover:text-destructive cursor-pointer hover:bg-destructive/10"
-                        onClick={() => site && confirmDelete(site)}
-                        disabled={deletingId === site.id}
-                      >
-                        {deletingId === site.id ? (
-                          <><Loader className="w-5 mr-2" /></>
-                        ) : (
-                          <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete Site</>
+                        {site.isOwner !== false && (
+                          <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                            <Button size="sm" className="w-full cursor-pointer">
+                              <Settings className="mr-1.5 h-3.5 w-3.5" />
+                              WP Admin
+                            </Button>
+                          </a>
                         )}
-                      </Button>
+                      </div>
+                      {site.isOwner !== false && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-destructive hover:text-destructive cursor-pointer hover:bg-destructive/10"
+                          onClick={() => site && confirmDelete(site)}
+                          disabled={deletingId === site.id}
+                        >
+                          {deletingId === site.id ? (
+                            <><Loader className="w-5 mr-2" /></>
+                          ) : (
+                            <><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete Site</>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   )}
 
