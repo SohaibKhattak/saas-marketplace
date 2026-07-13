@@ -36,6 +36,11 @@ jobs:
 
             docker compose up -d --build
             docker image prune -f
+
+            # Deploy WordPress MU-plugins
+            sudo mkdir -p /var/www/wordpress/wp-content/mu-plugins/
+            sudo cp -r ./wordpress/mu-plugins/* /var/www/wordpress/wp-content/mu-plugins/
+            sudo chown -R www-data:www-data /var/www/wordpress/wp-content/mu-plugins/
         env:
           API_ENV_FILE: ${{ secrets.API_ENV_FILE }}
           FRONTEND_ENV_FILE: ${{ secrets.FRONTEND_ENV_FILE }}
