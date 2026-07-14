@@ -62,6 +62,7 @@ interface ProductDetail {
   isSubscribed: boolean;
   isOwner: boolean;
   activePlanId: string | null;
+  activeBillingCycle: "MONTHLY" | "YEARLY" | null;
   _count: { subscriptions: number; reviews: number };
 }
 
@@ -94,7 +95,8 @@ export default function ProductPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await api.get<{ data: ProductDetail }>(`/products/catalog/${id}`);
+        const options = accessToken ? { token: accessToken } : undefined;
+        const res = await api.get<{ data: ProductDetail }>(`/products/catalog/${id}`, options);
         setProduct(res.data);
       } catch {
         setError('Product not found');
@@ -103,7 +105,7 @@ export default function ProductPage() {
       }
     }
     load();
-  }, [id]);
+  }, [id, accessToken]);
 
   useEffect(() => {
     if (!product || !user || !accessToken) return;
@@ -388,6 +390,7 @@ export default function ProductPage() {
                   isLoggedIn={!!user}
                   isOwner={product.isOwner}
                   activePlanId={product.activePlanId}
+                  activeBillingCycle={product.activeBillingCycle}
                   userRole={user?.role}
                 />
               </div>

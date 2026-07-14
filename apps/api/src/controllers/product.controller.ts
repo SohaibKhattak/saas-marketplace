@@ -316,10 +316,11 @@ export async function deleteProduct(
       throw new AppError(400, "Product already deleted", "ALREADY_DELETED");
     }
 
+    console.log("data before update", id,userId )
     const { error: updateError } = await supabase
       .from("products")
       .update({
-        isDeleted: true,
+        isdeleted: true,
         deleted_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -384,9 +385,9 @@ export async function submitForReview(req: AuthRequest, res: Response, next: Nex
       throw new AppError(400, "Cannot submit a deleted product", "ALREADY_DELETED");
     }
 
-    if (product.status !== "DRAFT" && product.status !== "REJECTED") {
+    if (product.status !== "DRAFT" && product.status !== "REJECTED" && product.status !== "UNPUBLISHED") {
       logger.error({ err: fetchError }, "Product cannot be submitted from current status");
-      throw new AppError(400, "Product can only be submitted from draft or rejected status", "INVALID_STATUS");
+      throw new AppError(400, "Product can only be submitted from draft, rejected, or unpublished status", "INVALID_STATUS");
     }
 
     // Must have at least one pricing plan
@@ -442,6 +443,7 @@ export async function getDeveloperProducts(
       .from("products")
       .select("*", { count: "exact" })
       .eq("developer_id", developerId)
+      .eq("isdeleted", false)
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -670,6 +672,7 @@ export async function getProductById(
     // --- Access Control Logic ---
     let isSubscribed = false;
     let activePlanId = null;
+    let activeBillingCycle = null;
     let isOwner = false;
     let showSite = false;
 
@@ -684,7 +687,7 @@ export async function getProductById(
         // 2. Check for active/trialing/valid canceled subscription for Customers
         const { data: subscriptions } = await supabase
           .from("subscriptions")
-          .select("id, pricing_plan_id, current_period_end, status")
+          .select("id, pricing_plan_id, current_period_end, status, billing_cycle")
           .eq("product_id", product.id)
           .eq("customer_id", req.user.userId);
 
@@ -699,6 +702,7 @@ export async function getProductById(
           if (validSub) {
             isSubscribed = true;
             activePlanId = validSub.pricing_plan_id;
+            activeBillingCycle = validSub.billing_cycle;
             showSite = true;
           }
         }
@@ -740,6 +744,7 @@ export async function getProductById(
       isSubscribed,
       isOwner,
       activePlanId,
+      activeBillingCycle,
       _count: {
         subscriptions: subscriptions ?? 0,
         reviews: reviews ?? 0,

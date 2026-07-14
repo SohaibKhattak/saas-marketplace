@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Loader } from '@/components/ui/loader';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,7 @@ interface PricingSectionProps {
   isLoggedIn: boolean;
   isOwner?: boolean;
   activePlanId?: string | null;
+  activeBillingCycle?: "MONTHLY" | "YEARLY" | null;
   userRole?: string | null;
 }
 
@@ -34,6 +35,7 @@ export function PricingSection({
   isLoggedIn,
   isOwner,
   activePlanId,
+  activeBillingCycle,
   userRole,
 }: PricingSectionProps) {
   const [billingCycle, setBillingCycle] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
@@ -43,148 +45,153 @@ export function PricingSection({
   return (
     <div className="w-full pb-14 space-y-12">
       <div className="flex flex-col items-center text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-xs font-bold text-primary uppercase tracking-widest">
+        {/* <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-slate-900">
           Pricing Plans
-        </div>
-        <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl text-slate-900">
-          Ready to supercharge your workflow?
         </h2>
         <p className="text-lg text-slate-500 max-w-2xl font-medium">
-          Choose the perfect plan for your business. All plans include our core features with no hidden fees.
-        </p>
+          Manage, track, and optimize your digital assets<br/>with a plan built for your needs.
+        </p> */}
 
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 mt-8">
+        <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-full border border-slate-100 mt-8">
+          <button
+            onClick={() => setBillingCycle("YEARLY")}
+            className={cn(
+              "px-6 py-2 text-sm font-semibold rounded-full transition-all duration-300 relative",
+              billingCycle === "YEARLY"
+                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            Yearly
+          </button>
           <button
             onClick={() => setBillingCycle("MONTHLY")}
             className={cn(
-              "px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300",
+              "px-6 py-2 text-sm font-semibold rounded-full transition-all duration-300",
               billingCycle === "MONTHLY"
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
+                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50"
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
             Monthly
           </button>
-          <button
-            onClick={() => setBillingCycle("YEARLY")}
-            className={cn(
-              "px-6 py-2 text-sm font-semibold rounded-lg transition-all duration-300 relative",
-              billingCycle === "YEARLY"
-                ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
-                : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            Yearly
-            <span className="absolute -top-3 -right-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter shadow-lg shadow-primary/20">
-              Save 20%
-            </span>
-          </button>
         </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto items-stretch">
         {plans.map((plan) => {
           const price = billingCycle === "MONTHLY" ? plan.price_monthly : plan.price_yearly;
           const displayPrice = price ?? plan.price_monthly;
           const isYearlyPossible = !!plan.price_yearly;
-          const isRecommended = plan.name.toLowerCase().includes("pro") || plan.name.toLowerCase().includes("popular");
+          const isRecommended = plan.name.toLowerCase().includes("growth") || plan.name.toLowerCase().includes("pro") || plan.name.toLowerCase().includes("popular");
+
+          // let description = "Ideal for individuals managing personal crypto finances.";
+          let subtext = plan.trial_days > 0 && `${plan.trial_days} days free`;
+          // if (isRecommended) {
+          //   description = "Built for traders and small businesses scaling their web3 operations.";
+          //   subtext = "2 days until expiration"; // Based on the image
+          // } else if (plan.name.toLowerCase().includes("enterprise")) {
+          //   description = "Perfect for web3 builders, companies and financial teams.";
+          //   subtext = "Individual";
+          // }
 
           return (
             <Card
               key={plan.id}
               className={cn(
-                "relative flex flex-col overflow-hidden border transition-all duration-500 hover:shadow-[0_32px_64px_-20px_rgba(0,0,0,0.15)] hover:-translate-y-2 rounded-3xl",
-                isRecommended ? "border-primary/40 shadow-2xl shadow-primary/5 ring-1 ring-primary/10" : "border-slate-200 bg-white"
+                "relative flex flex-col overflow-hidden border-none transition-all duration-500 rounded-[2rem]",
+                isRecommended ? "bg-black text-white" : "bg-slate-50/80 text-slate-900"
               )}
             >
-              {isRecommended && (
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-primary" />
-              )}
 
-              {plan.trial_days > 0 && (
-                <div className="absolute top-6 right-6">
-                  <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/10 border-none text-[10px] uppercase font-black px-2.5 py-1 rounded-lg">
-                    {plan.trial_days} Day Trial
-                  </Badge>
+              <CardHeader className="p-8 pb-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                  {/* {isRecommended && (
+                    <Badge className="bg-blue-600/20 text-blue-400 hover:bg-blue-600/20 border-none px-3 py-1 font-semibold rounded-full lowercase text-xs">
+                      best choice
+                    </Badge>
+                  )} */}
                 </div>
-              )}
-
-              <CardHeader className="p-8 pb-4">
-                <div className="space-y-1">
-                  <CardTitle className="text-xl font-bold text-slate-900">{plan.name}</CardTitle>
-                  {isRecommended && (
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Most Popular</p>
-                  )}
-                </div>
-                <div className="mt-8 flex items-baseline gap-1">
-                  <span className="text-5xl font-black tracking-tight text-slate-900">
-                    ${displayPrice}
-                  </span>
-                  <span className="text-slate-400 font-bold text-sm uppercase tracking-widest">
-                    /{billingCycle === "MONTHLY" ? "mo" : "yr"}
-                  </span>
-                </div>
-                {billingCycle === "YEARLY" && plan.price_monthly && plan.price_yearly && (
-                  <div className="flex items-center gap-2 mt-4">
-                    <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                      <Check className="h-3 w-3 text-emerald-600 stroke-3" />
-                    </div>
-                    <p className="text-xs font-bold text-emerald-600">
-                      Saving ${(plan.price_monthly * 12 - plan.price_yearly).toFixed(0)} per year
-                    </p>
-                  </div>
-                )}
+                {/* <p className={cn("text-sm leading-relaxed", isRecommended ? "text-slate-300" : "text-slate-500")}>
+                  {description}
+                </p> */}
               </CardHeader>
 
-              <CardContent className="flex-1 p-8">
-                <div className="h-px bg-slate-100 mb-8" />
-                <ul className="space-y-5">
+              <CardContent className="flex-1 p-8 pt-4">
+                <ul className="space-y-4">
                   {(plan.features as string[]).map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3.5 text-sm text-slate-600">
-                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-                        <Check className="h-2.5 w-2.5 stroke-4" />
+                    <li key={i} className="flex items-start gap-3 text-sm">
+                      <div className="mt-0.5 shrink-0">
+                        <Check className="h-4 w-4 text-blue-500 stroke-[3]" />
                       </div>
-                      <span className="leading-normal font-semibold">{feature}</span>
+                      <span className={cn("leading-tight font-medium", isRecommended ? "text-slate-300" : "text-slate-700")}>{feature}</span>
                     </li>
                   ))}
                 </ul>
               </CardContent>
 
-              <CardFooter className="p-8 pt-0 mt-auto flex flex-col">
-                <Button
-                  className={cn(
-                    "w-full h-11 text-sm font-semibold transition-all duration-300 rounded-xl",
-                    plan.id === activePlanId
-                      ? "bg-emerald-500 text-white cursor-default hover:bg-emerald-500"
-                      : isRecommended
-                        ? "bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/10 hover:shadow-primary/20"
-                        : "bg-slate-900 hover:bg-slate-800 text-white shadow-lg shadow-slate-900/5 hover:shadow-slate-900/10"
+              <CardFooter className="p-8 pt-0 mt-auto flex flex-col gap-6">
+                <div className="flex items-end justify-between w-full">
+                  <div className="flex items-baseline gap-1.5">
+                    {plan.price_monthly ? (
+                      <>
+                        <span className="text-4xl font-extrabold tracking-tight">
+                          ${displayPrice}
+                        </span>
+                        <span className={cn("text-xs font-semibold", isRecommended ? "text-slate-400" : "text-slate-500")}>
+                          / per month
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-2xl font-bold tracking-tight">
+                        Custom pricing
+                      </span>
+                    )}
+                  </div>
+                  {plan.price_monthly && (
+                    <span className={cn("text-xs font-semibold pb-1", isRecommended ? "text-slate-400" : "text-slate-500")}>
+                      billed {billingCycle === "YEARLY" ? "yearly" : "monthly"}
+                    </span>
                   )}
-                  onClick={() => !isOwner && plan.id !== activePlanId && onSubscribe(plan.id, billingCycle)}
-                  disabled={
-                    subscribingPlanId === plan.id ||
-                    (billingCycle === "YEARLY" && !isYearlyPossible) ||
-                    isOwner ||
-                    plan.id === activePlanId ||
-                    (isLoggedIn && userRole === 'DEVELOPER' && !isOwner)
-                  }
-                >
-                  {subscribingPlanId === plan.id ? (
-                    <><Loader className="w-5 mr-2" /></>
-                  ) : plan.id === activePlanId ? (
-                    "Active Subscription"
-                  ) : isOwner ? (
-                    "Manage Product"
-                  ) : isLoggedIn && userRole === 'DEVELOPER' ? (
-                    "Customer Account Required"
-                  ) : isLoggedIn ? (
-                    `Select ${plan.name}`
-                  ) : (
-                    "Sign in to Subscribe"
-                  )}
-                </Button>
-                <p className="text-center text-[10px] text-slate-400 mt-3 font-semibold uppercase tracking-widest w-full">
-                  No credit card required for trial
+                </div>
+
+                {activePlanId && (plan.id !== activePlanId || billingCycle !== activeBillingCycle) ? (
+                  <div className="w-full flex items-center justify-center text-center h-12 px-4 rounded-full border border-gray-200 bg-gray-50 text-[11px] text-gray-500 font-medium">
+                    To change subscription, contact support@saasifyy.tech
+                  </div>
+                ) : (
+                  <Button
+                    className={cn(
+                      "w-full h-12 text-sm font-bold transition-all duration-300 rounded-full",
+                      plan.id === activePlanId && billingCycle === activeBillingCycle
+                        ? "bg-white text-black cursor-default hover:bg-slate-100 border-[0.1px] border-black"
+                        : isRecommended
+                          ? "bg-white text-black hover:bg-slate-100"
+                          : "bg-black text-white hover:bg-slate-900"
+                    )}
+                    onClick={() => !isOwner && onSubscribe(plan.id, billingCycle)}
+                    disabled={
+                      subscribingPlanId === plan.id ||
+                      (billingCycle === "YEARLY" && !isYearlyPossible && plan.price_monthly !== null) ||
+                      isOwner ||
+                      (plan.id === activePlanId && billingCycle === activeBillingCycle) ||
+                      (isLoggedIn && userRole === 'DEVELOPER' && !isOwner)
+                    }
+                  >
+                    {subscribingPlanId === plan.id ? (
+                      <Loader2 className="w-5 mr-2 animate-spin" />
+                    ) : isLoggedIn && userRole === 'DEVELOPER' ? (
+                      "Customer Account Required"
+                    ) : plan.id === activePlanId && billingCycle === activeBillingCycle ? (
+                      "Current Subscription"
+                    ) : (
+                      "Subscribe"
+                    )}
+                  </Button>
+                )}
+                <p className={cn("text-center text-[11px] font-semibold tracking-wide w-full", isRecommended ? "text-slate-400" : "text-slate-500")}>
+                  {subtext}
                 </p>
               </CardFooter>
             </Card>

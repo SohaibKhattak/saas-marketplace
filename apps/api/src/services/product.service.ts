@@ -122,7 +122,6 @@ function generateSlug(name: string): string {
 // }
 
 export async function unpublishProduct(productId: string, developerId: string) {
-  // const product = await getOwnedProduct(productId, developerId);
   const {data: product, error: productError} = await supabase.from("products").select("*").eq("id", productId).single();
   if (productError) {
     throw new AppError(500, productError.message || "Database operation failed", "SUPABASE_ERROR");
@@ -130,14 +129,8 @@ export async function unpublishProduct(productId: string, developerId: string) {
   if(!product) {
     throw new AppError(404, "Product not found", "PRODUCT_NOT_FOUND");
   }
-  const {data: developer, error: developerError} = await supabase.from("developer_profiles").select("*").eq("id", product.developerId).single();
-  if (developerError) {
-    throw new AppError(500, developerError.message || "Database operation failed", "SUPABASE_ERROR");
-  }
-  if(!developer) {
-    throw new AppError(404, "Developer not found", "DEVELOPER_NOT_FOUND");
-  }
-  if(developer.userId !== developerId) {
+
+  if(product.developer_id !== developerId) {
     throw new AppError(403, "You do not own this product", "FORBIDDEN");
   }
 
@@ -145,7 +138,14 @@ export async function unpublishProduct(productId: string, developerId: string) {
     throw new AppError(400, "Only published products can be unpublished", "INVALID_STATUS");
   }
 
-  return supabase.from("products").update({ status: "UNPUBLISHED" }).eq("id", productId).select("*").single();
+  const { data, error } = await supabase.from("products").update({ status: "UNPUBLISHED" }).eq("id", productId).select("*");
+  if (error) {
+    throw new AppError(500, error.message, "SUPABASE_ERROR");
+  }
+  if (!data || data.length === 0) {
+    throw new AppError(500, "Failed to update product to UNPUBLISHED. No rows updated.", "UPDATE_FAILED");
+  }
+  return data[0];
 }
 
 export async function adminDeleteProduct(productId: string) {

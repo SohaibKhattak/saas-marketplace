@@ -51,7 +51,8 @@ import {
   Users,
   MessageSquare,
   Sparkles,
-  X
+  X,
+  Loader2
 } from "lucide-react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ImageCarousel } from "@/components/marketplace/image-carousel";
@@ -144,6 +145,14 @@ export default function ProductDetailPage() {
 
   const [reviewing, setReviewing] = useState(false);
 
+  // Unpublish modal
+  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
+
+  // Delete product modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState(false);
+
   const fetchProduct = useCallback(async () => {
     setIsRefreshing(true);
     try {
@@ -234,6 +243,9 @@ export default function ProductDetailPage() {
     try {
       await api.post(`/products/${productId}/submit`, {}, { token: accessToken! });
       setSuccess("Product submitted for review");
+      if (product) {
+        setProduct({ ...product, status: "PENDING_REVIEW" });
+      }
       fetchProduct();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to submit");
@@ -243,12 +255,14 @@ export default function ProductDetailPage() {
   }
 
   async function handleDeleteProduct() {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+    setDeletingProduct(true);
+    setError("");
     try {
       await api.delete(`/products/${productId}`, { token: accessToken! });
       router.push("/developer/products");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete");
+      setDeletingProduct(false);
     }
   }
 
@@ -319,19 +333,25 @@ export default function ProductDetailPage() {
     );
   }
 
-  const canEdit = product.status === "DRAFT" || product.status === "REJECTED";
-  const canSubmit = (product.status === "DRAFT" || product.status === "REJECTED") && product.pricingPlans.length > 0;
+  const canEdit = product.status === "DRAFT" || product.status === "REJECTED" || product.status === "UNPUBLISHED";
+  const canSubmit = (product.status === "DRAFT" || product.status === "REJECTED" || product.status === "UNPUBLISHED") && product.pricingPlans.length > 0;
   const isPublished = product.status === "PUBLISHED";
 
   async function handleUnpublish() {
-    if (!confirm("Are you sure you want to unpublish this product? It will be removed from the marketplace.")) return;
     setError("");
+    setUnpublishing(true);
     try {
       await api.post(`/products/${productId}/unpublish`, {}, { token: accessToken! });
       setSuccess("Product unpublished from marketplace");
+      setShowUnpublishModal(false);
+      if (product) {
+        setProduct({ ...product, status: "UNPUBLISHED" });
+      }
       fetchProduct();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to unpublish");
+    } finally {
+      setUnpublishing(false);
     }
   }
 
@@ -350,24 +370,24 @@ export default function ProductDetailPage() {
         <div className="flex flex-wrap gap-2">
           {canEdit && !isEditing && (
             <Button variant="outline" size="sm" onClick={handleStartEdit} className="h-9 cursor-pointer ">
-              <Pencil className="mr-2 h-4 w-4 text-primary" /> Edit Details
+              <Pencil className="mr-2 h-4 w-4 text-black" /> Edit Details
             </Button>
           )}
           {canSubmit && (
             <Button size="sm" onClick={handleSubmitForReview} disabled={reviewing} className="h-9 cursor-pointer">
-              <Send className="mr-2 h-4 w-4" />
-              {reviewing ? <Loader className="w-5 mr-2" /> : "Submit for Review"}
+              {!reviewing && <Send className="mr-2 h-4 w-4" />}
+              {reviewing ? <Loader2 className="w-5 mr-2 animate-spin" /> : "Submit for Review"}
             </Button>
           )}
           {isPublished && (
-            <Button variant="outline" size="sm" onClick={handleUnpublish} className="h-9">
+            <Button variant="outline" size="sm" onClick={() => setShowUnpublishModal(true)} className="h-9">
               Unpublish
             </Button>
           )}
           <Button
             variant="destructive"
             size="sm"
-            onClick={handleDeleteProduct}
+            onClick={() => setShowDeleteModal(true)}
             className="h-9 flex items-center gap-2 px-3 cursor-pointer"
           >
             <Trash2 className="h-4 w-4" /> Delete Product
@@ -378,7 +398,7 @@ export default function ProductDetailPage() {
       {product.rejectionReason && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 flex items-start gap-3">
           <div className="bg-destructive/10 p-2 rounded-full text-destructive">
-            <Sparkles className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </div>
           <div>
             <p className="text-sm font-semibold tracking-tight text-destructive">Product Rejected</p>
@@ -398,160 +418,141 @@ export default function ProductDetailPage() {
 
       {/* Pro tip for edits */}
       {canEdit && !isEditing && (
-        <div className="rounded-lg bg-primary/5 p-4 border border-primary/10 flex items-center gap-3">
-          <div className="bg-primary/10 p-2 rounded-full">
-            <Sparkles className="w-5 h-5 text-primary" />
-          </div>
-          <p className="text-sm font-medium text-primary">
-            Tip: Keep your product information updated. Make sure to upload between 5 to 8 screenshots for optimal conversions on the marketplace!
+        <div className="rounded-lg bg-green-500/10 p-4 border border-green-500/20 flex items-center gap-3">
+          <p className="text-sm font-medium text-green-700">
+            <span className="font-bold">Pro Tip:</span> Keep your product information updated. Make sure to upload between 5 to 8 screenshots for optimal conversions on the marketplace!
           </p>
         </div>
       )}
 
       {/* Main Content Grid */}
       {!isEditing ? (
-        <div className="space-y-8">
-          {/* Product Logo Section at the Top */}
-          <div className="flex flex-col items-center justify-center py-10 bg-linear-to-b from-gray-50/50 to-white rounded-3xl border border-gray-150 p-6 shadow-sm">
-            <div
-              className="relative w-full max-w-3xl h-64 sm:h-80 md:h-100 rounded-[2.5rem] border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center cursor-zoom-in hover:scale-[1.01] active:scale-99 transition-all duration-300 group"
-              onClick={() => product.logoUrl && setActiveLightboxImage(product.logoUrl)}
-            >
-              {product.logoUrl ? (
-                <>
+        <div className="space-y-12">
+          {/* Top Section: Split Layout (Logo + Info/Metrics) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
+            {/* Left: Logo */}
+            <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-[2.5rem] border border-gray-200 shadow-sm">
+              <div
+                className="relative w-full max-w-sm aspect-square rounded-[2rem] border-4 border-white shadow-lg overflow-hidden bg-white flex items-center justify-center cursor-zoom-in hover:scale-[1.02] transition-transform duration-300"
+                onClick={() => product.logoUrl && setActiveLightboxImage(product.logoUrl)}
+              >
+                {product.logoUrl ? (
                   <img
                     src={product.logoUrl}
                     alt={product.name}
-                    className="h-full w-full object-contain p-4 md:p-8 transition-transform duration-300 group-hover:scale-105"
+                    className="h-full w-full object-contain p-6"
                   />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 flex items-center justify-center transition-colors duration-300">
-                    <Sparkles className="w-8 h-8 text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-sm" />
+                ) : (
+                  <span className="text-6xl font-extrabold text-gray-300 tracking-tight">{product.name.charAt(0)}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Info & Metrics */}
+            <div className="flex flex-col h-full justify-center space-y-8 py-4">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Badge variant={statusVariant[product.status] ?? "secondary"} className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest rounded-full">
+                    {product.status.replace("_", " ")}
+                  </Badge>
+                  <span className="inline-block px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 text-black border border-gray-200">
+                    {product.category}
+                  </span>
+                </div>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">{product.name}</h1>
+                {product.createdAt && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                    <Calendar className="h-4 w-4" />
+                    <span>Created {new Date(product.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   </div>
-                </>
-              ) : (
-                <span className="text-6xl font-extrabold text-gray-400 tracking-tight">{product.name.charAt(0)}</span>
-              )}
+                )}
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-4 p-5 rounded-3xl bg-gray-50 border border-gray-200 hover:scale-[1.02] transition-transform duration-200">
+                  <div className="bg-black p-3.5 rounded-xl text-white shadow-md">
+                    <Users className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Subscribers</p>
+                    <p className="text-3xl font-extrabold text-gray-950 mt-1">{product._count.subscriptions}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-5 rounded-3xl bg-gray-50 border border-gray-200 hover:scale-[1.02] transition-transform duration-200">
+                  <div className="bg-black p-3.5 rounded-xl text-white shadow-md">
+                    <MessageSquare className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Reviews</p>
+                    <p className="text-3xl font-extrabold text-gray-950 mt-1">{product._count.reviews}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Screenshots Section */}
-          <Card className="border border-gray-200 shadow-md overflow-hidden rounded-3xl">
-            <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-6 py-5">
-              <CardTitle className="text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" /> Product Gallery
-              </CardTitle>
-              <CardDescription className="text-gray-500">Visual showcase of the product interface and user experience</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              {product.screenshots && product.screenshots.length > 0 ? (
-                <div className="w-full">
-                  <ImageCarousel images={product.screenshots} alt={product.name} />
-                </div>
-              ) : (
-                <div className="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center text-gray-450 bg-gray-50/50">
-                  <Sparkles className="h-10 w-10 mx-auto mb-3 text-gray-300 animate-pulse" />
-                  <p className="text-base font-semibold text-gray-700">No screenshots uploaded</p>
-                  <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">Upload screenshots in edit mode to display here</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Middle Section: Image Carousel (Marketplace Style) */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-gray-900 px-2">Product Gallery</h3>
+            {product.screenshots && product.screenshots.length > 0 ? (
+              <div className="w-full">
+                <ImageCarousel images={product.screenshots} alt={product.name} />
+              </div>
+            ) : (
+              <div className="rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center text-gray-400 bg-gray-50">
+                <p className="text-base font-semibold text-gray-700">No screenshots uploaded</p>
+                <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">Upload screenshots in edit mode to display them here</p>
+              </div>
+            )}
+          </div>
 
-          {/* Product Information Section */}
+          {/* Bottom Section: Description & WP Site */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left: General Info and Description */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Product Details Card */}
-              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
-                <CardHeader className="border-b border-gray-100 bg-gray-50/30 p-6">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">{product.name}</h1>
-                      <Badge variant={statusVariant[product.status] ?? "secondary"} className="px-3 py-1 text-xs font-semibold uppercase tracking-wider">
-                        {product.status.replace("_", " ")}
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500 items-center">
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
-                        {product.category}
-                      </span>
-                      {product.createdAt && (
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>Created {new Date(product.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+            <div className="lg:col-span-2">
+              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden h-full">
+                <CardHeader className="border-b border-gray-100 bg-gray-50/50 p-6">
+                  <h3 className="text-xl font-bold text-gray-900 tracking-tight">About the Product</h3>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-gray-900 tracking-tight">About the Product</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
-                      {product.description || "No description provided."}
-                    </p>
-                  </div>
+                <CardContent className="p-6">
+                  <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
+                    {product.description || "No description provided."}
+                  </p>
                 </CardContent>
               </Card>
+            </div>
 
-              {/* WordPress Site Integration Card */}
-              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
-                <CardHeader className="p-6 pb-4">
-                  <CardTitle className="text-lg font-bold text-gray-900 tracking-tight">Linked WordPress Site</CardTitle>
-                  <CardDescription className="text-gray-500">The site connected to this product delivery</CardDescription>
+            <div>
+              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden h-full">
+                <CardHeader className="p-6 pb-4 bg-gray-50/50 border-b border-gray-100">
+                  <CardTitle className="text-lg font-bold text-gray-900 tracking-tight">WordPress Integration</CardTitle>
+                  <CardDescription className="text-gray-500">Linked delivery site</CardDescription>
                 </CardHeader>
-                <CardContent className="px-6 pb-6">
+                <CardContent className="p-6">
                   {product.site ? (
-                    <div className="flex items-center gap-4 rounded-2xl border border-gray-150 p-4 bg-gray-50/50 hover:bg-gray-50 transition-colors duration-250">
-                      <div className="p-3 bg-white rounded-xl border shadow-sm">
-                        <Globe className="h-6 w-6 text-gray-500" />
+                    <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 p-4 bg-gray-50 hover:bg-gray-100 transition-colors duration-250">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-white rounded-lg border shadow-sm">
+                          <Globe className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <a
+                            href={product.site.site_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-bold text-gray-900 hover:text-black hover:underline truncate block"
+                          >
+                            {product.site.site_url}
+                          </a>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <a
-                          href={product.site.site_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm font-semibold text-gray-900 hover:text-primary hover:underline flex items-center gap-1 truncate"
-                        >
-                          {product.site.site_url}
-                        </a>
-                        <p className="text-xs text-gray-500 mt-0.5">Subdomain: {product.site.subdomain}</p>
+                      <div className="text-xs text-gray-500 font-medium pl-14">
+                        Subdomain: <span className="text-gray-700">{product.site.subdomain}</span>
                       </div>
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No WordPress site linked to this product.</p>
                   )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right: Metrics / Action Box */}
-            <div className="space-y-6">
-              <Card className="border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
-                <CardHeader className="p-6 pb-4">
-                  <CardTitle className="text-lg font-bold text-gray-900 tracking-tight">Analytics & Metrics</CardTitle>
-                  <CardDescription className="text-gray-500">Product performance overview</CardDescription>
-                </CardHeader>
-                <CardContent className="px-6 pb-6 space-y-4">
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50/60 border border-blue-100/50 hover:scale-[1.02] transition-transform duration-200">
-                    <div className="bg-blue-500 p-3 rounded-xl text-white shadow-md shadow-blue-500/10">
-                      <Users className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Subscribers</p>
-                      <p className="text-2xl font-extrabold text-gray-950 mt-1">{product._count.subscriptions}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-50/60 border border-amber-100/50 hover:scale-[1.02] transition-transform duration-200">
-                    <div className="bg-amber-500 p-3 rounded-xl text-white shadow-md shadow-amber-500/10">
-                      <MessageSquare className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Reviews</p>
-                      <p className="text-2xl font-extrabold text-gray-950 mt-1">{product._count.reviews}</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -783,6 +784,46 @@ export default function ProductDetailPage() {
             </Button>
             <Button type="button" variant="destructive" onClick={executeDeletePlan} disabled={deletingPlan}>
               {deletingPlan ? "Deleting..." : "Delete Plan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Unpublish Confirm Dialog */}
+      <Dialog open={showUnpublishModal} onOpenChange={setShowUnpublishModal}>
+        <DialogContent className="sm:max-w-100">
+          <DialogHeader>
+            <DialogTitle>Unpublish Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to unpublish this product? It will be removed from the marketplace.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button type="button" variant="outline" onClick={() => setShowUnpublishModal(false)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleUnpublish} disabled={unpublishing}>
+              {unpublishing ? "Unpublishing..." : "Unpublish"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Product Confirm Dialog */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent className="sm:max-w-100">
+          <DialogHeader>
+            <DialogTitle>Delete Product</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete this product? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button type="button" variant="outline" onClick={() => setShowDeleteModal(false)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleDeleteProduct} disabled={deletingProduct}>
+              {deletingProduct ? "Deleting..." : "Delete Product"}
             </Button>
           </DialogFooter>
         </DialogContent>

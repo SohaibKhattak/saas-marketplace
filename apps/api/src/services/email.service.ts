@@ -18,80 +18,103 @@ const transporter = nodemailer.createTransport({
 
 const FROM_EMAIL = env.SMTP_FROM || `Saasifyy <noreply@${new URL(env.FRONTEND_URL).hostname}>`;
 
-export async function sendVerificationEmail(to: string, verifyUrl: string) {
+function buildEmailTemplate(title: string, bodyHtml: string, actionButton?: { text: string; url: string }) {
+  // Placeholder URL for logo in the bucket. Update this with actual URL once deployed.
+  const logoUrl = "https://aliayutkvrtygkzdtoud.supabase.co/storage/v1/object/public/avatars/avatars/logo%20(3).png";
+  const year = new Date().getFullYear();
 
-  const htmlContent = `
-    <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;padding:32px;background-color:#fafafa;">
-      <div style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 4px 12px rgba(0,0,0,0.05);text-align:center;">
-        <h2 style="color:#111827;font-size:24px;margin-bottom:16px;">Welcome to Saasifyy!</h2>
-        <p style="color:#4b5563;font-size:16px;line-height:1.5;margin-bottom:32px;">Click the link below to verify your email address and get started:</p>
-        <a href="${verifyUrl}" style="display:inline-block;padding:14px 28px;background-color:#7c3aed;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;transition:background-color 0.2s;">Verify Email</a>
-        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #f3f4f6;">
-          <p style="color:#9ca3af;font-size:14px;margin-bottom:8px;">Or copy and paste this link into your browser:</p>
-          <p style="color:#7c3aed;font-size:14px;word-break:break-all;"><a href="${verifyUrl}" style="color:#7c3aed;text-decoration:none;">${verifyUrl}</a></p>
+  return `
+    <div style="font-family:'Inter', 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;padding:32px;background-color:#fafafa;">
+      <div style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+        
+        <!-- Header -->
+        <div style="display:flex;align-items:center;margin-bottom:32px;border-bottom:1px solid #f3f4f6;padding-bottom:24px;">
+          <img src="${logoUrl}" alt="Saasify Logo" style="height:32px;width:auto;margin-right:12px;" />
+          <span style="font-size:24px;font-weight:700;color:#111827;letter-spacing:-0.5px;">Saasify</span>
         </div>
+
+        <!-- Title -->
+        <h2 style="color:#111827;font-size:24px;margin-bottom:24px;font-weight:600;">${title}</h2>
+        
+        <!-- Body -->
+        <div style="color:#4b5563;font-size:16px;line-height:1.6;margin-bottom:32px;">
+          ${bodyHtml}
+        </div>
+
+        <!-- Action Button -->
+        ${actionButton ? `
+          <div style="text-align:center;margin:32px 0;">
+            <a href="${actionButton.url}" style="display:inline-block;padding:14px 32px;background-color:#000000;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;transition:opacity 0.2s;">
+              ${actionButton.text}
+            </a>
+          </div>
+        ` : ''}
+
+        <!-- Footer -->
+        <div style="margin-top:40px;padding-top:24px;border-top:1px solid #f3f4f6;text-align:center;">
+          <p style="color:#9ca3af;font-size:13px;margin-bottom:8px;">
+            Saasify Inc. &copy; ${year}. All rights reserved.
+          </p>
+          <p style="color:#9ca3af;font-size:13px;margin-bottom:16px;">
+            123 Tech Lane, San Francisco, CA 94105
+          </p>
+          <div style="color:#9ca3af;font-size:12px;">
+            <a href="${env.FRONTEND_URL}/privacy" style="color:#6b7280;text-decoration:underline;margin:0 8px;">Privacy Policy</a> | 
+            <a href="${env.FRONTEND_URL}/terms" style="color:#6b7280;text-decoration:underline;margin:0 8px;">Terms of Service</a> | 
+            <a href="#" style="color:#6b7280;text-decoration:underline;margin:0 8px;">Unsubscribe</a>
+          </div>
+        </div>
+        
       </div>
-      <p style="color:#9ca3af;font-size:12px;text-align:center;margin-top:24px;">This link will expire in 24 hours.</p>
     </div>
   `;
+}
 
-  // --- Nodemailer Implementation ---
-  // await transporter.sendMail({
-  //   from: FROM_EMAIL,
-  //   to,
-  //   subject: "Verify your Saasifyy account",
-  //   html: htmlContent,
-  // });
+export async function sendVerificationEmail(to: string, verifyUrl: string) {
+  const htmlContent = buildEmailTemplate(
+    "Verify your email address",
+    `
+      <p style="margin-bottom:16px;">Welcome to Saasify! We are excited to have you on board.</p>
+      <p style="margin-bottom:16px;">To complete your registration and ensure the security of your account, please verify your email address by clicking the button below.</p>
+      <p style="margin-top:32px;font-size:14px;color:#6b7280;">If the button does not work, you can copy and paste the following link into your browser:</p>
+      <p style="font-size:14px;word-break:break-all;color:#000000;"><a href="${verifyUrl}" style="color:#000000;">${verifyUrl}</a></p>
+      <p style="margin-top:24px;font-size:12px;color:#9ca3af;">This verification link will expire in 24 hours.</p>
+    `,
+    { text: "Verify Email", url: verifyUrl }
+  );
 
-  
-  // --- Resend Implementation ---
   if (resend) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: "Verify your Saasifyy account",
+      subject: "Verify your Saasify account",
       html: htmlContent,
     });
   }
-  
 }
 
 export async function sendPasswordResetEmail(to: string, resetUrl: string) {
-  const htmlContent = `
-    <div style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;max-width:600px;margin:0 auto;padding:32px;background-color:#fafafa;">
-      <div style="background-color:#ffffff;border-radius:12px;padding:40px;box-shadow:0 4px 12px rgba(0,0,0,0.05);text-align:center;">
-        <h2 style="color:#111827;font-size:24px;margin-bottom:16px;">Password Reset Request</h2>
-        <p style="color:#4b5563;font-size:16px;line-height:1.5;margin-bottom:32px;">We received a request to reset your password. Click the button below to choose a new one:</p>
-        <a href="${resetUrl}" style="display:inline-block;padding:14px 28px;background-color:#7c3aed;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;transition:background-color 0.2s;">Reset Password</a>
-        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #f3f4f6;">
-          <p style="color:#9ca3af;font-size:14px;margin-bottom:8px;">Or copy and paste this link into your browser:</p>
-          <p style="color:#7c3aed;font-size:14px;word-break:break-all;"><a href="${resetUrl}" style="color:#7c3aed;text-decoration:none;">${resetUrl}</a></p>
-        </div>
-      </div>
-      <p style="color:#9ca3af;font-size:12px;text-align:center;margin-top:24px;">This link is valid for 1 hour. If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
-    </div>
-  `;
+  const htmlContent = buildEmailTemplate(
+    "Password Reset Request",
+    `
+      <p style="margin-bottom:16px;">We received a request to reset the password associated with your Saasify account.</p>
+      <p style="margin-bottom:16px;">If you initiated this request, please click the button below to choose a new password.</p>
+      <p style="margin-top:32px;font-size:14px;color:#6b7280;">Alternatively, copy and paste this link into your browser:</p>
+      <p style="font-size:14px;word-break:break-all;color:#000000;"><a href="${resetUrl}" style="color:#000000;">${resetUrl}</a></p>
+      <p style="margin-top:24px;font-size:12px;color:#9ca3af;">This link is valid for 1 hour. If you did not request a password reset, please ignore this email or contact our support team if you have concerns.</p>
+    `,
+    { text: "Reset Password", url: resetUrl }
+  );
 
-  // --- Nodemailer Implementation ---
-  // await transporter.sendMail({
-  //   from: FROM_EMAIL,
-  //   to,
-  //   subject: "Reset your Saasifyy password",
-  //   html: htmlContent,
-  // });
-
-  
-  // --- Resend Implementation ---
   if (resend) {
     const res = await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: "Reset your Saasifyy password",
+      subject: "Reset your Saasify password",
       html: htmlContent,
     });
-    console.log("email resp: ",res)
+    console.log("email resp: ", res);
   }
-  
 }
 
 export async function sendNewSubscriptionEmail(
@@ -100,35 +123,35 @@ export async function sendNewSubscriptionEmail(
 ) {
   const dashboardUrl = `${env.FRONTEND_URL}/developer/products`;
 
-  const htmlContent = `
-    <h2>You have a new subscriber! 🎉</h2>
-    <p><strong>${data.customerName}</strong> just subscribed to <strong>${data.productName}</strong>.</p>
-    <table style="margin:16px 0;border-collapse:collapse;">
-      <tr><td style="padding:4px 12px 4px 0;color:#666;">Plan</td><td style="padding:4px 0;"><strong>${data.planName}</strong></td></tr>
-      <tr><td style="padding:4px 12px 4px 0;color:#666;">Amount</td><td style="padding:4px 0;"><strong>$${data.amount}/${data.billingCycle === "YEARLY" ? "year" : "month"}</strong></td></tr>
-    </table>
-    <p><a href="${dashboardUrl}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:8px;">View Dashboard</a></p>
-  `;
+  const htmlContent = buildEmailTemplate(
+    "New Subscription Alert",
+    `
+      <p style="margin-bottom:16px;"><strong>${data.customerName}</strong> has just subscribed to your product, <strong>${data.productName}</strong>.</p>
+      <div style="background-color:#f9fafb;border-radius:8px;padding:16px;margin:24px 0;border:1px solid #e5e7eb;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;width:40%;">Plan Selected</td>
+            <td style="padding:8px 0;color:#111827;font-weight:500;">${data.planName}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;width:40%;">Subscription Amount</td>
+            <td style="padding:8px 0;color:#111827;font-weight:500;">$${data.amount} / ${data.billingCycle === "YEARLY" ? "year" : "month"}</td>
+          </tr>
+        </table>
+      </div>
+      <p style="margin-bottom:16px;">You can view and manage your product performance metrics directly from your developer dashboard.</p>
+    `,
+    { text: "View Dashboard", url: dashboardUrl }
+  );
 
-  // --- Nodemailer Implementation ---
-  // await transporter.sendMail({
-  //   from: FROM_EMAIL,
-  //   to: developerEmail,
-  //   subject: `New subscriber for ${data.productName}!`,
-  //   html: htmlContent,
-  // });
-
-  
-  // --- Resend Implementation ---
   if (resend) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: developerEmail,
-      subject: `New subscriber for \${data.productName}!`,
+      subject: `New subscription for ${data.productName}`,
       html: htmlContent,
     });
   }
-  
 }
 
 export async function sendSubscriptionConfirmationEmail(
@@ -137,33 +160,33 @@ export async function sendSubscriptionConfirmationEmail(
 ) {
   const subsUrl = `${env.FRONTEND_URL}/customer/subscriptions`;
 
-  const htmlContent = `
-    <h2>Subscription Confirmed ✅</h2>
-    <p>You're now subscribed to <strong>${data.productName}</strong>.</p>
-    <table style="margin:16px 0;border-collapse:collapse;">
-      <tr><td style="padding:4px 12px 4px 0;color:#666;">Plan</td><td style="padding:4px 0;"><strong>${data.planName}</strong></td></tr>
-      <tr><td style="padding:4px 12px 4px 0;color:#666;">Amount</td><td style="padding:4px 0;"><strong>$${data.amount}/${data.billingCycle === "YEARLY" ? "year" : "month"}</strong></td></tr>
-    </table>
-    <p><a href="${subsUrl}" style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:8px;">Manage Subscriptions</a></p>
-  `;
+  const htmlContent = buildEmailTemplate(
+    "Subscription Confirmed",
+    `
+      <p style="margin-bottom:16px;">Thank you for your purchase. You are now successfully subscribed to <strong>${data.productName}</strong>.</p>
+      <div style="background-color:#f9fafb;border-radius:8px;padding:16px;margin:24px 0;border:1px solid #e5e7eb;">
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;width:40%;">Plan Details</td>
+            <td style="padding:8px 0;color:#111827;font-weight:500;">${data.planName}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;width:40%;">Billing Cycle Amount</td>
+            <td style="padding:8px 0;color:#111827;font-weight:500;">$${data.amount} / ${data.billingCycle === "YEARLY" ? "year" : "month"}</td>
+          </tr>
+        </table>
+      </div>
+      <p style="margin-bottom:16px;">You can manage your subscription settings and billing details from your customer dashboard.</p>
+    `,
+    { text: "Manage Subscriptions", url: subsUrl }
+  );
 
-  // --- Nodemailer Implementation ---
-  // await transporter.sendMail({
-  //   from: FROM_EMAIL,
-  //   to: customerEmail,
-  //   subject: `Subscription confirmed — ${data.productName}`,
-  //   html: htmlContent,
-  // });
-
-  
-  // --- Resend Implementation ---
   if (resend) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: customerEmail,
-      subject: `Subscription confirmed — \${data.productName}`,
+      subject: `Subscription confirmed — ${data.productName}`,
       html: htmlContent,
     });
   }
-  
 }
