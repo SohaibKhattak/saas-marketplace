@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormError } from "@/components/ui/form-error";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api-client";
@@ -13,6 +13,14 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,12 +30,28 @@ export default function ForgotPasswordPage() {
     try {
       await api.post("/auth/forgot-password", { email });
       setSubmitted(true);
+      setResendCountdown(30);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
         setError("An unexpected error occurred");
       }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!email || resendCountdown > 0) return;
+    setIsLoading(true);
+    setError("");
+    try {
+      await api.post("/auth/forgot-password", { email });
+      setResendCountdown(30);
+    } catch (err) {
+      // In a real app we might want to show this error somewhere
+      console.error("Failed to resend", err);
     } finally {
       setIsLoading(false);
     }
@@ -42,6 +66,19 @@ export default function ForgotPasswordPage() {
           </div>
           <h1 className="text-2xl font-bold mb-2">Check your email</h1>
           <p className="text-gray-600 text-sm mb-8">If an account exists for <span className="font-semibold">{email}</span>, we sent a password reset link.</p>
+          <div className="space-y-3 mb-6">
+            <button 
+              type="button" 
+              onClick={handleResend}
+              disabled={isLoading || resendCountdown > 0}
+              className="w-full h-11 bg-white text-black font-semibold tracking-tight rounded-sm hover:bg-gray-50 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isLoading && <Loader className="w-4 h-4 mr-2" />}
+              {resendCountdown > 0 
+                ? `Resend available in ${resendCountdown}s` 
+                : "Resend reset email"}
+            </button>
+          </div>
           <Link href="/login" className="block">
             <button type="button" className="w-full h-11 bg-black text-white font-semibold tracking-tight rounded-sm hover:bg-neutral-800 border border-transparent focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all duration-200">Back to login</button>
           </Link>

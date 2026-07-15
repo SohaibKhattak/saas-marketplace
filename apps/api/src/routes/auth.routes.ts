@@ -121,6 +121,26 @@ router.post("/verify-email", authController.verifyEmail);
 
 /**
  * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Resend verification email
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string, format: email }
+ *     responses:
+ *       200: { description: Verification email resent }
+ */
+router.post("/resend-verification", validate(z.object({ email: z.string().email() })), authController.resendVerification);
+
+/**
+ * @swagger
  * /auth/forgot-password:
  *   post:
  *     tags: [Auth]

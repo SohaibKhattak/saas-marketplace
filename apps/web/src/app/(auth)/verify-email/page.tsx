@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Store, CheckCircle2, Mail, ArrowRight, XCircle } from "lucide-react";
+import { Store, CheckCircle2, Mail, ArrowRight, XCircle, Loader2 } from "lucide-react";
 import { Loader } from '@/components/ui/loader';
 
 function VerifyEmailContent() {
@@ -24,6 +24,34 @@ function VerifyEmailContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const hasAttempted = useRef(false);
+
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCountdown]);
+
+  async function handleResend() {
+    if (!email || resendCountdown > 0) return;
+    setIsResending(true);
+    setError("");
+    try {
+      await api.post("/auth/resend-verification", { email });
+      setResendCountdown(30);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred while resending");
+      }
+    } finally {
+      setIsResending(false);
+    }
+  }
 
   // Auto-verify if token is in URL (from email link)
   useEffect(() => {
@@ -61,7 +89,7 @@ function VerifyEmailContent() {
             </div>
             <span>Saasifyy</span>
           </Link>
-          
+
         </div>
         <div className="flex-1 flex items-center justify-center px-4 pb-12">
           <div className="w-full max-w-md animate-fade-in text-center">
@@ -83,7 +111,7 @@ function VerifyEmailContent() {
             </div>
             <span>Saasifyy</span>
           </Link>
-          
+
         </div>
 
         <div className="flex-1 flex items-center justify-center px-4 pb-12">
@@ -122,7 +150,7 @@ function VerifyEmailContent() {
           </div>
           <span>Saasifyy</span>
         </Link>
-        
+
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 pb-12">
@@ -159,6 +187,19 @@ function VerifyEmailContent() {
               )}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
+              {!error && email && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleResend}
+                  disabled={isResending || resendCountdown > 0}
+                >
+                  {isResending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {resendCountdown > 0
+                    ? `Resend available in ${resendCountdown}s`
+                    : "Resend verification email"}
+                </Button>
+              )}
               <p className="text-sm text-gray-500">
                 Already verified?{" "}
                 <Link href="/login" className="text-neutral-900 font-semibold tracking-tight hover:underline">

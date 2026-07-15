@@ -91,6 +91,11 @@ export async function login(req: Request, res: Response) {
        WHERE email = $1`,
       [email]
     );
+    
+    if (existingUser.rows.length === 0) {
+      return res.status(401).json({ error: { message: "This account isn't registered", code: "ACCOUNT_NOT_FOUND" } });
+    }
+    
     if (existingUser.rows[0]?.authProvider === "GOOGLE") {
       return res.status(403).json({
         error: {
@@ -105,6 +110,9 @@ export async function login(req: Request, res: Response) {
     const authClient = createAuthClient();
     const { data, error } = await authClient.auth.signInWithPassword({ email, password });
     if (error || !data.session || !data.user) {
+      if (error?.message === "Invalid login credentials") {
+        return res.status(401).json({ error: { message: "Invalid password", code: "INVALID_PASSWORD" } });
+      }
       return res.status(401).json({ error: { message: error?.message || "Invalid credentials", code: "INVALID_CREDENTIALS" } });
     }
 
@@ -247,6 +255,39 @@ export async function verifyEmail(req: Request, res: Response, next: NextFunctio
     // Optionally, you can implement email verification logic if you want to support custom verification
     // Otherwise, Supabase handles email verification
     res.status(501).json({ error: { message: "Email verification is handled by Supabase Auth.", code: "NOT_IMPLEMENTED" } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resendVerification(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: { message: "Email is required", code: "VALIDATION_ERROR" } });
+    }
+
+    // We use magiclink to generate an action link for unverified users, 
+    // as type: 'signup' requires a password which we don't have here.
+    const authClient = createAuthClient();
+    const { data, error } = await authClient.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+      options: {
+        redirectTo: `${env.FRONTEND_URL}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      console.log("Supabase error during resend verification:", error);
+      return res.status(400).json({ error: { message: error.message, code: "SUPABASE_ERROR" } });
+    }
+
+    if (data?.properties?.action_link) {
+      await sendVerificationEmail(email, data.properties.action_link);
+    }
+
+    res.json({ message: "Verification email resent successfully." });
   } catch (err) {
     next(err);
   }
