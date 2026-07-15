@@ -56,6 +56,8 @@ type DeveloperProfileDto = {
 };
 
 type DeveloperProfileWithRelationsDto = DeveloperProfileDto & {
+  stripeChargesEnabled: boolean;
+  stripeDetailsSubmitted: boolean;
   productCount: number;
   sites: DeveloperSiteDto[];
 };
@@ -386,6 +388,19 @@ export async function getProfile(
       console.error("[getProfile] product count error:", productCountError);
     }
 
+    // 4. Fetch live Stripe account status if connected
+    let stripeChargesEnabled = false;
+    let stripeDetailsSubmitted = false;
+    if (profile.stripe_account_id) {
+      try {
+        const stripeAccount = await stripe.accounts.retrieve(profile.stripe_account_id);
+        stripeChargesEnabled = stripeAccount.charges_enabled ?? false;
+        stripeDetailsSubmitted = stripeAccount.details_submitted ?? false;
+      } catch (stripeErr) {
+        logDebug("Failed to retrieve Stripe account status", stripeErr);
+        // If retrieval fails (e.g. deleted account), treat as not connected
+      }
+    }
 
     res.json({
       data: {
@@ -398,6 +413,8 @@ export async function getProfile(
         applicationStatus: profile.application_status,
         rejectionReason: profile.rejection_reason,
         stripeAccountId: profile.stripe_account_id,
+        stripeChargesEnabled,
+        stripeDetailsSubmitted,
         approvedAt: profile.approved_at,
         createdAt: profile.created_at,
         updatedAt: profile.updated_at,
@@ -839,6 +856,22 @@ export async function createStripeLoginLink(
 
     if (profileError || !profile || !profile.stripe_account_id) {
       throw new AppError(400, "Developer has not connected Stripe", "STRIPE_NOT_CONNECTED");
+    }
+
+    // Check if the account has completed onboarding before generating a login link.
+    // Login links only work for accounts that have finished Stripe's onboarding process.
+    const stripeAccount = await stripe.accounts.retrieve(profile.stripe_account_id);
+    
+    if (!stripeAccount.charges_enabled || !stripeAccount.details_submitted) {
+      // Account exists but onboarding is incomplete — generate an account link to resume.
+      const accountLink = await stripe.accountLinks.create({
+        account: profile.stripe_account_id,
+        refresh_url: `${env.FRONTEND_URL}/developer/profile?stripe=refresh`,
+        return_url: `${env.FRONTEND_URL}/developer/profile?stripe=success`,
+        type: "account_onboarding",
+      });
+      res.json({ url: accountLink.url, onboardingIncomplete: true });
+      return;
     }
 
     const loginLink = await stripe.accounts.createLoginLink(profile.stripe_account_id);

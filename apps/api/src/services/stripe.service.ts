@@ -48,6 +48,17 @@ export async function createCheckoutSession(
     throw new AppError(404, "Developer profile not found", "DEVELOPER_NOT_FOUND");
   }
 
+  // Guard: Block checkout if developer hasn't completed Stripe onboarding
+  if (!devProfile.stripe_account_id) {
+    throw new AppError(400, "This product is temporarily unavailable for purchase because the developer hasn't completed their payment setup.", "DEVELOPER_STRIPE_INCOMPLETE");
+  }
+
+  // Verify the Stripe account has completed onboarding and can receive transfers
+  const devStripeAccount = await stripe.accounts.retrieve(devProfile.stripe_account_id);
+  if (!devStripeAccount.charges_enabled) {
+    throw new AppError(400, "This product is temporarily unavailable for purchase because the developer hasn't completed their payment setup.", "DEVELOPER_STRIPE_INCOMPLETE");
+  }
+
   // Check if customer has any history with this product
   const { data: existingRecords } = await supabase
     .from("subscriptions")

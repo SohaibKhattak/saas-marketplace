@@ -95,6 +95,7 @@ export default function DeveloperProfilePage() {
   // Stripe Connect state
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
+  const [stripeChargesEnabled, setStripeChargesEnabled] = useState(false);
   const [stripeSetupError, setStripeSetupError] = useState<string | null>(null);
   const [stripeDashboardLoading, setStripeDashboardLoading] = useState(false);
   const [stripeSuccess, setStripeSuccess] = useState(false);
@@ -118,13 +119,14 @@ export default function DeveloperProfilePage() {
 
   const fetchDevProfile = useCallback(async () => {
     try {
-      const res = await api.get<{ data: DeveloperProfile & { stripeAccountId: string | null } }>("/developers/me", { token: accessToken! });
+      const res = await api.get<{ data: DeveloperProfile & { stripeAccountId: string | null; stripeChargesEnabled: boolean; stripeDetailsSubmitted: boolean } }>("/developers/me", { token: accessToken! });
       setDevProfile(res.data);
       setBusinessName(res.data.businessName ?? "");
       setBusinessEmail(res.data.businessEmail ?? "");
       // setTaxId(res.data.taxId ?? "");
       setBio(res.data.bio ?? "");
       setStripeAccountId(res.data.stripeAccountId ?? null);
+      setStripeChargesEnabled(res.data.stripeChargesEnabled ?? false);
     } catch {
       setProfileMessage({ type: "error", text: "Failed to load developer profile" });
     } finally {
@@ -703,6 +705,19 @@ export default function DeveloperProfilePage() {
                   {stripeLoading ? "Connecting..." : "Set up Stripe Payouts"}
                 </Button>
               </div>
+            ) : !stripeChargesEnabled ? (
+            <div className="rounded-sm border border-orange-500/20 bg-orange-500/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="font-semibold tracking-tight text-orange-900 dark:text-orange-400">Stripe Setup Incomplete</p>
+                <p className="text-sm text-orange-700/80 dark:text-orange-500 mt-1">Your Stripe account was created but onboarding is not complete. You won&apos;t be able to receive payouts or have your products purchased until you finish setup.</p>
+              </div>
+              <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+                <Badge variant="outline" className="bg-orange-500/20 text-orange-700 border-orange-500/30">Incomplete</Badge>
+                <Button onClick={handleConnectStripe} disabled={stripeLoading}>
+                  {stripeLoading ? "Redirecting..." : "Complete Stripe Setup"}
+                </Button>
+              </div>
+            </div>
             ) : (
             <div className="rounded-sm border border-green-500/20 bg-green-500/10 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
